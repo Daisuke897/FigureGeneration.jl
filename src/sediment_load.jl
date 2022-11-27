@@ -31,6 +31,9 @@ export
     make_graph_suspended_volume_flow_dist,
     make_graph_bedload_volume_flow_dist,
     make_graph_sediment_volume_flow_dist,
+    make_graph_suspended_load_target_hour_ja,
+    make_graph_bedload_target_hour_ja,
+    make_graph_suspended_bedload_target_hour_ja,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
     make_graph_yearly_mean_suspended_load_3_conditions,
@@ -46,13 +49,14 @@ function bedload_sediment_volume_each_year!(
     for i in 1:(1999-1965+1)
         target_year=1965+i-1
         bedload_sediment[i]=sum(
-	    data_file[data_file.I .== area_meter, :Qball][each_year_timing["$target_year"][1]+1:each_year_timing["$target_year"][2]+1]
+	    data_file[data_file.I .== area_meter, :Qball][each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1]
 	    )
     end
     
     return bedload_sediment
     
 end
+
 
 function bedload_sediment_volume_each_year(
     area_index::Int, data_file::DataFrame, each_year_timing
@@ -68,6 +72,7 @@ function bedload_sediment_volume_each_year(
 
 end
 
+
 #特定位置の各年の年間浮遊砂量の配列を出力する関数
 function suspended_sediment_volume_each_year!(
     suspended_sediment, area_index::Int, data_file::DataFrame, each_year_timing
@@ -78,7 +83,7 @@ function suspended_sediment_volume_each_year!(
     for i in 1:(1999-1965+1)
         target_year=1965+i-1
         suspended_sediment[i]=sum(
-	    data_file[data_file.I .== area_meter, :Qsall][each_year_timing["$target_year"][1]+1:each_year_timing["$target_year"][2]+1]
+	    data_file[data_file.I .== area_meter, :Qsall][each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1]
 	    )
     end
     
@@ -101,39 +106,6 @@ function suspended_sediment_volume_each_year(
 
 end
 
-#-------------
-
-#function sediment_volume_flow_dist(
-#    data_file::DataFrame, target_year::Int,
-#    symbol_name::Symbol, each_year_timing)
-
-#    flow_size = length(data_file[data_file.T .== 0, :I])
-
-#    sediment_vol_flow_dist = zeros(Float64, flow_size)
-
-#    sediment_volume_flow_dist!(
-#        sediment_vol_flow_dist, data_file,
-#        target_year, flow_size, symbol_name,
-#	each_year_timing)
-
-#    return sediment_vol_flow_dist
-#end
-
-#function sediment_volume_flow_dist!(
-#    sediment_vol_flow_dist, data_file::DataFrame,
-#    target_year::Int, flow_size::Int,
-#    symbol_name::Symbol, each_year_timing)
-
-#    for i in 1:flow_size
-#        sediment_vol_flow_dist[i] = sum(
-#            data_file[data_file.I .== (200 * (i - 1)), symbol_name][each_year_timing[string(target_year)][1]+1:each_year_timing[string(target_year)][2]+1]
-#            )
-#    end
-
-#    return sediment_vol_flow_dist
-#end
-
-#-------------------
 
 #各年の年間流砂量のグラフを出力する関数 日本語バージョン（縦軸のスケールは異なる）
 function make_graph_sediment_load_each_year_diff_scale_ja(
@@ -182,8 +154,7 @@ function make_graph_sediment_load_each_year_diff_scale_ja(
         xlabel="年", guidefontsize=18, seriestype=:bar,
         legend_font_pointsize=13,
         tickfontsize=18, label="河口 掃流砂", color=:midnightblue)
-    
-    
+        
     plot!(p1, p3, p2, p4, layout=l, legend=:best, dpi=300, size=(1200,600),
         topmargin=10Plots.mm, rightmargin=30Plots.mm)
     
@@ -398,26 +369,92 @@ function make_graph_bedload_volume_flow_dist(
 end
 
 function make_graph_sediment_volume_flow_dist(
-    data_file::DataFrame,
-    target_year::Int,
-    each_year_timing)
+data_file::DataFrame,
+target_year::Int,
+each_year_timing)
 
-    p1 = make_graph_suspended_volume_flow_dist(
-        data_file,target_year,each_year_timing)
+p1 = make_graph_suspended_volume_flow_dist(
+data_file,target_year,each_year_timing)
 
-    plot!(p1, xlabel="", ylabel="Yearly\n Suspended\n Load\n (m³/year)",
-        ylims=(0, 1.4e7))
+plot!(p1, xlabel="", ylabel="Yearly\n Suspended\n Load\n (m³/year)",
+ylims=(0, 1.4e7))
 
-    p2 = make_graph_bedload_volume_flow_dist(
-        data_file,target_year,each_year_timing)
+p2 = make_graph_bedload_volume_flow_dist(
+data_file,target_year,each_year_timing)
 
-    plot!(p2, title="", ylabel="Yearly\n Bedload\n (m³/year)",
-        ylims=(0, 2.0e5))
+plot!(p2, title="", ylabel="Yearly\n Bedload\n (m³/year)",
+ylims=(0, 2.0e5))
+
+l = @layout[a; b]
+
+plot(p1, p2, layout=l)
+
+end
+
+#特定の時間の流砂量を表示できるようにする。
+#浮遊砂量の図
+function make_graph_suspended_load_target_hour_ja(
+    target_hour,data_file,time_schedule)
+
+    target_second = 3600 * target_hour
+    
+    start_index, finish_index = decide_index_number(target_hour)
+    
+    want_title = making_time_series_title(
+                     "浮遊砂量", target_hour,
+                     target_second, time_schedule
+		     )
+
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(data_file[data_file.T .== 0, :I].*10^-3,
+        reverse(data_file[start_index:finish_index,:Qs]),
+        label="", fillrange=0,
+        ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
+	title=want_title, xlabel="河口からの距離 (km)",
+	xticks=[0, 20, 40, 60, 77.8],
+	linewidth=2, legend=:topleft,
+	color=:firebrick)
+end
+#掃流砂量の図
+function make_graph_bedload_target_hour_ja(
+    target_hour,data_file,time_schedule)
+
+    target_second = 3600 * target_hour
+    
+    start_index, finish_index = decide_index_number(target_hour)
+    
+    want_title = making_time_series_title(
+                     "掃流砂量", target_hour,
+                     target_second, time_schedule
+		     )
+
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(data_file[data_file.T .== 0, :I].*10^-3,
+        reverse(data_file[start_index:finish_index,:Qb]),
+        label="", fillrange=0,
+        ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
+	title=want_title, xlabel="河口からの距離 (km)",
+	xticks=[0, 20, 40, 60, 77.8],
+	linewidth=2, legend=:topleft,
+	color=:royalblue)
+end
+
+#浮遊砂量と掃流砂量の2つの図
+function make_graph_suspended_bedload_target_hour_ja(
+    target_hour,data_file,time_schedule)
 
     l = @layout[a; b]
 
-    plot(p1, p2, layout=l)
+    p1 = make_graph_suspended_load_target_hour_ja(
+             target_hour,data_file,time_schedule
+	     )
+    plot!(p1, xlabel="")
 
+    p2 = make_graph_bedload_target_hour_ja(
+             target_hour,data_file,time_schedule
+	     )
+
+    plot(p1, p2, layout=l)
 end
 
 #3つの条件を重ねられるのか。。。
@@ -437,7 +474,7 @@ function sediment_load_whole_area_each_year!(
     target_year::Int, each_year_timing, tag::Symbol
     )
 
-    for target_hour in each_year_timing["$target_year"][1]:each_year_timing["$target_year"][2]
+    for target_hour in each_year_timing[target_year][1]:each_year_timing[target_year][2]
         start_index, final_index = decide_index_number(target_hour)
         sediment_load_each_year .= sediment_load_each_year .+ df[start_index:final_index, tag]
     end
@@ -446,8 +483,7 @@ function sediment_load_whole_area_each_year!(
 end
 
 function sediment_load_whole_area_each_year(
-    df,
-    target_year::Int, each_year_timing, tag::Symbol
+    df, target_year::Int, each_year_timing, tag::Symbol
     )
 
     flow_size = length(df[df.T .== 0, :I])

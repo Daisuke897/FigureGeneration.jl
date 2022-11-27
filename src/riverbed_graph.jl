@@ -33,7 +33,7 @@ export comparison_final_average_riverbed_ja,
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
-title_01, data_file, hours_calculate_end, time_schedule, when_year)   
+title_01, data_file, hours_calculate_end, time_schedule)   
     
     distance_from_upstream = data_file[data_file.T .== 0, :I]
     
@@ -49,7 +49,7 @@ end
 
 #core_comparison_final_average_riverbed_2はタイトルに秒数が入らない
 function core_comparison_final_average_riverbed_2(
-title_01, data_file, hours_calculate_end, time_schedule, when_year)    
+title_01, data_file, hours_calculate_end, time_schedule)    
     
     distance_from_upstream = data_file[data_file.T .== 0, :I]
     
@@ -64,14 +64,14 @@ end
 #実測河床位が存在する場合
 function comparison_final_average_riverbed_ja(
     hours_calculate_end,riverbed_level_data,
-    data_file,time_schedule,when_year)
+    data_file,time_schedule,when_year::Int)
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, when_year]
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3,
@@ -88,14 +88,14 @@ end
 #実測河床位が存在する場合
 function comparison_final_average_riverbed_en(
     hours_calculate_end,riverbed_level_data,
-    data_file,time_schedule,when_year)
+    data_file,time_schedule,when_year::Int)
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, when_year]
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3,
@@ -112,11 +112,11 @@ end
 #実測河床位が存在しない場合
 function comparison_final_average_riverbed_ja(
     hours_calculate_end,
-    data_file,time_schedule,when_year)
+    data_file,time_schedule)
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
 
@@ -135,11 +135,11 @@ end
 #実測河床位が存在しない場合
 function comparison_final_average_riverbed_en(
     hours_calculate_end,
-    data_file,time_schedule,when_year)
+    data_file,time_schedule)
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
     
@@ -157,18 +157,19 @@ end
 #実測と再現の河床位の誤差を表示するグラフを作る関数（日本語版）
 function difference_final_average_riverbed_ja(
     hours_calculate_end, riverbed_level_data,
-    data_file, time_schedule, when_year)
+    data_file, time_schedule, when_year::Int)
     
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, when_year]
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     difference_riverbed = average_riverbed_level .- riverbed_level
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    hline!([0], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3, reverse(difference_riverbed), 
         label="実測河床位との誤差",  
         ylabel="誤差 (m)", xlims=(0,77.8), title=want_title,
@@ -180,18 +181,19 @@ end
 #実測と再現の河床位の誤差を表示するグラフを作る関数（英語版）
 function difference_final_average_riverbed_en(
     hours_calculate_end, riverbed_level_data,
-    data_file, time_schedule, when_year)
+    data_file, time_schedule, when_year::Int)
     
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule, when_year)
+    hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, when_year]
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     difference_riverbed = average_riverbed_level .- riverbed_level
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    hline!([0], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3, reverse(difference_riverbed), 
         label="Difference in Riverbed Elevation",  
         ylabel="Difference (m)", xlims=(0,77.8), title=want_title,
@@ -204,17 +206,17 @@ end
 
 #実測値の累積の河床変動量を計算する．
 function cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
-    measured_riverbed,start_year,final_year)
+    measured_riverbed,start_year::Int,final_year::Int)
     
-    cumulative_change_measured.=measured_riverbed[!, string(final_year)].-
-        measured_riverbed[!, string(start_year)]
+    cumulative_change_measured.=measured_riverbed[:, Symbol(final_year)].-
+        measured_riverbed[:, Symbol(start_year)]
     
     return cumulative_change_measured
 end
 function cumulative_change_in_measured_riverbed_elevation(measured_riverbed,
-    start_year,final_year)
+    start_year::Int,final_year::Int)
     
-    flow_size=length(measured_riverbed[!, string(final_year)])
+    flow_size=length(measured_riverbed[:, Symbol(final_year)])
     cumulative_change_measured=zeros(Float64, flow_size)
     
     cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
@@ -249,9 +251,9 @@ end
 
 #累積の河床変動量のグラフを作る関数（日本語版）
 function graph_cumulative_change_in_riverbed_ja(measured_riverbed,data_file_1,
-    start_year,final_year,start_target_hour,final_target_hour)
+    start_year::Int,final_year::Int,start_target_hour,final_target_hour)
     
-    flow_size=length(measured_riverbed[!, string(final_year)])
+    flow_size=length(measured_riverbed[:, Symbol(final_year)])
     cumulative_change_measured=zeros(Float64, flow_size)
     cumulative_change_simulated_1=zeros(Float64, flow_size)    
     
@@ -278,9 +280,9 @@ end
 
 #累積の河床変動量のグラフを作る関数（英語版）
 function graph_cumulative_change_in_riverbed_en(measured_riverbed,data_file_1,
-    start_year,final_year,start_target_hour,final_target_hour)
+    start_year::Int,final_year::Int,start_target_hour,final_target_hour)
     
-    flow_size=length(measured_riverbed[!, string(final_year)])
+    flow_size=length(measured_riverbed[:, Symbol(final_year)])
     cumulative_change_measured=zeros(Float64, flow_size)
     cumulative_change_simulated_1=zeros(Float64, flow_size)    
     
@@ -306,7 +308,7 @@ function graph_cumulative_change_in_riverbed_en(measured_riverbed,data_file_1,
 end
 
 # 全区間の実測河床位の年ごとの平均値を出力する関数
-function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::String)
+function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::Int)
     
     average_riverbed_whole = mean(
         Tables.columntable(riverbed_level[:, :])[Symbol(when_year)]
@@ -316,7 +318,7 @@ function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::St
 end
 
 # 区間別の実測河床位の年ごとの平均値を出力する関数
-function observed_riverbed_average_section(riverbed_level::DataFrame,when_year::String,
+function observed_riverbed_average_section(riverbed_level::DataFrame,when_year::Int,
     section_index)
     
     #average_riverbed_level_whole = mean(
@@ -332,7 +334,7 @@ function observed_riverbed_average_section(riverbed_level::DataFrame,when_year::
 end
 
 function observed_riverbed_average_section!(average_riverbed_section,
-    riverbed_level::DataFrame,when_year::String,section_index)
+    riverbed_level::DataFrame,when_year::Int,section_index)
     	
     for i in 1:length(section_index)
         average_riverbed_section[i]=mean(

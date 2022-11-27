@@ -79,7 +79,7 @@ list_RMSE,exist_riverbed_level_years,each_year_timing,data_file,initial_and_fina
         list_RMSE[i] =
 	calculate_RMSE(
 	data_file,initial_and_final_riverbed_level,
-	each_year_timing[string(target_year)][2],string(target_year))
+	each_year_timing[target_year][2],string(target_year))
     end
     
     return list_RMSE
@@ -110,7 +110,7 @@ initial_and_final_riverbed_level,section_index,which_section::Int)
         string_year = string(year)
         list_RMSE[i]=
 	calculate_RMSE(data_file,initial_and_final_riverbed_level,
-	each_year_timing[string_year][2],string_year,
+	each_year_timing[year][2],string_year,
         section_index[which_section][1],section_index[which_section][2])
     end
     
@@ -139,7 +139,7 @@ section_index,label_list
         
         plot!(p,year_list,list_RMSE_section,
 	    label=label_list[section_number],
-	    xlims=(1964,2001),ylims=(0,0.8),
+	    xlims=(1964,2001),ylims=(0,1.0),
             legend=:bottomright, linewidth=4,
 	    markershape=markershapes[section_number],
 	    markersize=8,dpi=300,palette=:Set1_5,
@@ -152,7 +152,7 @@ section_index,label_list
     calculate_each_year_RMSE!(list_RMSE,exist_riverbed_level_years,
         each_year_timing,data_file,initial_and_final_riverbed_level)
     
-    plot!(p, year_list, list_RMSE, label="0 km - 77.8 km", linewidth=4,
+    plot!(p, year_list, list_RMSE, label="0.0-77.8 km", linewidth=4,
         markershape=markershapes[end], markersize=8)
     
     return p

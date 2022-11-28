@@ -457,6 +457,118 @@ function make_graph_suspended_bedload_target_hour_ja(
     plot(p1, p2, layout=l)
 end
 
+#粒径別にも表示できるようにしたい！！
+#浮遊砂の粒径別のグラフを作る！
+function make_graph_suspended_load_target_hour_ja(
+    target_hour,data_file,time_schedule,
+    sediment_size)
+
+    target_second = 3600 * target_hour
+
+    start_index, finish_index = decide_index_number(target_hour)
+
+    want_title = making_time_series_title(
+                     "浮遊砂量", target_hour,
+                     target_second, time_schedule
+                     )
+
+    sediment_size_num = size(sediment_size)[1]
+
+    target_matrix = Matrix(
+        data_file[start_index:finish_index,DataFrames.Between(:Qs01, Symbol(string(:Qs, Printf.@sprintf("%02i", sediment_size_num))))]
+	)
+
+    reverse!(target_matrix, dims=2)
+    cumsum!(target_matrix, target_matrix, dims=2)
+    reverse!(target_matrix, dims=2)
+    reverse!(target_matrix, dims=1)
+
+    strings_sediment_size =
+        string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
+
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
+        title=want_title, xlabel="河口からの距離 (km)",
+        xticks=[0, 20, 40, 60, 77.8],
+        linewidth=2, legend=:outerright,
+	palette=:tab20,
+	legend_font_pointsize=9)
+
+    for i in 1:sediment_size_num
+        plot!(data_file[data_file.T .== 0, :I].*10^-3,
+	    target_matrix[:,i],
+	    fillrange=0,
+	    label=strings_sediment_size[i])
+    end
+    
+end
+
+#掃流砂のグラフ
+function make_graph_bedload_target_hour_ja(
+    target_hour,data_file,time_schedule,
+    sediment_size)
+
+    target_second = 3600 * target_hour
+
+    start_index, finish_index = decide_index_number(target_hour)
+
+    want_title = making_time_series_title(
+                     "掃流砂量", target_hour,
+                     target_second, time_schedule
+                     )
+
+    sediment_size_num = size(sediment_size)[1]
+
+    target_matrix = Matrix(
+        data_file[start_index:finish_index,DataFrames.Between(:Qb01, Symbol(string(:Qb, Printf.@sprintf("%02i", sediment_size_num))))]
+        )
+
+    reverse!(target_matrix, dims=2)
+    cumsum!(target_matrix, target_matrix, dims=2)
+    reverse!(target_matrix, dims=2)
+    reverse!(target_matrix, dims=1)
+
+    strings_sediment_size =
+        string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
+
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,1),
+        title=want_title, xlabel="河口からの距離 (km)",
+        xticks=[0, 20, 40, 60, 77.8],
+        linewidth=2, legend=:outerright,
+        palette=:tab20,
+        legend_font_pointsize=9)
+
+    for i in 1:sediment_size_num
+        plot!(data_file[data_file.T .== 0, :I].*10^-3,
+            target_matrix[:,i],
+            fillrange=0,
+            label=strings_sediment_size[i])
+    end
+
+end
+
+#浮遊砂量と掃流砂量の2つの図
+#エラーが解決しないので保留とする
+
+#function make_graph_suspended_bedload_target_hour_ja(
+#    target_hour,data_file,time_schedule,sediment_size)
+
+#    l = @layout[a; b]
+
+#    p1 = make_graph_suspended_load_target_hour_ja(
+#             target_hour,data_file,time_schedule,
+#             sediment_size)
+	     
+#    plot!(p1, xlabel="")
+
+#    p2 = make_graph_bedload_target_hour_ja(
+#             target_hour,data_file,time_schedule,
+#             sediment_size)
+
+#    plot(p1, p2, layout=l, legend=:none)
+#end
+
 #3つの条件を重ねられるのか。。。
 
 #年平均土砂量を表示できるようにプログラムを変更する。

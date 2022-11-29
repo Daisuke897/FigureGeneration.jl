@@ -486,8 +486,8 @@ function make_graph_suspended_load_target_hour_ja(
     strings_sediment_size =
         string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
+    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(p, ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
         title=want_title, xlabel="河口からの距離 (km)",
         xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
@@ -495,11 +495,13 @@ function make_graph_suspended_load_target_hour_ja(
 	legend_font_pointsize=9)
 
     for i in 1:sediment_size_num
-        plot!(data_file[data_file.T .== 0, :I].*10^-3,
+        plot!(p, data_file[data_file.T .== 0, :I].*10^-3,
 	    target_matrix[:,i],
 	    fillrange=0,
 	    label=strings_sediment_size[i])
     end
+
+    return p
     
 end
 
@@ -531,8 +533,8 @@ function make_graph_bedload_target_hour_ja(
     strings_sediment_size =
         string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,1),
+    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(p, ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
         title=want_title, xlabel="河口からの距離 (km)",
         xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
@@ -540,34 +542,38 @@ function make_graph_bedload_target_hour_ja(
         legend_font_pointsize=9)
 
     for i in 1:sediment_size_num
-        plot!(data_file[data_file.T .== 0, :I].*10^-3,
+        plot!(p, data_file[data_file.T .== 0, :I].*10^-3,
             target_matrix[:,i],
             fillrange=0,
             label=strings_sediment_size[i])
     end
 
+    return p
+
 end
 
 #浮遊砂量と掃流砂量の2つの図
-#エラーが解決しないので保留とする
 
-#function make_graph_suspended_bedload_target_hour_ja(
-#    target_hour,data_file,time_schedule,sediment_size)
+function make_graph_suspended_bedload_target_hour_ja(
+    target_hour,data_file,time_schedule,sediment_size)
 
-#    l = @layout[a; b]
+    l = @layout[a; b]
 
-#    p1 = make_graph_suspended_load_target_hour_ja(
-#             target_hour,data_file,time_schedule,
-#             sediment_size)
+    p1 = make_graph_suspended_load_target_hour_ja(
+             target_hour,data_file,time_schedule,
+             sediment_size)
 	     
-#    plot!(p1, xlabel="")
+    plot!(p1, xlabel="",
+          legend_font_pointsize=4)
 
-#    p2 = make_graph_bedload_target_hour_ja(
-#             target_hour,data_file,time_schedule,
-#             sediment_size)
+    p2 = make_graph_bedload_target_hour_ja(
+             target_hour,data_file,time_schedule,
+             sediment_size)
 
-#    plot(p1, p2, layout=l, legend=:none)
-#end
+    plot!(p2, legend_font_pointsize=4)
+
+    plot(p1, p2, layout=l)
+end
 
 #3つの条件を重ねられるのか。。。
 

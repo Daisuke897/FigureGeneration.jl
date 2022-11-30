@@ -75,6 +75,9 @@ export
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
     make_graph_yearly_mean_suspended_load_3_conditions,
-    make_graph_yearly_mean_bedload_3_conditions
+    make_graph_yearly_mean_bedload_3_conditions,
+    sediment_volume_each_year,
+    particle_suspended_volume_each_year,
+    particle_bedload_volume_each_year
 
 end

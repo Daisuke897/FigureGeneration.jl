@@ -21,6 +21,7 @@ using Printf,
     Plots,
     Statistics,
     DataFrames,
+    StatsPlots,
     ..GeneralGraphModule
 
 export
@@ -37,7 +38,10 @@ export
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
     make_graph_yearly_mean_suspended_load_3_conditions,
-    make_graph_yearly_mean_bedload_3_conditions
+    make_graph_yearly_mean_bedload_3_conditions,
+    sediment_volume_each_year,
+    particle_suspended_volume_each_year,
+    particle_bedload_volume_each_year
 
 #特定位置の各年の年間掃流砂量の配列を出力する関数
 function bedload_sediment_volume_each_year!(
@@ -106,6 +110,89 @@ function suspended_sediment_volume_each_year(
 
 end
 
+#特定位置の各年の年間の任意粒径階の流砂量の配列を出力する関数
+
+function sediment_volume_each_year!(
+    sediment, area_index::Int,
+    data_file::DataFrame, each_year_timing,
+    target_symbol::Symbol
+    )
+
+    area_meter = 200 * (area_index - 1)
+
+    for i in 1:(1999-1965+1)
+        target_year=1965+i-1
+        sediment[i]=sum(
+	    data_file[data_file.I .== area_meter, target_symbol][
+                each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1
+                ]
+	    )
+    end
+    
+end
+
+function sediment_volume_each_year(
+    area_index::Int, data_file::DataFrame,
+    each_year_timing, target_symbol::Symbol
+    )
+
+    sediment = zeros(Float64,1999-1965+1)
+    
+    sediment_volume_each_year!(
+        sediment, area_index, data_file,
+        each_year_timing, target_symbol
+	)
+
+    return sediment
+    
+end
+
+#全粒径階の流砂量を取り出す
+function particle_suspended_volume_each_year(
+    area_index::Int, data_file::DataFrame,
+    each_year_timing, sediment_size
+    )
+
+    sediment_size_num = size(sediment_size)[1]
+
+    sediment = zeros(Float64, 1999-1965+1, sediment_size_num)
+
+    @views for particle_class_num in 1:sediment_size_num
+        sediment_sub = sediment[:, particle_class_num]
+        sediment_volume_each_year!(
+            sediment_sub,
+            area_index, data_file,
+            each_year_timing,
+            Symbol(string("Qs", Printf.@sprintf("%02i", particle_class_num)))
+            )
+    end
+
+    return sediment
+    
+end
+
+function particle_bedload_volume_each_year(
+    area_index::Int, data_file::DataFrame,
+    each_year_timing, sediment_size
+    )
+
+    sediment_size_num = size(sediment_size)[1]
+
+    sediment = zeros(Float64, 1999-1965+1, sediment_size_num)
+
+    @views for particle_class_num in 1:sediment_size_num
+        sediment_sub = sediment[:, particle_class_num]
+        sediment_volume_each_year!(
+            sediment_sub,
+            area_index, data_file,
+            each_year_timing,
+            Symbol(string("Qb", Printf.@sprintf("%02i", particle_class_num)))
+            )
+    end
+
+    return sediment
+    
+end
 
 #各年の年間流砂量のグラフを出力する関数 日本語バージョン（縦軸のスケールは異なる）
 function make_graph_sediment_load_each_year_diff_scale_ja(

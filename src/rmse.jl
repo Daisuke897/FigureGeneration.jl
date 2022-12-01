@@ -219,10 +219,6 @@ function make_RMSE_csv(
                   section_index,string_section
                   )
 
-    if isdir("./csv_data/") == false
-        mkdir("./csv_data/")
-    end
-
     CSV.write(
         "./csv_data/rmse.csv",df_rmse
         )

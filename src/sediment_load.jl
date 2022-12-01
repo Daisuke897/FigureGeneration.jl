@@ -18,11 +18,12 @@
 module SedimentLoad
 
 using Printf,
-    Plots,
-    Statistics,
-    DataFrames,
-    StatsPlots,
-    ..GeneralGraphModule
+      Plots,
+      Statistics,
+      DataFrames,
+      StatsPlots,
+      CSV,
+      ..GeneralGraphModule
 
 export
     make_graph_sediment_load_each_year_diff_scale_ja,
@@ -39,12 +40,13 @@ export
     make_graph_yearly_mean_bedload,
     make_graph_yearly_mean_suspended_load_3_conditions,
     make_graph_yearly_mean_bedload_3_conditions,
-    sediment_volume_each_year,
-    particle_suspended_volume_each_year,
-    particle_bedload_volume_each_year,
     make_graph_particle_suspended_volume_each_year_ja,
-    make_graph_particle_bedload_volume_each_year_ja
-
+    make_graph_particle_bedload_volume_each_year_ja,
+    make_suspended_sediment_per_year_csv,
+    make_bedload_sediment_per_year_csv,
+    make_suspended_sediment_mean_year_csv,
+    make_bedload_sediment_mean_year_csv
+    
 #特定位置の各年の年間掃流砂量の配列を出力する関数
 function bedload_sediment_volume_each_year!(
     bedload_sediment, area_index::Int, data_file::DataFrame, each_year_timing
@@ -950,6 +952,248 @@ function make_graph_yearly_mean_bedload_3_conditions(
 	ylims=(0, 5e4),
 	legend=:topleft,
 	label=[label1 label2 label3])
+
+end
+
+function make_sediment_df!(
+    df_sediment,
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size,
+    qsall_or_qball_symbol::Symbol
+    )
+
+    df_sediment[!, :year] = collect(1965:1999)
+
+    #全粒径階の合計
+    sediment = zeros(Float64,1999-1965+1)
+    
+    sediment_volume_each_year!(
+        sediment,
+        area_index,
+        data_file,
+        each_year_timing,
+        qsall_or_qball_symbol
+	)    
+
+    df_sediment[!, :total] = sediment
+
+    #区間に分けた場合
+    string_sediment_size =
+        string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* "_mm"
+    
+    sediment_size_num = size(sediment_size)[1]
+    for particle_class_num in 1:sediment_size_num
+        sediment = zeros(Float64,1999-1965+1)
+        sediment_volume_each_year!(
+            sediment,
+            area_index,
+            data_file,
+            each_year_timing,
+            Symbol(
+                string(
+                    qsall_or_qball_symbol, Printf.@sprintf("%02i", particle_class_num)
+                )
+            )
+        )
+        df_sediment[!, string_sediment_size[particle_class_num]] = sediment
+    end
+
+    return df_sediment
+
+end
+
+function make_sediment_df(
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size,
+    qsall_or_qball_symbol::Symbol
+    )
+
+    df_sediment = DataFrames.DataFrame()
+
+    make_sediment_df!(
+        df_sediment,
+        area_index,
+        data_file,
+        each_year_timing,
+        sediment_size,
+        qsall_or_qball_symbol
+    )
+    
+    return df_sediment
+
+end
+
+function make_suspended_sediment_per_year_csv(
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size
+    )
+
+    df_suspended = DataFrames.DataFrame()
+
+    make_sediment_df!(
+        df_suspended,
+        area_index,
+        data_file,
+        each_year_timing,
+        sediment_size,
+        :Qsall
+    )
+
+    area_km = 778 - (area_index - 1) * 2
+    
+    CSV.write(
+        Printf.@sprintf("./csv_data/suspended_sediment_per_year_%03i.csv", area_km),
+        df_suspended
+    )
+
+end
+
+function make_bedload_sediment_per_year_csv(
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size
+    )
+
+    df_bedload = DataFrames.DataFrame()
+
+    make_sediment_df!(
+        df_bedload,
+        area_index,
+        data_file,
+        each_year_timing,
+        sediment_size,
+        :Qball
+    )
+
+    area_km = 778 - (area_index - 1) * 2
+    
+    CSV.write(
+        Printf.@sprintf("./csv_data/bedload_sediment_per_year_%03i.csv", area_km),
+        df_bedload
+    )
+
+end
+
+function make_sediment_mean_year_df!(
+    df_sediment_mean_year,
+    df_sediment,
+    sediment_size,
+    name_df
+    )
+
+    sediment_size_num = size(sediment_size)[1]
+
+    year_num_index =
+        ((1,35), (1,10), (11, 35), (11, 20), (21, 30), (31, 35))
+    
+    for i in 2:length(name_df)
+        for (j, year_i) in enumerate(year_num_index)
+   
+            df_sediment_mean_year[j, name_df[i]] = Statistics.mean(df_sediment[year_i[1]:year_i[2], i])
+
+        end
+    end
+
+    return df_sediment_mean_year
+
+end
+
+function make_suspended_sediment_mean_year_csv(
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size
+    )
+
+    df_suspended = DataFrames.DataFrame()
+
+    make_sediment_df!(
+        df_suspended,
+        area_index,
+        data_file,
+        each_year_timing,
+        sediment_size,
+        :Qsall
+    )
+
+    name_df = names(df_suspended)
+    
+    df_suspended_mean_year = DataFrames.DataFrame(
+        year=["1965-1999", "1965-1974", "1975-1999", "1975-1984", "1985-1994", "1995-1999"]
+    )
+
+    for i in 2:length(name_df)
+
+        df_suspended_mean_year[!, name_df[i]] .= 0.0
+        
+    end
+
+    make_sediment_mean_year_df!(
+        df_suspended_mean_year,
+        df_suspended,
+        sediment_size,
+        name_df
+    )
+
+    area_km = 778 - (area_index - 1) * 2
+    
+    CSV.write(
+        Printf.@sprintf("./csv_data/suspended_sediment_mean_year_%03i.csv", area_km),
+        df_suspended_mean_year
+    )
+
+end
+
+function make_bedload_sediment_mean_year_csv(
+    area_index,
+    data_file,
+    each_year_timing,
+    sediment_size
+    )
+
+    df_bedload = DataFrames.DataFrame()
+
+    make_sediment_df!(
+        df_bedload,
+        area_index,
+        data_file,
+        each_year_timing,
+        sediment_size,
+        :Qball
+    )
+
+    name_df = names(df_bedload)
+    
+    df_bedload_mean_year = DataFrames.DataFrame(
+        year=["1965-1999", "1965-1974", "1975-1999", "1975-1984", "1985-1994", "1995-1999"]
+    )
+
+    for i in 2:length(name_df)
+
+        df_bedload_mean_year[!, name_df[i]] .= 0.0
+        
+    end
+
+    make_sediment_mean_year_df!(
+        df_bedload_mean_year,
+        df_bedload,
+        sediment_size,
+        name_df
+    )
+
+    area_km = 778 - (area_index - 1) * 2
+    
+    CSV.write(
+        Printf.@sprintf("./csv_data/bedload_sediment_mean_year_%03i.csv", area_km),
+        df_bedload_mean_year
+    )
 
 end
 

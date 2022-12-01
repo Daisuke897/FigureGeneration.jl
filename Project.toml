@@ -1,7 +1,7 @@
 name = "FigureGeneration"
 uuid = "b201116c-8639-42fa-8ada-85b4ad167d25"
 authors = ["Daisuke <nakada0907@outlook.com> and contributors"]
-version = "0.1.1"
+version = "0.1.2"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"

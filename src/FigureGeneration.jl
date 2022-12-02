@@ -83,4 +83,9 @@ export
     make_suspended_sediment_mean_year_csv,
     make_bedload_sediment_mean_year_csv
 
+include("hydraulic_conditions.jl")
+using .Hydraulic_conditions
+export make_upstream_discharge_graph_ja,
+    make_downstream_water_level_graph_ja
+
 end

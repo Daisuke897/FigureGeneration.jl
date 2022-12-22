@@ -42,6 +42,7 @@ export
     make_graph_yearly_mean_bedload_3_conditions,
     make_graph_particle_suspended_volume_each_year_ja,
     make_graph_particle_bedload_volume_each_year_ja,
+    make_graph_particle_sediment_volume_each_year_ja,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
@@ -217,13 +218,16 @@ function make_graph_particle_suspended_volume_each_year_ja(
     
     title_graph = string(
         "河口から ", round(area_km, digits=2), " km"
-        ) 
+    )
     
-    StatsPlots.groupedbar(
+    hline([-10], line=:black, label="", linestyle=:dot, linewidth=1)
+    
+    StatsPlots.groupedbar!(
         collect(1965:1999), suspended_sediment,
         bar_position = :stack,
         legend = :outerright,
         ylims=(0, 2e7),
+        xlims=(1964, 2000),
         ylabel="浮遊砂量 (m³/年)",
         xlabel="年",
 	xticks=[1965, 1975, 1985, 1995],
@@ -254,12 +258,15 @@ function make_graph_particle_bedload_volume_each_year_ja(
     title_graph = string(
         "河口から ", round(area_km, digits=2), " km"
         ) 
-    
-    StatsPlots.groupedbar(
+
+    hline([-10], line=:black, label="", linestyle=:dot, linewidth=1)
+   
+    StatsPlots.groupedbar!(
         collect(1965:1999), bedload_sediment,
         bar_position = :stack,
         legend = :outerright,
-        ylims=(0, 2e5),
+        ylims=(0, 1.5e5),
+        xlims=(1964, 2000),
         ylabel="掃流砂量 (m³/年)",
         xlabel="年",
 	xticks=[1965, 1975, 1985, 1995],
@@ -270,7 +277,31 @@ function make_graph_particle_bedload_volume_each_year_ja(
         palette=:tab20
     )
 
-end    
+end
+
+function make_graph_particle_sediment_volume_each_year_ja(
+    area_index::Int, data_file::DataFrame,
+    each_year_timing, sediment_size, river_length_km
+    )
+
+    p1 = make_graph_particle_suspended_volume_each_year_ja(
+        area_index, data_file,
+        each_year_timing, sediment_size, river_length_km
+    )
+
+    plot!(p1, xlabel="", legend=:none, ylabel="浮遊 (m³/年)")
+
+    p2 = make_graph_particle_bedload_volume_each_year_ja(
+        area_index, data_file,
+        each_year_timing, sediment_size, river_length_km
+    )
+
+    plot!(p2, title="", bottom_margin=30Plots.mm, ylabel="掃流 (m³/年)")
+
+    plot(p1, p2, layout=Plots.@layout[a; b])
+
+end
+
 
 #各年の年間流砂量のグラフを出力する関数 日本語バージョン（縦軸のスケールは異なる）
 function make_graph_sediment_load_each_year_diff_scale_ja(
@@ -649,7 +680,7 @@ function make_graph_suspended_load_target_hour_ja(
     reverse!(target_matrix, dims=1)
 
     strings_sediment_size =
-        string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
+        string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
     p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(p, ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
@@ -657,7 +688,9 @@ function make_graph_suspended_load_target_hour_ja(
         xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
 	palette=:tab20,
-	legend_font_pointsize=9)
+	legend_font_pointsize=9,
+        label_title="粒径(mm)",
+        legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
         plot!(p, data_file[data_file.T .== 0, :I].*10^-3,
@@ -696,7 +729,7 @@ function make_graph_bedload_target_hour_ja(
     reverse!(target_matrix, dims=1)
 
     strings_sediment_size =
-        string.(round.(sediment_size[:,:diameter_mm], digits=3)) .* " mm"
+        string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
     p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(p, ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
@@ -704,7 +737,9 @@ function make_graph_bedload_target_hour_ja(
         xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
         palette=:tab20,
-        legend_font_pointsize=9)
+        legend_font_pointsize=9,
+        label_title="粒径(mm)",
+        legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
         plot!(p, data_file[data_file.T .== 0, :I].*10^-3,

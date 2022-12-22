@@ -78,6 +78,7 @@ export
     make_graph_yearly_mean_bedload_3_conditions,
     make_graph_particle_suspended_volume_each_year_ja,
     make_graph_particle_bedload_volume_each_year_ja,
+    make_graph_particle_sediment_volume_each_year_ja,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
@@ -86,6 +87,7 @@ export
 include("hydraulic_conditions.jl")
 using .Hydraulic_conditions
 export make_upstream_discharge_graph_ja,
-    make_downstream_water_level_graph_ja
+    make_downstream_water_level_graph_ja,
+    make_up_discharge_down_water_lev_graph_ja
 
 end

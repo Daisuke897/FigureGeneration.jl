@@ -21,12 +21,12 @@ Run Julia and type ']' to open Julia's package manager.
 After that, add the FigureGeneration.
 ```julia
 julia> ]
-(v1.7) pkg> add https://github.com/Daisuke897/FigureGeneration.jl.git
+(@v1.8) pkg> add https://github.com/Daisuke897/FigureGeneration.jl.git
 ```
 The following commands are recommended for development.
 ```julia
 julia> ]
-(v1.7) pkg> develop https://github.com/Daisuke897/FigureGeneration.jl.git
+(@v1.8) pkg> develop https://github.com/Daisuke897/FigureGeneration.jl.git
 ```
 
 ## Author

@@ -24,7 +24,8 @@ using Printf,
       ..GeneralGraphModule
 
 export make_upstream_discharge_graph_ja,
-    make_downstream_water_level_graph_ja
+    make_downstream_water_level_graph_ja,
+    make_up_discharge_down_water_lev_graph_ja
 
 #条件としての上流の流量の作図
 function make_upstream_discharge_graph_ja(
@@ -138,12 +139,38 @@ function make_downstream_water_level_graph_ja(
     plot!(
         p,
         time_data[1:(target_hours+1)],
-        water_lavel_data[1:(target_hours+1)],
+        water_level_data[1:(target_hours+1)],
         linecolor=:midnightblue
     )
 
     return p
 
 end
+
+# 2つ並べた図を作りたい
+function make_up_discharge_down_water_lev_graph_ja(
+    data_file,
+    time_schedule,
+    target_hours
+    )
+
+    p1 = make_upstream_discharge_graph_ja(
+        data_file,
+        time_schedule,
+        target_hours
+    )
+
+    plot!(p1, xlabel="")
+
+    p2 = make_downstream_water_level_graph_ja(
+        data_file,
+        time_schedule,
+        target_hours
+    )
+
+    plot!(p1, p2, layout=Plots.@layout[a;b])
+
+end   
+
 
 end

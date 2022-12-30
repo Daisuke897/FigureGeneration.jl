@@ -30,6 +30,18 @@ export default_setting_plots
 #include("graph_data.jl")
 #using .GraphData
 
+include("read_df_river.jl")
+using .Read_df_river
+export
+    get_main_df,
+    get_time_schedule,
+    get_dict_each_year_timing!,
+    get_observed_riverbed_level,
+    get_sediment_size,
+    get_fmini,
+    Section,
+    Exist_riverbed_level
+
 include("general_graph_module.jl")
 #using .GeneralGraphModule
 

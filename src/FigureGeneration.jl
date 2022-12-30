@@ -25,7 +25,16 @@ default(tickfontsize=18, legend_font_pointsize=13,
     legend_title_font_pointsize=13, dpi=300,
     grid=false, framestyle=:box)
 end
-export default_setting_plots
+
+function check_dir_exist_if_no_mkdir(path_string::String)
+if isdir(path_string) == false
+    mkdir(path_string)
+end
+end
+
+export
+    default_setting_plots,
+    check_dir_exist_if_no_mkdir
 
 #include("graph_data.jl")
 #using .GraphData

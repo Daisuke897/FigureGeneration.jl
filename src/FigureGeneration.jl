@@ -32,9 +32,8 @@ if isdir(path_string) == false
 end
 end
 
-export
-    default_setting_plots,
-    check_dir_exist_if_no_mkdir
+export default_setting_plots,
+       check_dir_exist_if_no_mkdir
 
 #include("graph_data.jl")
 #using .GraphData
@@ -110,5 +109,11 @@ using .Hydraulic_conditions
 export make_upstream_discharge_graph_ja,
     make_downstream_water_level_graph_ja,
     make_up_discharge_down_water_lev_graph_ja
+
+include("parameters.jl")
+using .Parameters
+export make_figure_energy_slope,
+       make_figure_friction_velocity,
+       params
 
 end

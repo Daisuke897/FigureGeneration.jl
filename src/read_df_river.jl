@@ -129,7 +129,7 @@ function get_sediment_size()
     sediment_size = CSV.read("./Sed_size.csv", DataFrames.DataFrame)
     sediment_size.diameter_mm = sediment_size[!, 2] * 1000
     
-    return get_sediment_size
+    return sediment_size
 end
 
 function get_fmini()
@@ -170,19 +170,20 @@ end
 struct Exist_riverbed_level
     years::Vector{Int}
     timing::Vector{Int}
-end
 
-function Exist_riverbed_level(observed_riverbed_level, each_year_timing)
-    exist_riverbed_level_years=get_exist_riverbed_level_years(observed_riverbed_level)
+    function Exist_riverbed_level(observed_riverbed_level, each_year_timing)
+        exist_riverbed_level_years=get_exist_riverbed_level_years(observed_riverbed_level)
 
-    exist_riverbed_level_timing = Vector{Int}(undef, 0)
-    get_exist_riverbed_level_timing!(
-        exist_riverbed_level_timing, exist_riverbed_level_years,
-        each_year_timing
-    )
+        exist_riverbed_level_timing = Vector{Int}(undef, 0)
+        get_exist_riverbed_level_timing!(
+            exist_riverbed_level_timing, exist_riverbed_level_years,
+            each_year_timing
+        )
         
-    return Exist_riverbed_level(exist_riverbed_level_years, exist_riverbed_level_timing)
+        return new(exist_riverbed_level_years, exist_riverbed_level_timing)
+     end
 end
+
 
 #df_cross = CSV.read("./3_riverbed.csv", DataFrame)
 

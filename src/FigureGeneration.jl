@@ -106,9 +106,9 @@ export
 
 include("hydraulic_conditions.jl")
 using .Hydraulic_conditions
-export make_upstream_discharge_graph_ja,
-    make_downstream_water_level_graph_ja,
-    make_up_discharge_down_water_lev_graph_ja
+export make_upstream_discharge_graph,
+       make_downstream_water_level_graph,
+       make_up_discharge_down_water_lev_graph
 
 include("parameters.jl")
 using .Parameters

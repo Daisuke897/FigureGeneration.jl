@@ -23,29 +23,87 @@ using Printf,
       DataFrames,
       ..GeneralGraphModule
 
-export make_upstream_discharge_graph_ja,
-    make_downstream_water_level_graph_ja,
-    make_up_discharge_down_water_lev_graph_ja
+export make_upstream_discharge_graph,
+    make_downstream_water_level_graph,
+    make_up_discharge_down_water_lev_graph
 
 #条件としての上流の流量の作図
-function make_upstream_discharge_graph_ja(
-    data_file,
-    time_schedule,
+function _base_upstream_discharge_graph(japanese, max_num_time)
+    x_label = _get_x_label_time_sec(japanese)
+    y_label = _get_y_label_upstream_discharge_graph(japanese)
+    
+    p = plot(
+        legend=:none,
+        xlabel=x_label,
+        xlims=(0,max_num_time),
+        xticks=[0, 4e6, 8e6, 12e6],
+        ylabel=y_label,
+        ylims=(0,10000)
+    )
+
+    return p
+end
+
+function _base_downstream_water_level_graph(japanese, max_num_time)
+    x_label = _get_x_label_time_sec(japanese)
+    y_label = _get_y_label_downstream_water_level(japanese)
+    
+    p = plot(
+        legend=:none,
+        xlabel=x_label,
+        xlims=(0,max_num_time),
+        xticks=[0, 4e6, 8e6, 12e6],
+        ylabel=y_label,
+        ylims=(-1, 2)
+    )
+
+    return p
+end
+
+function _get_x_label_time_sec(japanese)
+    x_label="Time (sec)"
+    y_label="Discharge (m³/s)"
+
+    if japanese==true
+        x_label="秒数 (sec)"
+        y_label="流量 (m³/s)"
+    end
+    
+    return x_label
+end
+
+function _get_y_label_upstream_discharge_graph(japanese)
+    y_label="Discharge (m³/s)"
+
+    if japanese==true
+        y_label="流量 (m³/s)"
+    end
+    
+    return y_label
+end
+
+function _get_y_label_downstream_water_level(japanese)
+    y_label="Water Level (m)"
+
+    if japanese==true
+        y_label="水位 (m)"
+    end
+    
+    return y_label
+end
+
+function _plot_target_array_graph!(
+    p,
+    time_data,
+    target_array,
+    color::Symbol,
     target_hours
     )
 
-    time_data = unique(data_file[:, :T])
-    discharge_data = time_schedule[:, :discharge_m3_s]
-
-    p = plot(
+    plot!(
+        p,
         time_data,
-        discharge_data,
-        legend=:none,
-        xlabel="秒数(s)",
-        xlims=(0,maximum(time_data)),
-        xticks=[0, 4e6, 8e6, 12e6],
-        ylabel="流量(m³/s)",
-        ylims=(0,10000),
+        target_array,
         linestyle=:dot,
         linecolor=:black
     )
@@ -53,123 +111,168 @@ function make_upstream_discharge_graph_ja(
     plot!(
         p,
         time_data[1:(target_hours+1)],
-        discharge_data[1:(target_hours+1)],
-        linecolor=:red
+        target_array[1:(target_hours+1)],
+        linecolor=color
     )
 
     return p
-
 end
 
-function make_upstream_discharge_graph_ja(
-    data_file,
-    time_schedule,
-    each_year_timing,
-    target_hours
+function _get_target_year_sec!(
+    target_year_sec,
+    each_year_timing
     )
-
-    time_data = unique(data_file[:, :T])
-    discharge_data = time_schedule[:, :discharge_m3_s]
-
-    target_year_sec=zeros(
-        Int, length(each_year_timing)-1
-    )
-
+    
     for i in 1:length(each_year_timing)-1
         target_year = 1965 + i - 1
         target_year_sec[i] = 3600 * each_year_timing[target_year][1]
     end
 
-    p = vline(
-            target_year_sec,
-            label="",
-            linecolor=:black,
-            linestyle=:dash,
-            linewidth=1
-         )
-    
-    plot!(p,
-        time_data,
-        discharge_data,
-        legend=:none,
-        xlabel="秒数(s)",
-        xlims=(0,maximum(time_data)),
-        xticks=[0, 4e6, 8e6, 12e6],
-        ylabel="流量(m³/s)",
-        ylims=(0,10000),
-        linestyle=:dot,
-        linecolor=:black
-    )
-    
-    plot!(
-        p,
-        time_data[1:(target_hours+1)],
-        discharge_data[1:(target_hours+1)],
-        linecolor=:red
+end
+
+function _vline_per_year_timing!(
+    p,
+    each_year_timing
     )
 
+    target_year_sec=zeros(
+        Int, length(each_year_timing)-1
+    )
+
+    _get_target_year_sec!(
+        target_year_sec,
+        each_year_timing
+    )
+    
+    vline!(p,
+        target_year_sec,
+        label="",
+        linecolor=:black,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    return p
+end
+
+function make_upstream_discharge_graph(
+    data_file,
+    time_schedule,
+    target_hours;
+    japanese::Bool=false
+    )
+
+    time_data = unique(data_file[:, :T])
+    max_num_time = maximum(time_data)
+
+    discharge_data = time_schedule[:, :discharge_m3_s]
+    
+    p = _base_upstream_discharge_graph(japanese, max_num_time)
+    
+    _plot_target_array_graph!(
+        p,
+        time_data,
+        discharge_data,
+        :red,
+        target_hours
+    )
+    
+    return p
+
+end
+
+function make_upstream_discharge_graph(
+    data_file,
+    time_schedule,
+    each_year_timing,
+    target_hours;
+    japanese::Bool=false    
+    )
+
+    time_data = unique(data_file[:, :T])
+    max_num_time = maximum(time_data)
+
+    discharge_data = time_schedule[:, :discharge_m3_s]
+
+    p = _base_upstream_discharge_graph(japanese, max_num_time)
+
+    _vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    _plot_target_array_graph!(
+        p,
+        time_data,
+        discharge_data,
+        :red,
+        target_hours
+    )
+    
     return p
 
 end
 
 #条件としての河口の水位の作図
 
-function make_downstream_water_level_graph_ja(
+function make_downstream_water_level_graph(
     data_file,
     time_schedule,
-    target_hours
+    target_hours;
+    japanese::Bool=false    
     )
 
     time_data = unique(data_file[:, :T])
+    max_num_time = maximum(time_data)
+    
     water_level_data = time_schedule[:, :water_level_m]
 
-    p = plot(
+    p = _base_downstream_water_level_graph(japanese, max_num_time)
+
+    _plot_target_array_graph!(
+        p,
         time_data,
         water_level_data,
-        legend=:none,
-        xlabel="秒数(s)",
-        xlims=(0,maximum(time_data)),
-        xticks=[0, 4e6, 8e6, 12e6],
-        ylabel="水位(m)",
-        #ylims=(0,10000),
-        linestyle=:dot,
-        linecolor=:black
+        :midnightblue,
+        target_hours
     )
     
-    plot!(
-        p,
-        time_data[1:(target_hours+1)],
-        water_level_data[1:(target_hours+1)],
-        linecolor=:midnightblue
-    )
-
     return p
 
 end
 
 # 2つ並べた図を作りたい
-function make_up_discharge_down_water_lev_graph_ja(
+function make_up_discharge_down_water_lev_graph(
     data_file,
     time_schedule,
-    target_hours
+    target_hours;
+    japanese::Bool=false
     )
 
-    p1 = make_upstream_discharge_graph_ja(
+    p1 = make_upstream_discharge_graph(
         data_file,
         time_schedule,
-        target_hours
+        target_hours,
+        japanese=japanese
     )
 
-    plot!(p1, xlabel="")
+    plot!(p1, xticks=0, xlabel="", title="(a)")
 
-    p2 = make_downstream_water_level_graph_ja(
+    p2 = make_downstream_water_level_graph(
         data_file,
         time_schedule,
-        target_hours
+        target_hours,
+        japanese=japanese
     )
 
-    plot!(p1, p2, layout=Plots.@layout[a;b])
+    plot!(p2, title="(b)")
 
+    p = plot(p1, p2,
+             titlelocation=:left,
+             layout=Plots.@layout[a;b],
+             top_margin=8Plots.mm)
+    
+    return p
 end   
 
 

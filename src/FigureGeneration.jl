@@ -56,7 +56,7 @@ include("general_graph_module.jl")
 include("rmse.jl")
 using .RMSE
 export
-    make_RMSE_fluctuation_graph_each_ja,
+    make_RMSE_fluctuation_graph_each,
     make_RMSE_csv
 
 include("riverbed_graph.jl")

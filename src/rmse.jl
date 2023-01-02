@@ -24,7 +24,7 @@ using ..GeneralGraphModule
 export
     calculate_RMSE,
     calculate_each_year_RMSE,
-    make_RMSE_fluctuation_graph_each_ja,
+    make_RMSE_fluctuation_graph_each,
     make_RMSE_csv
 
 function error_actual_mean_riverbed(data_file, initial_and_final_riverbed_level, target_hour, which_type)
@@ -117,14 +117,25 @@ initial_and_final_riverbed_level,section_index,which_section::Int)
     return list_RMSE
 end
 
-function make_RMSE_fluctuation_graph_each_ja(
-exist_riverbed_level_years,each_year_timing,data_file,initial_and_final_riverbed_level,
-section_index,label_list
+function make_RMSE_fluctuation_graph_each(
+    exist_riverbed_level_years,
+    each_year_timing,
+    data_file,
+    initial_and_final_riverbed_level,
+    section_index,
+    label_list;
+    japanese::Bool=false
 )
-    
+
+    legend_t = "Dist. from the estuary"
+
+    if japanese==true
+        legend_t = "河口からの距離"
+    end
+        
     year_list=[x for x in exist_riverbed_level_years]
     
-    p=plot(legend_title="河口からの距離")
+    p=plot(legend_title=legend_t)
     
     markershapes=[:diamond,:circle,:utriangle,:pentagon,:dtriangle]
     
@@ -143,7 +154,7 @@ section_index,label_list
             legend=:bottomright, linewidth=4,
 	    markershape=markershapes[section_number],
 	    markersize=8,dpi=300,palette=:Set1_5,
-            xlabel="年", ylabel="RMSE (m)")
+            ylabel="RMSE (m)")
         
     end
     

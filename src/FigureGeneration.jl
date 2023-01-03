@@ -75,9 +75,7 @@ export
 
 include("particle_size.jl")
 using .ParticleSize
-export
-    graph_ratio_simulated_particle_size_dist_ja,
-    graph_ratio_simulated_particle_size_dist_en
+export graph_ratio_simulated_particle_size_dist
 
 include("sediment_load.jl")
 using .SedimentLoad

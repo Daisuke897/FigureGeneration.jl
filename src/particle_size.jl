@@ -21,9 +21,7 @@ using Printf, Plots, Statistics, DataFrames
 using LinearAlgebra
 using ..GeneralGraphModule
 
-export
-    graph_ratio_simulated_particle_size_dist_ja,
-    graph_ratio_simulated_particle_size_dist_en
+export graph_ratio_simulated_particle_size_dist
 
 #河床の粒度分布を計算する関数
 function simulated_particle_size_dist(data_file::DataFrame,
@@ -36,7 +34,7 @@ function simulated_particle_size_dist(data_file::DataFrame,
 
     simulated_particle_size_dist = Matrix(
                                        data_file[start_index:finish_index,
-                                       Between("fmc01", "fmc$string_num_particle_size")]
+                                       Between("fmc01", string("fmc", string_num_particle_size))]
                                        )
 
     simulated_particle_size_dist!(simulated_particle_size_dist)
@@ -60,12 +58,13 @@ function simulated_particle_size_dist!(simulated_particle_size_dist)
 end
 
 # 縦軸に割合(%)，横軸に河口からの距離(km)とした，
-# グラフを作る．（日本語版）
-function graph_ratio_simulated_particle_size_dist_ja(
+# グラフを作る．
+function graph_ratio_simulated_particle_size_dist(
     data_file::DataFrame,
     sediment_size::DataFrame,
     time_schedule::DataFrame,
-    hours_now::Integer
+    hours_now::Integer;
+    japanese::Bool=false
     )
 
     start_index, finish_index = decide_index_number(hours_now)
@@ -80,21 +79,31 @@ function graph_ratio_simulated_particle_size_dist_ja(
 
     simulated_particle_size_dist!(simulated_particle_size_dist)
 
-    distance_from_estuary = collect(Float64, 0:0.2:77.8)
+    distance_from_estuary = 0:0.2:77.8
 
     simulated_particle_size_dist = simulated_particle_size_dist * 100
 
     want_title = making_time_series_title("",
         hours_now, time_schedule)
 
+    x_label="Distance from the estuary (km)"
+    y_label="Percentage (%)"
+    l_title="Size (mm)"
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="割合 (%)"
+        l_title="粒経 (mm)"
+    end        
+    
     p = plot(
             palette=:tab20, title=want_title,
 	    # xticks=[0, 20, 40, 60, 77.8],
-            xlabel="河口からの距離 (km)",
-	    ylabel="割合 (%)",
+            xlabel=x_label,
+	    ylabel=y_label,
 	    xlims=(0,77.8), ylims=(0, 100),
 	    legend=:outerright,
-	    legend_title="粒径 (mm)",
+	    legend_title=l_title,
 	    top_margin=10Plots.mm
 	    )
 
@@ -114,65 +123,6 @@ function graph_ratio_simulated_particle_size_dist_ja(
     hline!([50], line=:black, label="", linestyle=:dash, linewidth=3)
 
     return p
-
-end
-
-# 縦軸に割合(%)，横軸に河口からの距離(km)とした，
-# グラフを作る．（英語版）
-function graph_ratio_simulated_particle_size_dist_en(
-    data_file::DataFrame,
-    sediment_size::DataFrame,
-    time_schedule::DataFrame,
-    hours_now::Integer
-    )
-
-    start_index, finish_index = decide_index_number(hours_now)
-
-    num_particle_size        = size(sediment_size[:, :Np], 1)
-    string_num_particle_size = @sprintf("%02i", num_particle_size)
-
-    simulated_particle_size_dist = Matrix(
-                                       data_file[start_index:finish_index,
-                                       Between("fmc01", "fmc$string_num_particle_size")]
-                                       )
-
-    simulated_particle_size_dist!(simulated_particle_size_dist)
-
-    distance_from_estuary = collect(Float64, 0:0.2:77.8)
-
-    simulated_particle_size_dist = simulated_particle_size_dist * 100
-
-    want_title = making_time_series_title("",
-        hours_now, time_schedule)
-
-    p = plot(
-            palette=:tab20, title=want_title,
-	    # xticks=[0, 20, 40, 60, 77.8],
-            xlabel="Distance from the estuary (km)",
-	    ylabel="Percentage (%)",
-	    xlims=(0,77.8), ylims=(0, 100),
-	    legend=:outerright,
-	    legend_title="Size (mm)",
-	    top_margin = 10Plots.mm
-	    )
-
-    for i in 1:num_particle_size
-
-        plot!(
-	    p,
-	    distance_from_estuary,
-	    reverse(simulated_particle_size_dist[:, i]),
-	    fillrange=0, linewidth=1,
-	    label = round(sediment_size[i, 3]; sigdigits=3)
-	    )
-
-    end
-
-    vline!([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([50], line=:black, label="", linestyle=:dash, linewidth=3)
-
-    return p
-
 end
 
 end

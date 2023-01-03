@@ -140,7 +140,7 @@ end
 
 function get_observed_riverbed_level()
     observed_riverbed_level = CSV.read(
-        "./1965-1999_observed_riverbed_level.csv", DataFrames.DataFrame
+        "./observed_riverbed_level.csv", DataFrames.DataFrame
     )
     
     return observed_riverbed_level

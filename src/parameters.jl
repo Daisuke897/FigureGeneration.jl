@@ -20,6 +20,7 @@ module Parameters
 import Plots,
        DataFrames,
        ..GeneralGraphModule
+       ..ParticleSize
 
 export make_figure_energy_slope,
        make_figure_friction_velocity,
@@ -28,40 +29,59 @@ export make_figure_energy_slope,
 struct Param{T<:AbstractFloat}
     manning_n::T
     g::T
+    specific_gravity::T
 end
 
-params = Param{Float64}(0.30, 9.81)
+params = Param{Float64}(0.30, 9.81, 1.65)
 
-function average_neighbors_target_hour!(return_array, normal_array)
+function average_neighbors_target_hour!(
+    return_array::Vector{T},
+    normal_array::Vector{T}
+    ) where {T<:AbstractFloat}
 
     return_array .= ((normal_array .+ circshift(normal_array, -1)) ./ 2)[1:end-1]
 
     return return_array
-
 end
 
-function average_neighbors_target_hour(df, target_symbol::Symbol, target_hour::Int)
+function average_neighbors_target_hour(normal_array::Vector{T}) where {T<:AbstractFloat}
+
+    return_array = zeros(T, length(normal_array))
+
+    average_neighbors_target_hour!(
+        return_array,
+        normal_array
+    )    
+    
+    return return_array
+end
+
+function average_neighbors_target_hour(df::DataFrame, target_symbol::Symbol, target_hour::Int)
 
     start_i, final_i = GeneralGraphModule.decide_index_number(target_hour)
 
     normal_array = @view df[start_i:final_i, target_symbol]
     
-    return_array = @view ((normal_array .+ circshift(normal_array, -1)) ./ 2)[1:end-1]
+    return_array = average_neighbors_target_hour(normal_array)
     
     return return_array
-
 end
 
-function calc_hydraulic_depth(area, width, target_hour::Int)
+function calc_hydraulic_depth(area::T, width::T) where {T<:AbstractFloat}
 
     hydraulic_depth = area / width
 
     return hydraulic_depth
 end
 
-function calc_energy_slope(area, width, discharge, manning_n, target_hour::Int)
+function calc_energy_slope(
+    area::T,
+    width::T,
+    discharge::T,
+    manning_n::T
+    ) where {T<:AbstarctFloat}
 
-    h_d = calc_hydraulic_depth(area, width, target_hour)
+    h_d = calc_hydraulic_depth(area, width)
 
     i_e = (manning_n * discharge / (h_d ^ (2/3)) / area) ^2
 
@@ -75,35 +95,35 @@ function calc_energy_slope(df, param::Param, target_hour::Int)
 
     discharge = average_neighbors_target_hour(df, :Qw, target_hour)
 
-    i_e = calc_energy_slope.(area, width, discharge, param.manning_n, target_hour::Int)
+    i_e = calc_energy_slope.(area, width, discharge, param.manning_n)
 
     return i_e
 end
 
 function calc_friction_velocity(
-    area,
-    width,
-    discharge,
-    manning_n,
-    gravity_accel,
-    target_hour::Int
-    )
+    area::T
+    width::T,
+    discharge::T,
+    manning_n::T,
+    gravity_accel::T
+    ) where {T<:AbstractFloat}
 
     hydraulic_depth = calc_hydraulic_depth(
-        area, width, target_hour
+        area,
+        width
     )
     
     energy_slope = calc_energy_slope(
-        area, width, discharge, manning_n, target_hour
+        area, width, discharge, manning_n
     )
     
-    u_star = sqrt(gravity_accel * hydraulic_depth * energy_slope)
+    u∗ = sqrt(gravity_accel * hydraulic_depth * energy_slope)
 
-    return u_star
+    return u∗
 end
 
 function calc_friction_velocity(
-    df,
+    df::DataFrame,
     param::Param,
     target_hour::Int
     )
@@ -123,6 +143,78 @@ function calc_friction_velocity(
     )
     
     return u_star
+end
+
+function calc_non_dimensional_shear_stress(
+    u∗::T,
+    specific_gravity::T,
+    gravity_accel::T,
+    mean_diameter::T    
+    ) where {T<:AbstractFloat}
+
+    τ∗ = (u∗^2) / specific_gravity / gravity_accel / mean_diameter
+
+    return τ∗
+end
+
+function calc_non_dimensional_shear_stress(
+    area::T,
+    width::T,
+    discharge::T,
+    manning_n::T,
+    specific_gravity::T,
+    gravity_accel::T,
+    mean_diameter::T    
+    ) where {T<:AbstractFloat}
+
+    u∗ = calc_friction_velocity(
+        area,
+        width,
+        discharge,
+        manning_n,
+        gravity_accel
+       )
+
+
+    τ∗ = calc_non_dimensional_shear_stress(
+        u∗,
+        specific_gravity,
+        gravity_accel,
+        mean_diameter    
+    )
+
+    return τ∗
+end
+
+function calc_non_dimensional_shear_stress(
+    df::DataFrame,
+    param::Param,
+    target_hour::Int
+    )
+
+    area      = average_neighbors_target_hour(df, :Aw, target_hour)
+    width     = average_neighbors_target_hour(df, :Bw, target_hour)
+
+    discharge = average_neighbors_target_hour(df, :Qw, target_hour)
+
+    mean_diameter_dist = get_average_simulated_particle_size_dist(
+        df,
+        sediment_size,
+        target_hour
+    )
+    mean_diameter = average_neighbors_target_hour(mean_diameter_dist)
+
+    τ∗ = calc_non_dimensional_shear_stress.(
+        area,
+        width,
+        discharge,
+        param.manning_n,
+        param.specific_gravity,
+        param.g,
+        mean_diameter    
+    )
+    
+    return τ∗
 end
 
 function make_figure_energy_slope(

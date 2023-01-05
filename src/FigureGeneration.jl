@@ -113,6 +113,7 @@ include("parameters.jl")
 using .Parameters
 export make_figure_energy_slope,
        make_figure_friction_velocity,
+       make_figure_non_dimensional_shear_stress,
        params
 
 end

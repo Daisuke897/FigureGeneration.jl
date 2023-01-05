@@ -19,11 +19,12 @@ module Parameters
 
 import Plots,
        DataFrames,
-       ..GeneralGraphModule
+       ..GeneralGraphModule,
        ..ParticleSize
 
 export make_figure_energy_slope,
        make_figure_friction_velocity,
+       make_figure_non_dimensional_shear_stress,
        params
 
 struct Param{T<:AbstractFloat}
@@ -35,8 +36,8 @@ end
 params = Param{Float64}(0.30, 9.81, 1.65)
 
 function average_neighbors_target_hour!(
-    return_array::Vector{T},
-    normal_array::Vector{T}
+    return_array::AbstractVector{T},
+    normal_array::AbstractVector{T}
     ) where {T<:AbstractFloat}
 
     return_array .= ((normal_array .+ circshift(normal_array, -1)) ./ 2)[1:end-1]
@@ -44,9 +45,9 @@ function average_neighbors_target_hour!(
     return return_array
 end
 
-function average_neighbors_target_hour(normal_array::Vector{T}) where {T<:AbstractFloat}
+function average_neighbors_target_hour(normal_array::AbstractVector{T}) where {T<:AbstractFloat}
 
-    return_array = zeros(T, length(normal_array))
+    return_array = zeros(T, length(normal_array)-1)
 
     average_neighbors_target_hour!(
         return_array,
@@ -56,12 +57,16 @@ function average_neighbors_target_hour(normal_array::Vector{T}) where {T<:Abstra
     return return_array
 end
 
-function average_neighbors_target_hour(df::DataFrame, target_symbol::Symbol, target_hour::Int)
+function average_neighbors_target_hour(
+    df::DataFrames.DataFrame,
+    target_symbol::Symbol,
+    target_hour::Int
+    )
 
     start_i, final_i = GeneralGraphModule.decide_index_number(target_hour)
 
     normal_array = @view df[start_i:final_i, target_symbol]
-    
+
     return_array = average_neighbors_target_hour(normal_array)
     
     return return_array
@@ -79,7 +84,7 @@ function calc_energy_slope(
     width::T,
     discharge::T,
     manning_n::T
-    ) where {T<:AbstarctFloat}
+    ) where {T<:AbstractFloat}
 
     h_d = calc_hydraulic_depth(area, width)
 
@@ -101,7 +106,7 @@ function calc_energy_slope(df, param::Param, target_hour::Int)
 end
 
 function calc_friction_velocity(
-    area::T
+    area::T,
     width::T,
     discharge::T,
     manning_n::T,
@@ -117,13 +122,13 @@ function calc_friction_velocity(
         area, width, discharge, manning_n
     )
     
-    u∗ = sqrt(gravity_accel * hydraulic_depth * energy_slope)
+    uₛ = sqrt(gravity_accel * hydraulic_depth * energy_slope)
 
-    return u∗
+    return uₛ
 end
 
 function calc_friction_velocity(
-    df::DataFrame,
+    df::DataFrames.DataFrame,
     param::Param,
     target_hour::Int
     )
@@ -133,7 +138,7 @@ function calc_friction_velocity(
 
     discharge = average_neighbors_target_hour(df, :Qw, target_hour)
 
-    u_star    = calc_friction_velocity.(
+    uₛ    = calc_friction_velocity.(
         area,
         width,
         discharge,
@@ -142,19 +147,19 @@ function calc_friction_velocity(
         target_hour
     )
     
-    return u_star
+    return uₛ
 end
 
 function calc_non_dimensional_shear_stress(
-    u∗::T,
+    uₛ::T,
     specific_gravity::T,
     gravity_accel::T,
     mean_diameter::T    
     ) where {T<:AbstractFloat}
 
-    τ∗ = (u∗^2) / specific_gravity / gravity_accel / mean_diameter
+    τₛ = (uₛ^2) / specific_gravity / gravity_accel / mean_diameter
 
-    return τ∗
+    return τₛ
 end
 
 function calc_non_dimensional_shear_stress(
@@ -167,7 +172,7 @@ function calc_non_dimensional_shear_stress(
     mean_diameter::T    
     ) where {T<:AbstractFloat}
 
-    u∗ = calc_friction_velocity(
+    uₛ = calc_friction_velocity(
         area,
         width,
         discharge,
@@ -176,18 +181,19 @@ function calc_non_dimensional_shear_stress(
        )
 
 
-    τ∗ = calc_non_dimensional_shear_stress(
-        u∗,
+    τₛ = calc_non_dimensional_shear_stress(
+        uₛ,
         specific_gravity,
         gravity_accel,
         mean_diameter    
     )
 
-    return τ∗
+    return τₛ
 end
 
 function calc_non_dimensional_shear_stress(
-    df::DataFrame,
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
     param::Param,
     target_hour::Int
     )
@@ -197,14 +203,14 @@ function calc_non_dimensional_shear_stress(
 
     discharge = average_neighbors_target_hour(df, :Qw, target_hour)
 
-    mean_diameter_dist = get_average_simulated_particle_size_dist(
+    mean_diameter_dist = ParticleSize.get_average_simulated_particle_size_dist(
         df,
         sediment_size,
         target_hour
     )
     mean_diameter = average_neighbors_target_hour(mean_diameter_dist)
 
-    τ∗ = calc_non_dimensional_shear_stress.(
+    τₛ = calc_non_dimensional_shear_stress.(
         area,
         width,
         discharge,
@@ -214,7 +220,7 @@ function calc_non_dimensional_shear_stress(
         mean_diameter    
     )
     
-    return τ∗
+    return τₛ
 end
 
 function make_figure_energy_slope(
@@ -277,8 +283,50 @@ function make_figure_friction_velocity(
     end
     
     Plots.vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    Plots.plot!(X, reverse(u_star), xlims=(0, 77.8), xlabel=xlabel_title,
-                ylims=(0, 4.0), ylabel=ylabel_title,
+    Plots.plot!(X, reverse(u_star),
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylims=(0, 4.0),
+                ylabel=ylabel_title,
+                legend=:none,
+                title=want_title)
+end
+
+function make_figure_non_dimensional_shear_stress(
+    df,
+    sediment_size,
+    time_schedule,
+    param::Param,
+    target_hour::Int;
+    japanese::Bool=false
+)
+
+    τₛ = calc_non_dimensional_shear_stress(df, sediment_size, param, target_hour)
+    X  = average_neighbors_target_hour(df, :I, target_hour) ./ 1000
+
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        target_hour * 3600,
+        time_schedule
+    )
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Non Dimensional\nShear Stress (-)"
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="無次元掃流力 (-)"
+    end
+    
+    Plots.vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    Plots.plot!(X, reverse(τₛ),
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylims=(0, 0.06),
+                ylabel=ylabel_title,
                 legend=:none, title=want_title)
 
 end

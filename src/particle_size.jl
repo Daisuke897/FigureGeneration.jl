@@ -66,7 +66,7 @@ function get_average_simulated_particle_size_dist(
     sediment_size::DataFrame,
     hours_now::Int
     )
-    simulated_particle_size_dist =
+    simulated_particle_dist =
         simulated_particle_size_dist(
             data_file,
             sediment_size,
@@ -75,7 +75,7 @@ function get_average_simulated_particle_size_dist(
 
     average_simulated_particle_size_dist =
         get_average_simulated_particle_size_dist(
-            simulated_particle_size_dist,
+            simulated_particle_dist,
             sediment_size
         )
 
@@ -95,6 +95,7 @@ function get_average_simulated_particle_size_dist(
 
     get_average_simulated_particle_size_dist!(
         average_simulated_particle_size_dist,
+        simulated_particle_size_dist,
         sediment_size[!, 3]
     )
     

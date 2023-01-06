@@ -251,7 +251,7 @@ end
 #累積の河床変動量のグラフを作る関数
 function graph_cumulative_change_in_riverbed(
     measured_riverbed,
-    data_file_1,
+    df,
     start_year::Int,
     final_year::Int,
     start_target_hour::Int,
@@ -270,7 +270,54 @@ function graph_cumulative_change_in_riverbed(
         measured_riverbed,start_year,final_year)
     
     cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated_1,
-        data_file_1,start_index_1,finish_index_1,start_index_2,finish_index_2)
+        df,start_index_1,finish_index_1,start_index_2,finish_index_2)
+
+    x_label = "Distance from the estuary (km)"
+    y_label = "Cumulative Change (m)"
+    legend_label_0 = "Measured"
+    legend_label_1 = "Case 1"
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "累積変化量 (m)"
+        legend_label_0 = "実測値"
+    end
+    
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    hline!([0], line=:black, label="", linestyle=:dash, linewidth=3)
+    
+    plot!([0.2*(i-1) for i in 1:flow_size],
+        [reverse(cumulative_change_measured), reverse(cumulative_change_simulated_1)],
+        legend=:topleft, xlims=(0,77.8), linewidth=2,
+        ylims=(-3,3), linecolor=[:midnightblue :orangered],
+	xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label, ylabel=y_label,
+        label=[legend_label_0 legend_label_1])
+end
+
+## varargを用いて複数条件の作図ができないか試してみる
+function graph_cumulative_change_in_riverbed(
+    measured_riverbed,
+    df,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int;
+    japanese::Bool=false
+    )
+    
+    flow_size=length(measured_riverbed[:, Symbol(final_year)])
+    cumulative_change_measured=zeros(Float64, flow_size)
+    cumulative_change_simulated_1=zeros(Float64, flow_size)    
+    
+    start_index_1, finish_index_1 = decide_index_number(start_target_hour)
+    start_index_2, finish_index_2 = decide_index_number(final_target_hour)
+    
+    cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
+        measured_riverbed,start_year,final_year)
+    
+    cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated_1,
+        df,start_index_1,finish_index_1,start_index_2,finish_index_2)
 
     x_label = "Distance from the estuary (km)"
     y_label = "Cumulative Change (m)"

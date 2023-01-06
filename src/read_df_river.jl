@@ -110,9 +110,9 @@ function get_string_section!(section_string, section_index)
     return section_string
 end
 
-function get_main_df()
+function get_main_df(;df_path::String="./2_1DallT1.csv")
     
-    df = CSV.read("./2_1DallT1.csv", DataFrames.DataFrame)
+    df = CSV.read(df_path, DataFrames.DataFrame)
     
     return df
 end

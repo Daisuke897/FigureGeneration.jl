@@ -204,142 +204,177 @@ end
 #累積の河床変動量のグラフを作成したい．
 
 #実測値の累積の河床変動量を計算する．
-function cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
-    measured_riverbed,start_year::Int,final_year::Int)
+function cumulative_change_in_measured_riverbed_elevation!(
+    cumulative_change_measured,
+    measured_riverbed::DataFrame,
+    start_year::Int,
+    final_year::Int
+    )
     
-    cumulative_change_measured.=measured_riverbed[:, Symbol(final_year)].-
-        measured_riverbed[:, Symbol(start_year)]
+    cumulative_change_measured.=measured_riverbed[!, Symbol(final_year)].-
+        measured_riverbed[!, Symbol(start_year)]
     
     return cumulative_change_measured
 end
-function cumulative_change_in_measured_riverbed_elevation(measured_riverbed,
-    start_year::Int,final_year::Int)
+
+function cumulative_change_in_measured_riverbed_elevation(
+    measured_riverbed::DataFrame,
+    start_year::Int,
+    final_year::Int
+    )
     
-    flow_size=length(measured_riverbed[:, Symbol(final_year)])
-    cumulative_change_measured=zeros(Float64, flow_size)
+    flow_size=length(measured_riverbed[!, Symbol(final_year)])
+    cumulative_change_measured=zeros(
+        eltype(measured_riverbed[!, Symbol(final_year)]),
+        flow_size
+    )
     
-    cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
-        measured_riverbed,start_year,final_year)
+    cumulative_change_in_measured_riverbed_elevation!(
+        cumulative_change_measured,
+        measured_riverbed,start_year,final_year
+    )
     
     return cumulative_change_measured 
 end
 
 #再現値の累積の河床変動量を計算する．
-function cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated,
-    data_file,start_index_1,finish_index_1,start_index_2,finish_index_2)
+function cumulative_change_in_simulated_riverbed_elevation!(
+    cumulative_change_simulated,
+    data_file::DataFrame,
+    start_index_1,
+    finish_index_1,
+    start_index_2,
+    finish_index_2
+    )
 
     cumulative_change_simulated.=data_file[start_index_2:finish_index_2, :Zbave].-
         data_file[start_index_1:finish_index_1, :Zbave]
     
     return cumulative_change_simulated    
 end
-function cumulative_change_in_simulated_riverbed_elevation(data_file,start_target_hour,
-    final_target_hour)
+
+function cumulative_change_in_simulated_riverbed_elevation(
+    data_file::DataFrame,
+    start_target_hour,
+    final_target_hour
+    )
     
     start_index_1, finish_index_1 = decide_index_number(start_target_hour)
     start_index_2, finish_index_2 = decide_index_number(final_target_hour)  
         
     flow_size=length(data_file[start_index_2:finish_index_2, :Zbave])
-    cumulative_change_simulated=zeros(Float64, flow_size)
+    cumulative_change_simulated=zeros(
+        eltype(data_file[start_index_2:finish_index_2, :Zbave]),
+        flow_size
+    )
     
-    cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated,
-        data_file,start_index_1,finish_index_1,start_index_2,finish_index_2)
+    cumulative_change_in_simulated_riverbed_elevation!(
+        cumulative_change_simulated,
+        data_file,
+        start_index_1,
+        finish_index_1,
+        start_index_2,
+        finish_index_2
+    )
     
     return cumulative_change_simulated 
 end
 
 #累積の河床変動量のグラフを作る関数
-function graph_cumulative_change_in_riverbed(
-    measured_riverbed,
-    df,
-    start_year::Int,
-    final_year::Int,
-    start_target_hour::Int,
-    final_target_hour::Int;
-    japanese::Bool=false
-    )
-    
-    flow_size=length(measured_riverbed[:, Symbol(final_year)])
-    cumulative_change_measured=zeros(Float64, flow_size)
-    cumulative_change_simulated_1=zeros(Float64, flow_size)    
-    
-    start_index_1, finish_index_1 = decide_index_number(start_target_hour)
-    start_index_2, finish_index_2 = decide_index_number(final_target_hour)
-    
-    cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
-        measured_riverbed,start_year,final_year)
-    
-    cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated_1,
-        df,start_index_1,finish_index_1,start_index_2,finish_index_2)
-
-    x_label = "Distance from the estuary (km)"
-    y_label = "Cumulative Change (m)"
-    legend_label_0 = "Measured"
-    legend_label_1 = "Case 1"
-
-    if japanese == true
-        x_label = "河口からの距離 (km)"
-        y_label = "累積変化量 (m)"
-        legend_label_0 = "実測値"
-    end
-    
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([0], line=:black, label="", linestyle=:dash, linewidth=3)
-    
-    plot!([0.2*(i-1) for i in 1:flow_size],
-        [reverse(cumulative_change_measured), reverse(cumulative_change_simulated_1)],
-        legend=:topleft, xlims=(0,77.8), linewidth=2,
-        ylims=(-3,3), linecolor=[:midnightblue :orangered],
-	xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label, ylabel=y_label,
-        label=[legend_label_0 legend_label_1])
-end
 
 ## varargを用いて複数条件の作図ができないか試してみる
+function _graph_cumulative_change_in_riverbed!(
+    p::Plots.Plot,
+    X,
+    start_target_hour,
+    final_target_hour,
+    ::Val{N},
+    df_vararg::NTuple{N, T}    
+    ) where {T, N}
+
+    for i in 1:N
+
+        cumulative_change_simulated=cumulative_change_in_simulated_riverbed_elevation(
+            df_vararg[i],
+            start_target_hour,
+            final_target_hour
+        )
+
+        legend_label = string("Case ", i)
+        
+        plot!(
+            p,
+            X,
+            reverse(cumulative_change_simulated),
+            label=legend_label
+        )
+        
+    end
+
+    return p
+
+end
+
 function graph_cumulative_change_in_riverbed(
     measured_riverbed,
-    df,
     start_year::Int,
     final_year::Int,
     start_target_hour::Int,
-    final_target_hour::Int;
+    final_target_hour::Int,
+    df_vararg::Vararg{T, N};
     japanese::Bool=false
+    ) where {T, N}
+    
+    flow_size=length(measured_riverbed[!, Symbol(final_year)])
+
+    cumulative_change_measured=cumulative_change_in_measured_riverbed_elevation(
+        measured_riverbed,
+        start_year,
+        final_year
     )
     
-    flow_size=length(measured_riverbed[:, Symbol(final_year)])
-    cumulative_change_measured=zeros(Float64, flow_size)
-    cumulative_change_simulated_1=zeros(Float64, flow_size)    
-    
-    start_index_1, finish_index_1 = decide_index_number(start_target_hour)
-    start_index_2, finish_index_2 = decide_index_number(final_target_hour)
-    
-    cumulative_change_in_measured_riverbed_elevation!(cumulative_change_measured,
-        measured_riverbed,start_year,final_year)
-    
-    cumulative_change_in_simulated_riverbed_elevation!(cumulative_change_simulated_1,
-        df,start_index_1,finish_index_1,start_index_2,finish_index_2)
-
     x_label = "Distance from the estuary (km)"
     y_label = "Cumulative Change (m)"
     legend_label_0 = "Measured"
-    legend_label_1 = "Case 1"
 
     if japanese == true
         x_label = "河口からの距離 (km)"
         y_label = "累積変化量 (m)"
         legend_label_0 = "実測値"
     end
+
+    p=plot(
+        legend=:topleft,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-3, 3),
+        ylabel=y_label
+    )
     
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([0], line=:black, label="", linestyle=:dash, linewidth=3)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
     
-    plot!([0.2*(i-1) for i in 1:flow_size],
-        [reverse(cumulative_change_measured), reverse(cumulative_change_simulated_1)],
-        legend=:topleft, xlims=(0,77.8), linewidth=2,
-        ylims=(-3,3), linecolor=[:midnightblue :orangered],
-	xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label, ylabel=y_label,
-        label=[legend_label_0 legend_label_1])
+    plot!(
+        p,
+        X,
+        reverse(cumulative_change_measured),
+        linecolor=:midnightblue,
+        label=legend_label_0
+    )
+
+    _graph_cumulative_change_in_riverbed!(
+        p,
+        X,
+        start_target_hour,
+        final_target_hour,
+        Val(N),
+        df_vararg
+    )
+
+    return p
 end
 
 # 全区間の実測河床位の年ごとの平均値を出力する関数

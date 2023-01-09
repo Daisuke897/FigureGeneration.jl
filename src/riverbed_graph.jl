@@ -20,10 +20,8 @@ module RiverbedGraph
 using Printf, Plots, Statistics, DataFrames
 using ..GeneralGraphModule
 
-export comparison_final_average_riverbed_ja,
-    comparison_final_average_riverbed_en,
-    difference_final_average_riverbed_ja,
-    difference_final_average_riverbed_en,
+export comparison_final_average_riverbed,
+    difference_final_average_riverbed,
     graph_cumulative_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
@@ -59,11 +57,16 @@ title_01, data_file, hours_calculate_end, time_schedule)
     return want_title, distance_from_upstream, start_index, finish_index
 end
 
-#実測と再現の河床位を比較するグラフを作る関数（日本語版）
+#実測と再現の河床位を比較するグラフを作る関数
 #実測河床位が存在する場合
-function comparison_final_average_riverbed_ja(
-    hours_calculate_end,riverbed_level_data,
-    data_file,time_schedule,when_year::Int)
+function comparison_final_average_riverbed(
+    hours_calculate_end,
+    riverbed_level_data,
+    data_file,
+    time_schedule,
+    when_year::Int;
+    japanese::Bool=false
+    )
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
@@ -72,46 +75,35 @@ function comparison_final_average_riverbed_ja(
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
     riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
+    label_vec = String["Measured" "Simulated"]
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Elevation (T.P. m)"
+
+    if japanese==true
+        label_vec = String["実測河床位" "再現河床位"]
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    end
+
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3,
         [reverse(riverbed_level), reverse(average_riverbed_level)], 
-        label=["実測河床位" "再現河床位"],  
-        ylabel="標高 (T.P. m)", xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel="河口からの距離 (km)",
+        label=label_vec,  
+        ylabel=y_label, xlims=(0,77.8), ylims=(-20,85),
+	title=want_title, xlabel=x_label,
 	xticks=[0, 20, 40, 60, 77.8],
 	linecolor=[:midnightblue :orangered],
 	linewidth=2, legend=:topleft)
 end
 
-#実測と再現の河床位を比較するグラフを作る関数（英語版）
-#実測河床位が存在する場合
-function comparison_final_average_riverbed_en(
-    hours_calculate_end,riverbed_level_data,
-    data_file,time_schedule,when_year::Int)
-
-    want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule)
-
-    average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
-
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(distance_from_upstream.*10^-3,
-        [reverse(riverbed_level), reverse(average_riverbed_level)], 
-        label=["Measured" "Simulated"],  
-        ylabel="Elevation (T.P. m)", xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel="Distance from the estuary (km)",
-	xticks=[0, 20, 40, 60, 77.8],
-	linecolor=[:midnightblue :orangered],
-	linewidth=2, legend=:topleft)
-end
-
-#実測と再現の河床位を比較するグラフを作る関数（日本語版）
+#実測と再現の河床位を比較するグラフを作る関数
 #実測河床位が存在しない場合
-function comparison_final_average_riverbed_ja(
+function comparison_final_average_riverbed(
     hours_calculate_end,
-    data_file,time_schedule)
+    data_file,
+    time_schedule
+    japanese::Bool=false
+    )
 
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
@@ -119,44 +111,36 @@ function comparison_final_average_riverbed_ja(
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(distance_from_upstream.*10^-3,
-        reverse(average_riverbed_level), 
-        label="再現河床位",  
-        ylabel="標高 (T.P. m)", xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel="河口からの距離 (km)",
-	xticks=[0, 20, 40, 60, 77.8],
-	linecolor=:orangered,
-	linewidth=2, legend=:topleft)
-end
+    label_s   = "Simulated"
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Elevation (T.P. m)"
 
-#実測と再現の河床位を比較するグラフを作る関数（英語版）
-#実測河床位が存在しない場合
-function comparison_final_average_riverbed_en(
-    hours_calculate_end,
-    data_file,time_schedule)
-
-    want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule)
-
-    average_riverbed_level = data_file[start_index:finish_index, :Zbave]
+    if japanese==true
+        label_s   = "再現河床位"
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    end
     
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3,
         reverse(average_riverbed_level), 
-        label="Simulated",  
-        ylabel="Elevation (T.P. m)", xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel="Distance from the estuary (km)",
+        label=label_s,  
+        ylabel=y_label, xlims=(0,77.8), ylims=(-20,85),
+	title=want_title, xlabel=x_label,
 	xticks=[0, 20, 40, 60, 77.8],
 	linecolor=:orangered,
 	linewidth=2, legend=:topleft)
 end
 
-#実測と再現の河床位の誤差を表示するグラフを作る関数（日本語版）
-function difference_final_average_riverbed_ja(
-    hours_calculate_end, riverbed_level_data,
-    data_file, time_schedule, when_year::Int)
+#実測と再現の河床位の誤差を表示するグラフを作る関数
+function difference_final_average_riverbed(
+    hours_calculate_end,
+    riverbed_level_data,
+    data_file,
+    time_schedule,
+    when_year::Int
+    japanese::Bool=false
+    )
     
     want_title, distance_from_upstream, start_index, finish_index =
     core_comparison_final_average_riverbed_2("", data_file,
@@ -167,36 +151,22 @@ function difference_final_average_riverbed_ja(
 
     difference_riverbed = average_riverbed_level .- riverbed_level
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([0], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(distance_from_upstream.*10^-3, reverse(difference_riverbed), 
-        label="実測河床位との誤差",  
-        ylabel="誤差 (m)", xlims=(0,77.8), title=want_title,
-	xlabel="河口からの距離 (km)",
-	xticks=[0, 20, 40, 60, 77.8],
-	linewidth=2, legend=:bottomleft, ylims=(-3,3))
-end
+    label_s   = "Error in Riverbed Elevation"
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Error (m)"
 
-#実測と再現の河床位の誤差を表示するグラフを作る関数（英語版）
-function difference_final_average_riverbed_en(
-    hours_calculate_end, riverbed_level_data,
-    data_file, time_schedule, when_year::Int)
+    if japanese==true
+        label_s   = "実測河床位との誤差"
+        x_label   = "河口からの距離 (km)"
+        y_label   = "誤差 (m)"
+    end
     
-    want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule)
-
-    average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
-
-    difference_riverbed = average_riverbed_level .- riverbed_level
-
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     hline!([0], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3, reverse(difference_riverbed), 
-        label="Difference in Riverbed Elevation",  
-        ylabel="Difference (m)", xlims=(0,77.8), title=want_title,
-	xlabel="Distance from the estuary (km)",
+        label=label_s,  
+        ylabel=y_label, xlims=(0,77.8), title=want_title,
+	xlabel=x_label,
 	xticks=[0, 20, 40, 60, 77.8],
 	linewidth=2, legend=:bottomleft, ylims=(-3,3))
 end

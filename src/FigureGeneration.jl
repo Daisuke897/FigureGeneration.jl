@@ -59,10 +59,8 @@ export
 include("riverbed_graph.jl")
 using .RiverbedGraph
 export
-    comparison_final_average_riverbed_ja,
-    comparison_final_average_riverbed_en,
-    difference_final_average_riverbed_ja,
-    difference_final_average_riverbed_en,
+    comparison_final_average_riverbed,
+    difference_final_average_riverbed,
     graph_cumulative_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,

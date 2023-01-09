@@ -321,10 +321,10 @@ function graph_cumulative_change_in_riverbed(
     final_year::Int,
     start_target_hour::Int,
     final_target_hour::Int,
-    df_vararg::Vararg{T, N};
+    df_tuple::NTuple{N, T};
     japanese::Bool=false
     ) where {T, N}
-    
+
     flow_size=length(measured_riverbed[!, Symbol(final_year)])
 
     cumulative_change_measured=cumulative_change_in_measured_riverbed_elevation(
@@ -336,6 +336,7 @@ function graph_cumulative_change_in_riverbed(
     x_label = "Distance from the estuary (km)"
     y_label = "Cumulative Change (m)"
     legend_label_0 = "Measured"
+    title_s = string(start_year, "-", final_year)
 
     if japanese == true
         x_label = "河口からの距離 (km)"
@@ -344,12 +345,13 @@ function graph_cumulative_change_in_riverbed(
     end
 
     p=plot(
-        legend=:topleft,
+        legend=:outerright,
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
         ylims=(-3, 3),
-        ylabel=y_label
+        ylabel=y_label,
+        title=title_s
     )
     
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
@@ -371,9 +373,32 @@ function graph_cumulative_change_in_riverbed(
         start_target_hour,
         final_target_hour,
         Val(N),
-        df_vararg
+        df_tuple
     )
 
+    return p
+end
+
+function graph_cumulative_change_in_riverbed(
+    measured_riverbed,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    df_vararg::Vararg{T, N};
+    japanese::Bool=false
+    ) where {T, N}
+
+    p = graph_cumulative_change_in_riverbed(
+        measured_riverbed,
+        start_year,
+        final_year,
+        start_target_hour,
+        final_target_hour,
+        df_vararg,
+        japanese=japanese
+    )
+    
     return p
 end
 

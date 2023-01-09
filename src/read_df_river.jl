@@ -6,7 +6,7 @@ import CSV,
 
 export get_main_df,
        get_time_schedule,
-       get_dict_each_year_timing!,
+       get_dict_each_year_timing,
        get_observed_riverbed_level,
        get_sediment_size,
        get_fmini,
@@ -15,7 +15,16 @@ export get_main_df,
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
-    condition_file = open("./Conditions.csv", "r")
+    max_time = get_max_num_time("./")
+
+    return max_time
+end
+
+function get_max_num_time(df_path::String) 
+    condition_file = open(
+        string(df_path, "Conditions.csv"),
+        "r"
+    )
     max_time = 0
     for i = 1:5
         max_time = parse(Int, readline(condition_file))
@@ -24,25 +33,34 @@ function get_max_num_time()
 end
 
 function get_n_years()
+    n_years = get_n_years("./")
+    
+    return n_years
+end
+
+function get_n_years(df_path::String)
     n_years = CSV.read(
-        "./Nyear.csv", DataFrames.DataFrame
+        string(df_path, "Nyear.csv"),
+        DataFrames.DataFrame
     )
     
     return n_years
 end
 
 function get_dict_each_year_timing!(
-        each_year_timing, time_schedule
+    each_year_timing,
+    time_schedule,
+    df_path::String
     )
 
     years = unique(time_schedule[:, :year])
       
-    n_years = get_n_years()
+    n_years = get_n_years(df_path)
     
     i_years    = [row[begin] for row in DataFrames.Tables.namedtupleiterator(n_years)]
     time_years = [row[end]   for row in DataFrames.Tables.namedtupleiterator(n_years)]
-    
-    max_time = get_max_num_time()
+
+    max_time = get_max_num_time(df_path)
     
     for i in @view i_years[begin:end-1]
         get!(each_year_timing, years[i], (time_years[i], time_years[i+1]-1))
@@ -53,31 +71,64 @@ function get_dict_each_year_timing!(
     return each_year_timing
 end
 
-function get_dict_each_year_timing(time_schedule)
+function get_dict_each_year_timing(
+    time_schedule,
+    )
+
+    each_year_timing = get_dict_each_year_timing(
+        time_schedule,
+        "./"
+    )
+    
+    return each_year_timing
+end
+
+function get_dict_each_year_timing(
+    time_schedule,
+    df_path::String
+    )
 
     each_year_timing = Dict{Int, Tuple{Int, Int}}()
     
     get_dict_each_year_timing!(
-        each_year_timing, time_schedule
+        each_year_timing,
+        time_schedule,
+        df_path
     )
     return each_year_timing
 end
 
-function get_section_index!(section_index)
+function get_section_index!(
+    section_index,
+    df_path::String
+    )
     mining_area_index = CSV.read(
-        "./mining_area_index.csv", DataFrames.DataFrame
-        )
-
-    append!(section_index, Tuple.(DataFrames.Tables.namedtupleiterator(mining_area_index[!, 2:3])))
+        string(df_path, "mining_area_index.csv"),
+        DataFrames.DataFrame
+    )
+    
+    append!(
+        section_index,
+        Tuple.(DataFrames.Tables.namedtupleiterator(mining_area_index[!, 2:3]))
+    )
     
     return section_index
 end
 
 function get_section_index()
     
+    section_index = get_section_index("./")
+
+    return section_index
+end
+
+function get_section_index(
+    df_path::String
+    )
+    
     section_index = Vector{Tuple{Int, Int}}(undef, 0)
 
-    get_section_index!(section_index)
+    get_section_index!(section_index, df_path)
     
     return section_index
 end
@@ -110,37 +161,88 @@ function get_string_section!(section_string, section_index)
     return section_string
 end
 
-function get_main_df(;df_path::String="./2_1DallT1.csv")
+function get_string_section(section_index)
+
+    section_string = Vector{String}(undef, 0)
+    get_string_section!(section_string, section_index)    
     
-    df = CSV.read(df_path, DataFrames.DataFrame)
+    return section_string
+end
+
+function get_main_df()
+
+    df = get_main_df("./")
     
     return df
 end
 
+function get_main_df(df_path::String)
+    
+    df = CSV.read(
+        string(df_path, "2_1DallT1.csv"),
+        DataFrames.DataFrame
+    )
+    
+    return df
+end
+
+
 function get_time_schedule()
+    time_schedule = get_time_schedule("./")
+    
+    return time_schedule
+end
+
+function get_time_schedule(df_path::String)
     time_schedule = CSV.read(
-        "./whole_season_time_schedule.csv", DataFrames.DataFrame
+        string(df_path, "whole_season_time_schedule.csv"),
+        DataFrames.DataFrame
     )
     
     return time_schedule
 end
 
 function get_sediment_size()
-    sediment_size = CSV.read("./Sed_size.csv", DataFrames.DataFrame)
+    sediment_size = get_sediment_size("./")
+        
+    return sediment_size
+end
+
+function get_sediment_size(df_path::String)
+    sediment_size = CSV.read(
+        string(df_path, "Sed_size.csv"),
+        DataFrames.DataFrame
+    )
     sediment_size.diameter_mm = sediment_size[!, 2] * 1000
     
     return sediment_size
 end
 
 function get_fmini()
-    fmini = CSV.read("./Fmini.csv", DataFrames.DataFrame)
+    fmini = get_fmini("./")
+    
+    return fmini
+end
+
+function get_fmini(df_path::String)
+    fmini = CSV.read(
+        string(df_path, "Fmini.csv"),
+        DataFrames.DataFrame
+    )
     
     return fmini
 end
 
 function get_observed_riverbed_level()
+    observed_riverbed_level = get_observed_riverbed_level("./")
+    
+    return observed_riverbed_level
+end
+
+function get_observed_riverbed_level(df_path::String)
     observed_riverbed_level = CSV.read(
-        "./observed_riverbed_level.csv", DataFrames.DataFrame
+        string(df_path, "observed_riverbed_level.csv"),
+        DataFrames.DataFrame
     )
     
     return observed_riverbed_level
@@ -158,12 +260,15 @@ struct Section
 end
 
 function Section()
-    section_index = Vector{Tuple{Int, Int}}(undef, 0)
-    get_section_index!(section_index)
 
-    section_string = Vector{String}(undef, 0)
-    get_string_section!(section_string, section_index)
-        
+    return Section("./")
+end
+
+function Section(df_path::String)
+    section_index = get_section_index(df_path)
+
+    section_string= get_string_section(section_index)
+    
     return Section(section_index, section_string)
 end
 

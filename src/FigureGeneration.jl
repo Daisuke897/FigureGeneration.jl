@@ -18,32 +18,30 @@ module FigureGeneration
 using Plots
 
 function default_setting_plots()
-pyplot(fontfamily="IPAexGothic")
+    pyplot(fontfamily="IPAexGothic")
 
-default(tickfontsize=18, legend_font_pointsize=13,
-    titlefontsize=13, guidefontsize=18,
-    legend_title_font_pointsize=13, dpi=300,
-    grid=false, framestyle=:box)
+    default(tickfontsize=18, legend_font_pointsize=13,
+        titlefontsize=13, guidefontsize=18,
+        legend_title_font_pointsize=13, dpi=300,
+        grid=false, framestyle=:box)
 end
 
 function check_dir_exist_if_no_mkdir(path_string::String)
-if isdir(path_string) == false
-    mkdir(path_string)
-end
+    if isdir(path_string) == false
+        mkdir(path_string)
+    end
 end
 
 export default_setting_plots,
        check_dir_exist_if_no_mkdir
 
-#include("graph_data.jl")
-#using .GraphData
 
 include("read_df_river.jl")
 using .Read_df_river
 export
     get_main_df,
     get_time_schedule,
-    get_dict_each_year_timing!,
+    get_dict_each_year_timing,
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
@@ -51,7 +49,6 @@ export
     Exist_riverbed_level
 
 include("general_graph_module.jl")
-#using .GeneralGraphModule
 
 include("rmse.jl")
 using .RMSE

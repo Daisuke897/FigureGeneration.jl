@@ -20,6 +20,7 @@ module RMSE
 using Printf, Plots, CSV
 using Statistics, DataFrames
 using ..GeneralGraphModule
+using ..FigureGeneration
 
 export
     calculate_RMSE,
@@ -230,6 +231,8 @@ function make_RMSE_csv(
                   section_index,string_section
                   )
 
+    FigureGeneration.check_dir_exist_if_no_mkdir("./csv_data")
+    
     CSV.write(
         "./csv_data/rmse.csv",df_rmse
         )

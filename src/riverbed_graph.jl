@@ -101,7 +101,7 @@ end
 function comparison_final_average_riverbed(
     hours_calculate_end,
     data_file,
-    time_schedule
+    time_schedule,
     japanese::Bool=false
     )
 
@@ -138,7 +138,7 @@ function difference_final_average_riverbed(
     riverbed_level_data,
     data_file,
     time_schedule,
-    when_year::Int
+    when_year::Int,
     japanese::Bool=false
     )
     

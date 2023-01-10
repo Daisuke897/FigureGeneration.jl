@@ -471,6 +471,29 @@ end
 
 #end
 
+#毎年の再現河床位の平均値の変動のグラフを作りたい
+function graph_simulated_riverbed_fluctuation(
+    measured_riverbed,
+    section::Section,
+    each_year_timing,
+    exist_riverbed_level::Exist_riverbed_level,
+    df_vararg::Vararg{DataFrame, N}
+    ) where {N}
+
+    for i in 1:N
+        for year in sort(collect(keys(each_year_timing)))
+            start_i, finish_i = decide_index_number(
+                each_year_timing[year][2]
+            )
+
+            average_value = mean(df_vararg[i][start_i:finish_i, :Zbave])
+
+
+         end
+    end
+    
+end
+
 #河床位の横断図を作るために，横軸の川幅の値の配列を作る関数を用意する
 function river_width_crossing(
     measured_width::DataFrame,

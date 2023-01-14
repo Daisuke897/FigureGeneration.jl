@@ -25,6 +25,7 @@ export comparison_final_average_riverbed,
     graph_cumulative_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
+    graph_simulated_riverbed_fluctuation,
     graph_measured_rb_crossing_1_year_en,
     graph_simulated_rb_crossing
 
@@ -472,26 +473,87 @@ end
 #end
 
 #毎年の再現河床位の平均値の変動のグラフを作りたい
-function graph_simulated_riverbed_fluctuation(
+function _graph_simulated_riverbed_fluctuation!(
+    p::Plots.Plot,
+    keys_year,
     measured_riverbed,
-    section::Section,
     each_year_timing,
-    exist_riverbed_level::Exist_riverbed_level,
-    df_vararg::Vararg{DataFrame, N}
+    df_vararg::NTuple{N, DataFrame}
     ) where {N}
-
+    
     for i in 1:N
-        for year in sort(collect(keys(each_year_timing)))
+        fluc_average_value = zeros(length(keys_year)+1)
+        
+        start_i, finish_i = decide_index_number(
+            each_year_timing[keys_year[1]][1]
+        )
+        std_average_value = mean(df_vararg[i][start_i:finish_i, :Zbave])        
+
+        for (index, year) in enumerate(keys_year)
             start_i, finish_i = decide_index_number(
-                each_year_timing[year][2]
+                each_year_timing[year][1]
             )
 
-            average_value = mean(df_vararg[i][start_i:finish_i, :Zbave])
+            fluc_average_value[index] =
+                mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
+        end
 
+        start_i, finish_i = decide_index_number(
+            each_year_timing[keys_year[end]][2]
+        )
 
-         end
+        fluc_average_value[length(keys_year)+1] =
+            mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
+        
+
+        legend_label = string("Case ", i)
+        
+        plot!(
+            p,
+            [keys_year; keys_year[end]+1],
+            fluc_average_value,
+            markershape=:circle,
+            label=legend_label
+        )
+    end
+
+    return p
+    
+end
+
+function graph_simulated_riverbed_fluctuation(
+    measured_riverbed,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese=false
+    ) where {N}
+
+    keys_year = sort(collect(keys(each_year_timing)))
+
+    y_label = "Fluctuation (m)"
+
+    if japanese==true
+        y_label="河床変動 (m)" 
     end
     
+    p = hline([0], line=:black, label="", linestyle=:dot, linewidth=1)
+    plot!(
+        p,
+        ylabel=y_label,
+        xlims=(keys_year[begin],keys_year[end]+1),
+        ylims=(-0.9, 0.1),
+        legend=:right
+    )    
+
+    _graph_simulated_riverbed_fluctuation!(
+        p,
+        keys_year,
+        measured_riverbed,
+        each_year_timing,
+        df_vararg
+    ) 
+    
+    return p
 end
 
 #河床位の横断図を作るために，横軸の川幅の値の配列を作る関数を用意する

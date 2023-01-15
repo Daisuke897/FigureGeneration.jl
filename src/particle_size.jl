@@ -182,38 +182,12 @@ function graph_ratio_simulated_particle_size_dist(
 end
 
 function graph_average_simulated_particle_size_dist(
-    data_file::DataFrame,
     sediment_size::DataFrame,
     time_schedule::DataFrame,
-    hours_now::Int;
+    hours_now::Int,
+    df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
-    )
-
-    start_index, finish_index = decide_index_number(hours_now)
-
-    num_particle_size        = size(sediment_size[:, :Np], 1)
-    string_num_particle_size = @sprintf("%02i", num_particle_size)
-
-    simulated_particle_size_dist = Matrix(
-                                       data_file[start_index:finish_index,
-                                       Between("fmc01", "fmc$string_num_particle_size")]
-                                       )
-
-    simulated_particle_size_dist!(simulated_particle_size_dist)
-
-    average_simulated_particle_size_dist =
-        zeros(
-            Float64,
-            size(simulated_particle_size_dist, 1)
-        )
-
-    get_average_simulated_particle_size_dist!(
-        average_simulated_particle_size_dist,
-        simulated_particle_size_dist,
-        sediment_size[!, 3]
-    )
-    
-    distance_from_estuary = 0:0.2:77.8
+    ) where {N}
 
     want_title = making_time_series_title("",
         hours_now, time_schedule)
@@ -226,15 +200,39 @@ function graph_average_simulated_particle_size_dist(
         y_label="平均粒径 (mm)"
     end        
     p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(p, distance_from_estuary,
-            reverse(average_simulated_particle_size_dist),
-            title=want_title,
-	    xticks=[0, 20, 40, 60, 77.8],
-            xlabel=x_label,
-	    ylabel=y_label,
-	    xlims=(0,77.8), ylims=(0, 300),
-	    legend=:none
-	    )
+    plot!(
+        p,
+        title=want_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(0, 300)
+    )
+
+    distance_from_estuary = 0:0.2:77.8
+    
+    for i in 1:N
+    
+        simu_particle_size_dist = simulated_particle_size_dist(
+            df_vararg[i],
+            sediment_size,
+            hours_now
+        )
+
+        average_simulated_particle_size_dist =
+            get_average_simulated_particle_size_dist(
+                simu_particle_size_dist,
+                sediment_size
+            )
+    
+    
+        plot!(
+            p, distance_from_estuary,
+            reverse(average_simulated_particle_size_dist)
+        )
+
+    end
 
     return p
 end

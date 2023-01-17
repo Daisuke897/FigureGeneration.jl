@@ -22,7 +22,8 @@ using LinearAlgebra
 using ..GeneralGraphModule
 
 export graph_ratio_simulated_particle_size_dist,
-       graph_average_simulated_particle_size_dist
+    graph_average_simulated_particle_size_dist
+    
 
 #河床の粒度分布を計算する関数
 function simulated_particle_size_dist(
@@ -66,12 +67,16 @@ function get_average_simulated_particle_size_dist(
     sediment_size::DataFrame,
     hours_now::Int
     )
-    simulated_particle_dist =
-        simulated_particle_size_dist(
-            data_file,
-            sediment_size,
-            hours_now
-        )
+
+    start_index, finish_index = decide_index_number(hours_now)
+
+    num_particle_size        = size(sediment_size[:, :Np], 1)
+    string_num_particle_size = @sprintf("%02i", num_particle_size)
+
+    simulated_particle_dist = Matrix(
+                                       data_file[start_index:finish_index,
+                                       Between("fmc01", string("fmc", string_num_particle_size))]
+                                   )
 
     average_simulated_particle_size_dist =
         get_average_simulated_particle_size_dist(
@@ -207,32 +212,115 @@ function graph_average_simulated_particle_size_dist(
         xlabel=x_label,
         ylabel=y_label,
         xlims=(0,77.8),
-        ylims=(0, 300)
+        ylims=(0, 200),
+        legend=:topleft
     )
 
     distance_from_estuary = 0:0.2:77.8
     
     for i in 1:N
-    
-        simu_particle_size_dist = simulated_particle_size_dist(
-            df_vararg[i],
-            sediment_size,
-            hours_now
-        )
 
         average_simulated_particle_size_dist =
             get_average_simulated_particle_size_dist(
-                simu_particle_size_dist,
-                sediment_size
+                df_vararg[i],
+                sediment_size,
+                hours_now
             )
-    
-    
+
+        legend_label = string("Case ", i)
+            
         plot!(
             p, distance_from_estuary,
-            reverse(average_simulated_particle_size_dist)
+            reverse(average_simulated_particle_size_dist),
+            label=legend_label
         )
 
     end
+
+    average_simulated_particle_size_dist =
+        get_average_simulated_particle_size_dist(
+            df_vararg[1],
+            sediment_size,
+            0
+        )
+    
+    legend_label = "Initial Condition"
+    if japanese==true
+        legend_label="初期条件"
+    end        
+            
+    plot!(
+        p, distance_from_estuary,
+        reverse(average_simulated_particle_size_dist),
+        label=legend_label,
+        linecolor=:midnightblue
+    )    
+
+    return p
+end
+
+function graph_average_simulated_particle_size_dist(
+    time_schedule::DataFrame,
+    hours_now::Int,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+    want_title = making_time_series_title("",
+        hours_now, time_schedule)
+
+    x_label="Distance from the estuary (km)"
+    y_label="Mean Diameter (mm)"
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    end        
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(
+        p,
+        title=want_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(0, 200),
+        legend=:topleft
+    )
+
+    distance_from_estuary = 0:0.2:77.8
+
+    start_index, finish_index = decide_index_number(hours_now)
+    
+    for i in 1:N
+
+        simu_particle_size_dist = df_vararg[i][start_index:finish_index, :Dmave] * 1000
+    
+        legend_label = string("Case ", i)
+            
+        plot!(
+            p, distance_from_estuary,
+            reverse(simu_particle_size_dist),
+            label=legend_label
+        )
+
+    end
+
+    start_index, finish_index = decide_index_number(0)
+    
+    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
+    
+    legend_label = "Initial Condition"
+    if japanese==true
+        legend_label="初期条件"
+    end        
+    
+    plot!(
+        p, distance_from_estuary,
+        reverse(simu_particle_size_dist),
+        label=legend_label,
+        linecolor=:midnightblue
+    )    
 
     return p
 end

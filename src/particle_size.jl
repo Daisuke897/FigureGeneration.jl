@@ -22,7 +22,8 @@ using LinearAlgebra
 using ..GeneralGraphModule
 
 export graph_ratio_simulated_particle_size_dist,
-    graph_average_simulated_particle_size_dist
+    graph_average_simulated_particle_size_dist,
+    graph_average_simulated_particle_size_fluc
     
 
 #河床の粒度分布を計算する関数
@@ -194,28 +195,12 @@ function graph_average_simulated_particle_size_dist(
     japanese::Bool=false
     ) where {N}
 
-    want_title = making_time_series_title("",
-        hours_now, time_schedule)
-
-    x_label="Distance from the estuary (km)"
-    y_label="Mean Diameter (mm)"
-
-    if japanese==true
-        x_label="河口からの距離 (km)"
-        y_label="平均粒径 (mm)"
-    end        
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(
-        p,
-        title=want_title,
-        xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label,
-        ylabel=y_label,
-        xlims=(0,77.8),
-        ylims=(0, 200),
-        legend=:topleft
-    )
-
+    p = _graph_average_simulated_particle_size_dist(
+            time_schedule,
+            hours_now,
+            japanese=japanese
+        ) 
+    
     distance_from_estuary = 0:0.2:77.8
     
     for i in 1:N
@@ -266,27 +251,11 @@ function graph_average_simulated_particle_size_dist(
     japanese::Bool=false
     ) where {N}
 
-    want_title = making_time_series_title("",
-        hours_now, time_schedule)
-
-    x_label="Distance from the estuary (km)"
-    y_label="Mean Diameter (mm)"
-
-    if japanese==true
-        x_label="河口からの距離 (km)"
-        y_label="平均粒径 (mm)"
-    end        
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(
-        p,
-        title=want_title,
-        xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label,
-        ylabel=y_label,
-        xlims=(0,77.8),
-        ylims=(0, 200),
-        legend=:topleft
-    )
+    p = _graph_average_simulated_particle_size_dist(
+            time_schedule,
+            hours_now,
+            japanese=japanese
+        ) 
 
     distance_from_estuary = 0:0.2:77.8
 
@@ -321,6 +290,219 @@ function graph_average_simulated_particle_size_dist(
         label=legend_label,
         linecolor=:midnightblue
     )    
+
+    return p
+end
+
+function _graph_average_simulated_particle_size_dist(
+    time_schedule::DataFrame,
+    hours_now::Int;
+    japanese::Bool=false
+    )
+
+    want_title = making_time_series_title("",
+        hours_now, time_schedule)
+
+    x_label="Distance from the estuary (km)"
+    y_label="Mean Diameter (mm)"
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    end        
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    plot!(
+        p,
+        title=want_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(0, 200),
+        legend=:topleft
+    )
+
+    return p
+end
+
+function _graph_average_simulated_particle_size_fluc!(
+    p::Plots.Plot,
+    keys_year,
+    sediment_size,
+    each_year_timing,
+    df_vararg::NTuple{N, DataFrame}
+    ) where {N}
+
+    
+    for i in 1:N
+        
+        fluc_average_value = zeros(length(keys_year)+1)
+
+        for (index, year) in enumerate(keys_year)
+            average_simulated_particle_size_dist =
+                get_average_simulated_particle_size_dist(
+                    df_vararg[i],
+                    sediment_size,
+                    each_year_timing[year][1]
+                )
+
+            fluc_average_value[index] =
+                mean(average_simulated_particle_size_dist)
+        end
+
+        average_simulated_particle_size_dist =
+            get_average_simulated_particle_size_dist(
+                df_vararg[i],
+                sediment_size,
+                each_year_timing[keys_year[end]][2]
+            )
+
+        fluc_average_value[end] =
+            mean(average_simulated_particle_size_dist)
+
+        legend_label = string("Case ", i)
+                    
+        plot!(
+            p,
+            [keys_year; keys_year[end]+1],
+            fluc_average_value,
+            markershape=:auto,
+            label=legend_label
+        )
+        
+    end
+
+    return p
+end
+
+function _graph_average_simulated_particle_size_fluc!(
+    p::Plots.Plot,
+    keys_year,
+    sediment_size,
+    each_year_timing,
+    i_begin::Int,
+    i_end::Int,
+    df_vararg::NTuple{N, DataFrame}
+    ) where {N}
+
+    for i in 1:N
+        
+        fluc_average_value = zeros(length(keys_year)+1)
+
+        for (index, year) in enumerate(keys_year)
+            average_simulated_particle_size_dist =
+                get_average_simulated_particle_size_dist(
+                    df_vararg[i],
+                    sediment_size,
+                    each_year_timing[year][1]
+                )
+
+            fluc_average_value[index] =
+                mean(average_simulated_particle_size_dist[i_begin:i_end])
+        end
+
+        average_simulated_particle_size_dist =
+            get_average_simulated_particle_size_dist(
+                df_vararg[i],
+                sediment_size,
+                each_year_timing[keys_year[end]][2]
+            )
+
+        fluc_average_value[end] =
+            mean(average_simulated_particle_size_dist[i_begin:i_end])
+
+        i_max = length(average_simulated_particle_size_dist)
+
+        title_s = @sprintf("%.1f km - %.1f km", 0.2*(i_max-i_end), 0.2*(i_max-i_begin))
+        
+        legend_label = string("Case ", i)
+                    
+        plot!(
+            p,
+            [keys_year; keys_year[end]+1],
+            fluc_average_value,
+            markershape=:auto,
+            label=legend_label,
+            title=title_s
+        )
+        
+    end
+
+    return p
+end
+
+function _graph_average_simulated_particle_size_fluc(
+    keys_year,
+    japanese::Bool
+    )
+
+    y_label="Mean Diameter (mm)"
+
+    if japanese==true
+        y_label="平均粒径 (mm)"
+    end        
+
+    p = vline([0], line=:black, label="", linestyle=:dot, linewidth=1)
+    plot!(
+        p,
+        ylabel=y_label,
+        xlims=(keys_year[begin], keys_year[end]+1),
+        legend=:bottomleft
+    )
+
+    return p
+end
+
+function graph_average_simulated_particle_size_fluc(
+    sediment_size,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+    keys_year = sort(collect(keys(each_year_timing)))
+    
+    p = _graph_average_simulated_particle_size_fluc(
+        keys_year,
+        japanese
+    )
+    
+    _graph_average_simulated_particle_size_fluc!(
+        p,
+        keys_year,
+        sediment_size,
+        each_year_timing,
+        df_vararg
+    )
+
+    return p
+end
+
+function graph_average_simulated_particle_size_fluc(
+    sediment_size,
+    each_year_timing,
+    i_begin::Int,
+    i_end::Int,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+    keys_year = sort(collect(keys(each_year_timing)))
+    
+    p = _graph_average_simulated_particle_size_fluc(
+        keys_year,
+        japanese
+    )
+
+    _graph_average_simulated_particle_size_fluc!(
+        p,
+        keys_year,
+        sediment_size,
+        each_year_timing,
+        i_begin,
+        i_end,
+        df_vararg
+    )
 
     return p
 end

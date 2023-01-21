@@ -577,28 +577,29 @@ function graph_condition_change_in_mean_diameter(
     final_target_hour::Int,
     df_base::DataFrame,
     df_with_mining::DataFrame,
-    df_with_dam::DataFrame;    
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
     japanese::Bool=false
     )
 
     x_label = "Distance from the estuary (km)"
     y_label = "Variation (mm)"
     title_s = string("Mean Diameter  ", start_year, "-", final_year)
-    label_s = ["by Gravel extraction", "by Dam"]
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
     
     if japanese==true
         x_label="河口からの距離 (km)"
         y_label="変化量 (mm)"
         title_s = string("平均粒径 ", start_year, "-", final_year)
-        label_s = ["砂利採取", "ダム"]
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
     end
 
     p=plot(
-        legend=:outerright,
+        legend=:bottomright,
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
-        #ylims=(-150, 100),
+        ylims=(-15, 15),
         ylabel=y_label,
         title=title_s
     )
@@ -628,9 +629,21 @@ function graph_condition_change_in_mean_diameter(
             start_target_hour,
             final_target_hour
         )
+
+    with_mining_and_dam_mean_particle_diff =
+        _average_simulated_particle_size_diff(
+            df_with_mining_and_dam,
+            sediment_size,
+            start_target_hour,
+            final_target_hour
+        )
     
-    change_by_mining = with_mining_mean_particle_diff - base_mean_particle_diff
-    change_by_dam    = with_dam_mean_particle_diff    - base_mean_particle_diff
+    change_by_mining         = with_mining_mean_particle_diff -
+        base_mean_particle_diff
+    change_by_dam            = with_dam_mean_particle_diff    -
+        base_mean_particle_diff
+    change_by_mining_and_dam = with_mining_and_dam_mean_particle_diff -
+        base_mean_particle_diff
     
     X = [0.2*(i-1) for i in 1:length(change_by_dam)]
         
@@ -646,6 +659,13 @@ function graph_condition_change_in_mean_diameter(
         X,
         reverse(change_by_dam),
         label=label_s[2]
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(change_by_mining_and_dam),
+        label=label_s[3]
     )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)

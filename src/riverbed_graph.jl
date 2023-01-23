@@ -23,6 +23,7 @@ using ..GeneralGraphModule
 export comparison_final_average_riverbed,
     difference_final_average_riverbed,
     graph_cumulative_change_in_riverbed,
+    graph_condition_change_in_riverbed,    
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
@@ -466,12 +467,6 @@ function observed_riverbed_average_section_each_year!(average_riverbed_level_sec
     return average_riverbed_level_section_each_year
 end
 
-#毎年の各区間の実測河床位の平均値の変動のグラフを作る関数
-#function observed_riverbed_average_graph_ja()
-
-
-#end
-
 #毎年の再現河床位の平均値の変動のグラフを作りたい
 function _graph_simulated_riverbed_fluctuation!(
     p::Plots.Plot,
@@ -556,6 +551,101 @@ function graph_simulated_riverbed_fluctuation(
     return p
 end
 
+function graph_condition_change_in_riverbed(
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
+    )
+
+    x_label = "Distance from the estuary (km)"
+    y_label = "Variation (m)"
+    title_s = string("Riverbed Elevation ", start_year, "-", final_year)
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "変化量 (m)"
+        title_s = string("断面平均河床位 ", start_year, "-", final_year)
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+    end
+
+    p=plot(
+        legend=:best,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-2, 2),
+        ylabel=y_label,
+        title=title_s
+    )
+    
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+
+    base_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
+        df_base,
+        start_target_hour,
+        final_target_hour
+    )
+
+    with_mining_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
+        df_with_mining,
+        start_target_hour,
+        final_target_hour
+    )
+
+    with_dam_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
+        df_with_dam,
+        start_target_hour,
+        final_target_hour
+    )
+
+    with_mining_and_dam_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
+        df_with_mining_and_dam,
+        start_target_hour,
+        final_target_hour
+    )
+
+    change_by_mining         = with_mining_riverbed_diff -
+        base_riverbed_diff
+    change_by_dam            = with_dam_riverbed_diff    -
+        base_riverbed_diff
+    change_by_mining_and_dam = with_mining_and_dam_riverbed_diff -
+        base_riverbed_diff
+    
+    X = [0.2*(i-1) for i in 1:length(change_by_dam)]
+
+    plot!(
+        p,
+        X,
+        reverse(change_by_mining),
+        label=label_s[1]
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(change_by_dam),
+        label=label_s[2]
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(change_by_mining_and_dam),
+        label=label_s[3]
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    return p
+end
+
 #河床位の横断図を作るために，横軸の川幅の値の配列を作る関数を用意する
 function river_width_crossing(
     measured_width::DataFrame,
@@ -615,22 +705,6 @@ function graph_measured_rb_crossing_1_year_en(
     )
 
 end
-
-# 断面の実測河床位3年分（1965年, 1975年, 1999年）を表示させた．
-#function graph_measured_rb_crossing_3_years(
-#           measured_width,
-#           measured_rb,
-#           longitudinal_index::Int
-#           )
-
-#           plot(river_width_crossing(measured_width,measured_rb,longitudinal_index,22),
-#              [measured_rb[1][:, Symbol(longitudinal_index)], measured_rb[6][:, Symbol(longitudinal_index)],
-#              measured_rb[22][:, Symbol(longitudinal_index)]],
-#              legend=:outerright, label=["1965" "1975" "1999"],
-#              xlabel="Distance from Left Bank (m)",
-#              ylabel="Elevation (m)",
-#              title=@sprintf("%.1f km from the estuary", 0.2*(390 - longitudinal_index)))
-#           end
 
 # 断面の再現河床位を表示させる関数を作る．
 function graph_simulated_rb_crossing(

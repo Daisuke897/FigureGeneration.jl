@@ -62,6 +62,7 @@ export
     comparison_final_average_riverbed,
     difference_final_average_riverbed,
     graph_cumulative_change_in_riverbed,
+    graph_condition_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,    

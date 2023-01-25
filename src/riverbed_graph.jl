@@ -326,19 +326,10 @@ function graph_cumulative_change_in_riverbed(
         title=title_s
     )
     
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
 
     X = [0.2*(i-1) for i in 1:flow_size]
     
-    plot!(
-        p,
-        X,
-        reverse(cumulative_change_measured),
-        linecolor=:midnightblue,
-        label=legend_label_0
-    )
-
     _graph_cumulative_change_in_riverbed!(
         p,
         X,
@@ -347,6 +338,16 @@ function graph_cumulative_change_in_riverbed(
         Val(N),
         df_tuple
     )
+
+    plot!(
+        p,
+        X,
+        reverse(cumulative_change_measured),
+        linecolor=:midnightblue,
+        label=legend_label_0
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
     return p
 end
@@ -507,7 +508,7 @@ function _graph_simulated_riverbed_fluctuation!(
             p,
             [keys_year; keys_year[end]+1],
             fluc_average_value,
-            markershape=:circle,
+            markershape=:auto,
             label=legend_label
         )
     end

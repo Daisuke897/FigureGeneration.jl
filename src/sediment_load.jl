@@ -38,8 +38,8 @@ export
     make_graph_suspended_bedload_target_hour_ja,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
-    make_graph_yearly_mean_suspended_load_3_conditions,
-    make_graph_yearly_mean_bedload_3_conditions,
+    make_graph_condition_change_yearly_mean_suspended_load,    
+    make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
     make_graph_particle_bedload_volume_each_year_ja,
     make_graph_particle_sediment_volume_each_year_ja,
@@ -775,8 +775,6 @@ function make_graph_suspended_bedload_target_hour_ja(
     plot(p1, p2, layout=l)
 end
 
-#3つの条件を重ねられるのか。。。
-
 #年平均土砂量を表示できるようにプログラムを変更する。
 #過去のJupyter-labのコードを参考にする。
 function sediment_load_whole_area(df, target_hour::Int, tag::Symbol)
@@ -835,8 +833,12 @@ function yearly_mean_sediment_load_whole_area!(
 end
 
 function yearly_mean_sediment_load_whole_area(
-    df, start_year::Int, final_year::Int,
-    each_year_timing, tag::Symbol)
+    df,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    tag::Symbol
+    )
 
     flow_size = length(df[df.T .== 0, :I])
 
@@ -851,143 +853,375 @@ function yearly_mean_sediment_load_whole_area(
 end
 
 function make_graph_yearly_mean_suspended_load(
-    df, label::String, start_year::Int, final_year::Int,
-    each_year_timing)
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
 
-    flow_size = length(df[df.T .== 0, :I])
+    flow_size = length(df_vararg[1][df_vararg[1].T .== 0, :I])
 
-    sediment_load_yearly_mean = zeros(Float64, flow_size)
+    title_s = string(start_year, "-", final_year)
+    x_label = "Distance from the Estuary (km)"
+    y_label = "Suspended Load (m³/year)"
 
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean, flow_size,
-	df, start_year, final_year, each_year_timing,
-	:Qsall)
-
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(collect(0:0.2:77.8),
-        reverse(sediment_load_yearly_mean),
-	title=string(start_year, "-", final_year),
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly Mean\nSuspended Load (m³/year)",
+    if japanese==true 
+        title_s = string(start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="浮遊砂量 (m³/年)"
+    end
+    
+    p = plot(
+    	title=title_s,
+	xlabel=x_label,
 	xlims=(0,77.8),
-	ylims=(0, 4e6),
-	legend=:bottomright,
-	label=label)
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	ylims=(0, 5e6),
+	legend=:outerright
+        )
 
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    for i in 1:N
+    
+        sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	    df_vararg[i],
+            start_year,
+            final_year,
+            each_year_timing,
+	    :Qsall
+        )
+        
+        legend_label = string("Case ", i)
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean),
+	    label=legend_label
+        )
+
+    end
+
+    return p
+    
 end
 
 function make_graph_yearly_mean_bedload(
-    df, label::String, start_year::Int, final_year::Int,
-    each_year_timing)
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
 
-    flow_size = length(df[df.T .== 0, :I])
+    flow_size = length(df_vararg[1][df_vararg[1].T .== 0, :I])
 
-    sediment_load_yearly_mean = zeros(Float64, flow_size)
+    title_s = string(start_year, "-", final_year)
+    x_label = "Distance from the Estuary (km)"
+    y_label = "Bedload (m³/year)"
 
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean, flow_size,
-	df, start_year, final_year, each_year_timing,
-	:Qball)
-
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(collect(0:0.2:77.8),
-        reverse(sediment_load_yearly_mean),
-	title=string(start_year, "-", final_year),
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly Mean\nBedload (m³/year)",
+    if japanese==true 
+        title_s = string(start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="掃流砂量 (m³/年)"
+    end
+    
+    p = plot(
+    	title=title_s,
+	xlabel=x_label,
 	xlims=(0,77.8),
-	ylims=(0, 5e4),
-	legend=:bottomright,
-	label=label)
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	ylims=(0, 6e4),
+	legend=:outerright
+        )
 
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    for i in 1:N
+    
+        sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	    df_vararg[i],
+            start_year,
+            final_year,
+            each_year_timing,
+	    :Qball
+        )
+        
+        legend_label = string("Case ", i)
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean),
+	    label=legend_label
+        )
+
+    end
+
+    return p
+    
 end
 
-function make_graph_yearly_mean_suspended_load_3_conditions(
-    df1, df2, df3,
-    label1::String, label2::String, label3::String,
-    start_year::Int, final_year::Int,
-    each_year_timing)
+function make_graph_condition_change_yearly_mean_suspended_load(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
+    )
 
-    flow_size = length(df1[df1.T .== 0, :I])
+    flow_size = length(df_base[df_base.T .== 0, :I])
 
-    sediment_load_yearly_mean1 = zeros(Float64, flow_size)
+    title_s = string("Annual mean suspended load ", start_year, "-", final_year)
+    x_label = "Distance from the Estuary (km)"
+    y_label = "Variation (m³/year)"
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]    
+
+    if japanese==true 
+        title_s = string("年平均浮遊砂量 ", start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="変化量 (m³/年)"
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]        
+    end
+    
+    p = plot(
+    	title=title_s,
+	xlabel=x_label,
+	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	ylims=(-7e5, 7e5),
+	legend=:best
+        )
+
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)        
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
 
     yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean1, flow_size,
-	df1, start_year, final_year, each_year_timing,
-	:Qsall)
+        sediment_load_yearly_mean_base,
+        flow_size,
+        df_base,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
 
-    sediment_load_yearly_mean2 = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean2, flow_size,
-	df2, start_year, final_year, each_year_timing,
-	:Qsall)
-
-    sediment_load_yearly_mean3 = zeros(Float64, flow_size)
+    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
 
     yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean3, flow_size,
-	df3, start_year, final_year, each_year_timing,
-	:Qsall)
+        sediment_load_yearly_mean_mining,
+        flow_size,
+        df_with_mining,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(collect(0:0.2:77.8),
-        [reverse(sediment_load_yearly_mean1),
-	    reverse(sediment_load_yearly_mean2),
-	    reverse(sediment_load_yearly_mean3)],
-	title=string(start_year, "-", final_year),
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly Mean\nSuspended Load (m³/year)",
-	xlims=(0, 77.8),
-	ylims=(0, 4e6),
-	legend=:bottomright,
-	label=[label1 label2 label3])
+    sediment_load_yearly_mean_mining .=
+        sediment_load_yearly_mean_mining .- sediment_load_yearly_mean_base
 
+    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_dam,
+        flow_size,
+        df_with_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+
+    sediment_load_yearly_mean_dam .=
+        sediment_load_yearly_mean_dam .- sediment_load_yearly_mean_base
+
+    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining_dam,
+        flow_size,
+        df_with_mining_and_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+    
+    sediment_load_yearly_mean_mining_dam .=
+        sediment_load_yearly_mean_mining_dam .- sediment_load_yearly_mean_base
+    
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1]
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_dam),
+        label=label_s[2]
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3]
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    return p
+    
 end
 
-function make_graph_yearly_mean_bedload_3_conditions(
-    df1, df2, df3,
-    label1::String, label2::String, label3::String,
-    start_year::Int, final_year::Int,
-    each_year_timing)
+function make_graph_condition_change_yearly_mean_bedload(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
+    )
 
-    flow_size = length(df1[df1.T .== 0, :I])
+    flow_size = length(df_base[df_base.T .== 0, :I])
 
-    sediment_load_yearly_mean1 = zeros(Float64, flow_size)
+    title_s = string("Annual mean bedload ", start_year, "-", final_year)
+    x_label = "Distance from the Estuary (km)"
+    y_label = "Variation (m³/year)"
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]    
+
+    if japanese==true 
+        title_s = string("年平均掃流砂量 ", start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="変化量 (m³/年)"
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]        
+    end
+    
+    p = plot(
+    	title=title_s,
+	xlabel=x_label,
+	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	ylims=(-20000, 20000),
+	legend=:best
+        )
+
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)    
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
 
     yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean1, flow_size,
-	df1, start_year, final_year, each_year_timing,
-	:Qball)
+        sediment_load_yearly_mean_base,
+        flow_size,
+        df_base,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
 
-    sediment_load_yearly_mean2 = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean2, flow_size,
-	df2, start_year, final_year, each_year_timing,
-	:Qball)
-
-    sediment_load_yearly_mean3 = zeros(Float64, flow_size)
+    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
 
     yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean3, flow_size,
-	df3, start_year, final_year, each_year_timing,
-	:Qball)
+        sediment_load_yearly_mean_mining,
+        flow_size,
+        df_with_mining,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(collect(0:0.2:77.8),
-        [reverse(sediment_load_yearly_mean1),
-	    reverse(sediment_load_yearly_mean2),
-	    reverse(sediment_load_yearly_mean3)],
-	title=string(start_year, "-", final_year),
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly Mean\nBedload (m³/year)",
-	xlims=(0, 77.8),
-	ylims=(0, 5e4),
-	legend=:topleft,
-	label=[label1 label2 label3])
+    sediment_load_yearly_mean_mining .=
+        sediment_load_yearly_mean_mining .- sediment_load_yearly_mean_base
 
+    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_dam,
+        flow_size,
+        df_with_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+
+    sediment_load_yearly_mean_dam .=
+        sediment_load_yearly_mean_dam .- sediment_load_yearly_mean_base
+
+    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining_dam,
+        flow_size,
+        df_with_mining_and_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+    
+    sediment_load_yearly_mean_mining_dam .=
+        sediment_load_yearly_mean_mining_dam .- sediment_load_yearly_mean_base
+    
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1]
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_dam),
+        label=label_s[2]
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3]
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    return p
+    
 end
 
 function make_sediment_df!(

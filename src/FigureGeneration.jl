@@ -23,7 +23,7 @@ function default_setting_plots()
     default(tickfontsize=18, legend_font_pointsize=13,
         titlefontsize=13, guidefontsize=18,
         legend_title_font_pointsize=13, dpi=300,
-        grid=false, framestyle=:box)
+        grid=false, framestyle=:box, linewidth=3)
 end
 
 function check_dir_exist_if_no_mkdir(path_string::String)
@@ -93,8 +93,8 @@ export
     make_graph_suspended_bedload_target_hour_ja,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
-    make_graph_yearly_mean_suspended_load_3_conditions,
-    make_graph_yearly_mean_bedload_3_conditions,
+    make_graph_condition_change_yearly_mean_suspended_load,    
+    make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
     make_graph_particle_bedload_volume_each_year_ja,
     make_graph_particle_sediment_volume_each_year_ja,

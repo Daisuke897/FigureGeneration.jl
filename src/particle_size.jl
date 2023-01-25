@@ -241,7 +241,8 @@ function graph_average_simulated_particle_size_dist(
         p, distance_from_estuary,
         reverse(average_simulated_particle_size_dist),
         label=legend_label,
-        linecolor=:midnightblue
+        linecolor=:midnightblue,
+        linestyle=:dash
     )    
 
     return p
@@ -291,7 +292,8 @@ function graph_average_simulated_particle_size_dist(
         p, distance_from_estuary,
         reverse(simu_particle_size_dist),
         label=legend_label,
-        linecolor=:midnightblue
+        linecolor=:midnightblue,
+        linestyle=:dash
     )    
 
     return p

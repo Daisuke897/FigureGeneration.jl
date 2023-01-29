@@ -25,6 +25,7 @@ import Plots,
 export make_figure_energy_slope,
        make_figure_friction_velocity,
        make_figure_non_dimensional_shear_stress,
+       make_figure_velocity,
        params
 
 struct Param{T<:AbstractFloat}
@@ -143,8 +144,7 @@ function calc_friction_velocity(
         width,
         discharge,
         param.manning_n,
-        param.g,
-        target_hour
+        param.g
     )
     
     return uₛ
@@ -325,9 +325,64 @@ function make_figure_non_dimensional_shear_stress(
                 xlims=(0, 77.8),
                 xlabel=xlabel_title,
                 xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, 0.06),
+                ylims=(0, 1),
                 ylabel=ylabel_title,
                 legend=:none, title=want_title)
+
+end
+
+function make_figure_velocity(
+    time_schedule,
+    target_hour::Int,
+    df_vararg::Vararg{DataFrames.DataFrame, N};
+    japanese::Bool=false
+) where {N}
+
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
+
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        target_hour * 3600,
+        time_schedule
+    )
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Velocity (m/s)"
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="流速 (m/s)"
+    end
+    
+    p = Plots.plot(
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylims=(0, Inf),
+                ylabel=ylabel_title,
+                legend=:topleft, title=want_title)
+
+    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    for i in 1:N
+
+        velocity = df_vararg[i][start_index:finish_index, :Ux]
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(velocity),
+            label=string("Case ", i)
+        )
+        
+    end
+
+    return p
 
 end
 

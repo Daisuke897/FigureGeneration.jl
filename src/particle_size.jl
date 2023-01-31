@@ -186,8 +186,8 @@ function graph_ratio_simulated_particle_size_dist(
 
     end
 
-    vline!([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([50], line=:black, label="", linestyle=:dash, linewidth=3)
+    vline!([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    hline!([50], line=:black, label="", linestyle=:dash, linewidth=2)
 
     return p
 end
@@ -317,7 +317,7 @@ function _graph_average_simulated_particle_size_dist(
         x_label="河口からの距離 (km)"
         y_label="平均粒径 (mm)"
     end        
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
     plot!(
         p,
         title=want_title,
@@ -544,7 +544,7 @@ function graph_cumulative_change_in_mean_diameter(
         title=title_s
     )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)    
 
     for i in 1:N
 
@@ -568,6 +568,8 @@ function graph_cumulative_change_in_mean_diameter(
         )
 
     end
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)        
 
     return p
     
@@ -602,7 +604,7 @@ function graph_cumulative_ratio_in_mean_diameter(
         title=title_s
     )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
 
     for i in 1:N
 
@@ -616,7 +618,7 @@ function graph_cumulative_ratio_in_mean_diameter(
 
         legend_label = string("Case ", i)
 
-        X = [0.2*(i-1) for i in 1:length(cum_change_simu_particle_size)]
+        X = [0.2*(i-1) for i in 1:length(ratio_simu_particle_size)]
         
         plot!(
             p,
@@ -666,7 +668,7 @@ function graph_condition_change_in_mean_diameter(
         title=title_s
     )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)
 
     base_mean_particle_diff =
         _average_simulated_particle_size_diff(
@@ -770,8 +772,8 @@ function graph_condition_ratio_in_mean_diameter(
         title=title_s
     )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
-
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
     base_mean_particle_diff =
         _average_simulated_particle_size_diff(
             df_base,
@@ -811,7 +813,7 @@ function graph_condition_ratio_in_mean_diameter(
     change_by_mining_and_dam = with_mining_and_dam_mean_particle_diff ./
         base_mean_particle_diff
     
-    X = [0.2*(i-1) for i in 1:length(change_by_dam)]
+    X = [0.2*(i-1) for i in 1:length(base_mean_particle_diff)]
         
     plot!(
         p,
@@ -834,8 +836,6 @@ function graph_condition_ratio_in_mean_diameter(
         label=label_s[3]
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-    
     return p
 
 end

@@ -29,7 +29,7 @@ function decide_index_number(target_hour::Int)
 end
 
 function decide_index_number(
-    target_hour::Int
+    target_hour::Int,
     num_data_flow::Int
     )
     start_index = 1 + num_data_flow*target_hour

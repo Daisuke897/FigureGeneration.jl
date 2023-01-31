@@ -21,12 +21,23 @@ export decide_index_number
 export making_time_series_title
 
 #時間に対応するインデックス数を返す関数
-function decide_index_number(target_hour)
+function decide_index_number(target_hour::Int)
     start_index = 1 + 390*target_hour
     finish_index = start_index + 389
     
     return start_index, finish_index
 end
+
+function decide_index_number(
+    target_hour::Int
+    num_data_flow::Int
+    )
+    start_index = 1 + num_data_flow*target_hour
+    finish_index = start_index + (num_data_flow-1)
+    
+    return start_index, finish_index
+end
+
 
 #時刻の情報を入力して，時刻の入ったグラフのタイトルを作成する関数
 #秒の値も入れるバージョン

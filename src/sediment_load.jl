@@ -661,7 +661,7 @@ function make_graph_suspended_load_target_hour_ja(
 
     target_second = 3600 * target_hour
 
-    start_index, finish_index = decide_index_number(target_hour)
+    start_index, finish_index = decide_index_number(target_hour, 183)
 
     want_title = making_time_series_title(
                      "浮遊砂量", target_hour,
@@ -683,9 +683,9 @@ function make_graph_suspended_load_target_hour_ja(
         string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
     p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(p, ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
+    plot!(p, ylabel="浮遊砂量 (m³/s)", xlims=(0,36.4),ylims=(0,100),
         title=want_title, xlabel="河口からの距離 (km)",
-        xticks=[0, 20, 40, 60, 77.8],
+#        xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
 	palette=:tab20,
 	legend_font_pointsize=9,
@@ -710,7 +710,7 @@ function make_graph_bedload_target_hour_ja(
 
     target_second = 3600 * target_hour
 
-    start_index, finish_index = decide_index_number(target_hour)
+    start_index, finish_index = decide_index_number(target_hour, 183)
 
     want_title = making_time_series_title(
                      "掃流砂量", target_hour,
@@ -732,9 +732,11 @@ function make_graph_bedload_target_hour_ja(
         string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
     p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(p, ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
+    plot!(p, ylabel="掃流砂量 (m³/s)",
+        xlims=(0,36.4),
+        ylims=(0,2),
         title=want_title, xlabel="河口からの距離 (km)",
-        xticks=[0, 20, 40, 60, 77.8],
+#        xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
         palette=:tab20,
         legend_font_pointsize=9,

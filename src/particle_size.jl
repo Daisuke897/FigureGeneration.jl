@@ -26,7 +26,9 @@ export
     graph_average_simulated_particle_size_dist,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
-    graph_condition_change_in_mean_diameter
+    graph_cumulative_ratio_in_mean_diameter,
+    graph_condition_change_in_mean_diameter,
+    graph_condition_ratio_in_mean_diameter
     
 
 #河床の粒度分布を計算する関数
@@ -571,6 +573,64 @@ function graph_cumulative_change_in_mean_diameter(
     
 end
 
+function graph_cumulative_ratio_in_mean_diameter(
+    sediment_size,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+    x_label = "Distance from the estuary (km)"
+    y_label="Ratio (-)"
+    title_s = string("Mean Diameter  ", start_year, "-", final_year)
+    
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="比率 (-)"
+        title_s = string("平均粒径 ", start_year, "-", final_year)
+    end
+
+    p=plot(
+        legend=:outerright,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        title=title_s
+    )
+
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+
+    for i in 1:N
+
+        ratio_simu_particle_size =
+            _average_simulated_particle_size_ratio(
+                df_vararg[i],
+                sediment_size,
+                start_target_hour,
+                final_target_hour
+            )
+
+        legend_label = string("Case ", i)
+
+        X = [0.2*(i-1) for i in 1:length(cum_change_simu_particle_size)]
+        
+        plot!(
+            p,
+            X,
+            reverse(ratio_simu_particle_size),
+            label=legend_label
+        )
+
+    end
+
+    return p
+    
+end
+
 function graph_condition_change_in_mean_diameter(
     sediment_size,
     start_year::Int,
@@ -676,6 +736,110 @@ function graph_condition_change_in_mean_diameter(
 
 end
 
+function graph_condition_ratio_in_mean_diameter(
+    sediment_size,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
+    )
+
+    x_label = "Distance from the estuary (km)"
+    y_label = "Ratio (-)"
+    title_s = string("Mean Diameter  ", start_year, "-", final_year)
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
+    
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="比率 (-)"
+        title_s = string("平均粒径 ", start_year, "-", final_year)
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+    end
+
+    p=plot(
+        legend=:bottomright,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        title=title_s
+    )
+
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+
+    base_mean_particle_diff =
+        _average_simulated_particle_size_diff(
+            df_base,
+            sediment_size,
+            start_target_hour,
+            final_target_hour
+        )
+
+    with_mining_mean_particle_diff =
+        _average_simulated_particle_size_diff(
+            df_with_mining,
+            sediment_size,
+            start_target_hour,
+            final_target_hour
+        )
+
+    with_dam_mean_particle_diff =
+        _average_simulated_particle_size_diff(
+            df_with_dam,
+            sediment_size,
+            start_target_hour,
+            final_target_hour
+        )
+
+    with_mining_and_dam_mean_particle_diff =
+        _average_simulated_particle_size_diff(
+            df_with_mining_and_dam,
+            sediment_size,
+            start_target_hour,
+            final_target_hour
+        )
+    
+    change_by_mining         = with_mining_mean_particle_diff ./
+        base_mean_particle_diff
+    change_by_dam            = with_dam_mean_particle_diff    ./
+        base_mean_particle_diff
+    change_by_mining_and_dam = with_mining_and_dam_mean_particle_diff ./
+        base_mean_particle_diff
+    
+    X = [0.2*(i-1) for i in 1:length(change_by_dam)]
+        
+    plot!(
+        p,
+        X,
+        reverse(change_by_mining),
+        label=label_s[1]
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(change_by_dam),
+        label=label_s[2]
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(change_by_mining_and_dam),
+        label=label_s[3]
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    return p
+
+end
+
 function _average_simulated_particle_size_diff(
     df::DataFrame,
     sediment_size::DataFrame,
@@ -701,6 +865,34 @@ function _average_simulated_particle_size_diff(
         mean_particle_final - mean_particle_start
 
     return mean_particle_diff
+
+end
+
+function _average_simulated_particle_size_ratio(
+    df::DataFrame,
+    sediment_size::DataFrame,
+    start_target_hour::Int,
+    final_target_hour::Int
+    )
+
+    mean_particle_start =
+        get_average_simulated_particle_size_dist(
+            df,
+            sediment_size,
+            start_target_hour
+        )
+
+    mean_particle_final =
+        get_average_simulated_particle_size_dist(
+            df,
+            sediment_size,
+            final_target_hour
+        )
+    
+    mean_particle_ratio =
+        mean_particle_final ./ mean_particle_start
+
+    return mean_particle_ratio
 
 end
 

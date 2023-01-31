@@ -76,7 +76,9 @@ export
     graph_average_simulated_particle_size_dist,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
-    graph_condition_change_in_mean_diameter
+    graph_cumulative_ratio_in_mean_diameter,
+    graph_condition_change_in_mean_diameter,
+    graph_condition_ratio_in_mean_diameter
 
 include("sediment_load.jl")
 using .SedimentLoad

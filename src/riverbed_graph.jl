@@ -326,9 +326,15 @@ function graph_cumulative_change_in_riverbed(
         title=title_s
     )
     
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
-
     X = [0.2*(i-1) for i in 1:flow_size]
+
+    plot!(
+        p,
+        X,
+        reverse(cumulative_change_measured),
+        linecolor=:midnightblue,
+        label=legend_label_0
+    )
     
     _graph_cumulative_change_in_riverbed!(
         p,
@@ -339,16 +345,13 @@ function graph_cumulative_change_in_riverbed(
         df_tuple
     )
 
-    plot!(
-        p,
-        X,
-        reverse(cumulative_change_measured),
-        linecolor=:midnightblue,
-        label=legend_label_0
-    )
 
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)    
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
+
+
+    
     return p
 end
 

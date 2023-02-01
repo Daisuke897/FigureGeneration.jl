@@ -207,6 +207,25 @@ function graph_average_simulated_particle_size_dist(
         ) 
     
     distance_from_estuary = 0:0.2:77.8
+
+    legend_label = "Initial Condition"
+    if japanese==true
+        legend_label="初期条件"
+    end
+
+    average_simulated_particle_size_dist =
+        get_average_simulated_particle_size_dist(
+            df_vararg[1],
+            sediment_size,
+            0
+        )
+
+    plot!(
+        p, distance_from_estuary,
+        reverse(average_simulated_particle_size_dist),
+        label=legend_label,
+        linecolor=:midnightblue
+    )    
     
     for i in 1:N
 
@@ -227,26 +246,8 @@ function graph_average_simulated_particle_size_dist(
 
     end
 
-    average_simulated_particle_size_dist =
-        get_average_simulated_particle_size_dist(
-            df_vararg[1],
-            sediment_size,
-            0
-        )
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
     
-    legend_label = "Initial Condition"
-    if japanese==true
-        legend_label="初期条件"
-    end        
-            
-    plot!(
-        p, distance_from_estuary,
-        reverse(average_simulated_particle_size_dist),
-        label=legend_label,
-        linecolor=:midnightblue,
-        linestyle=:dash
-    )    
-
     return p
 end
 
@@ -265,8 +266,24 @@ function graph_average_simulated_particle_size_dist(
 
     distance_from_estuary = 0:0.2:77.8
 
-    start_index, finish_index = decide_index_number(hours_now)
+    legend_label = "Initial Condition"
+    if japanese==true
+        legend_label="初期条件"
+    end
     
+    start_index, finish_index = decide_index_number(0)
+    
+    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
+    
+    plot!(
+        p, distance_from_estuary,
+        reverse(simu_particle_size_dist),
+        label=legend_label,
+        linecolor=:midnightblue
+    )
+    
+    start_index, finish_index = decide_index_number(hours_now)
+        
     for i in 1:N
 
         simu_particle_size_dist = df_vararg[i][start_index:finish_index, :Dmave] * 1000
@@ -281,22 +298,8 @@ function graph_average_simulated_particle_size_dist(
 
     end
 
-    start_index, finish_index = decide_index_number(0)
     
-    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
-    
-    legend_label = "Initial Condition"
-    if japanese==true
-        legend_label="初期条件"
-    end        
-    
-    plot!(
-        p, distance_from_estuary,
-        reverse(simu_particle_size_dist),
-        label=legend_label,
-        linecolor=:midnightblue,
-        linestyle=:dash
-    )    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
 
     return p
 end
@@ -317,9 +320,8 @@ function _graph_average_simulated_particle_size_dist(
         x_label="河口からの距離 (km)"
         y_label="平均粒径 (mm)"
     end        
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-    plot!(
-        p,
+
+    p = plot(
         title=want_title,
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,

@@ -95,6 +95,7 @@ export
     make_graph_suspended_bedload_target_hour_ja,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
+    make_graph_particle_yearly_mean_suspended,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,

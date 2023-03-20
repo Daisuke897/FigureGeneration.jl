@@ -39,6 +39,7 @@ export
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
     make_graph_particle_yearly_mean_suspended,
+    make_graph_particle_yearly_mean_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
@@ -1116,6 +1117,79 @@ function make_graph_particle_yearly_mean_suspended(
         final_year,
         each_year_timing,
         :Qsall
+    )
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_each_size[:,i]),
+            label = round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+        
+    end
+
+    return p
+
+end
+
+function make_graph_particle_yearly_mean_bedload(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+    flow_size = length(df[df.T .== 0, :I])
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    if japanese==false
+        title_s = string(start_year, "-", final_year)
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Bedload (m³/year)"
+        legend_t= "Size (mm)"
+    elseif japanese==true 
+        title_s = string(start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="掃流砂量 (m³/年)"
+        legend_t= "粒径 (mm)"        
+    end
+
+    p = plot(
+    	title=title_s,
+    	xlabel=x_label,
+    	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(0, 6e4),
+    	legend=:outerright,
+        label_title=legend_t,
+        palette=:tab20,
+        legend_title_font_pointsize=11,
+        legend_font_pointsize=9
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    sediment_load_each_size = zeros(Float64, flow_size, sediment_size_num)
+
+    stack_yearly_mean_sediment_load_each_size_whole_area!(
+        sediment_load_each_size,
+        sediment_size_num,
+        flow_size,
+        df,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
     )
 
     for i in 1:sediment_size_num

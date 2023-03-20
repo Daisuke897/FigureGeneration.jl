@@ -40,6 +40,8 @@ export
     make_graph_yearly_mean_bedload,
     make_graph_particle_yearly_mean_suspended,
     make_graph_particle_yearly_mean_bedload,
+    make_graph_percentage_particle_yearly_mean_suspended,
+    make_graph_percentage_particle_yearly_mean_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
@@ -1204,6 +1206,207 @@ function make_graph_particle_yearly_mean_bedload(
         )
         
     end
+
+    return p
+
+end
+
+function percentage_sediment_load_each_size!(
+        sediment_load_each_size,
+        number_particle_size::Int,
+        flow_size::Int,
+        df::DataFrame,
+        start_year::Int,
+        final_year::Int,
+        each_year_timing,
+        tag::Symbol
+    )
+
+    for i in 1:number_particle_size
+
+        sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+        each_size_tag = Symbol(string(tag, @sprintf("%02i", i)))
+
+        core_yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+            df,
+            start_year,
+            final_year,
+            each_year_timing,
+            each_size_tag
+        )
+        
+        sediment_load_each_size[:,i].=sediment_load_yearly_mean        
+
+    end
+
+    return sediment_load_each_size
+    
+end
+
+function make_graph_percentage_particle_yearly_mean_suspended(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+    flow_size = length(df[df.T .== 0, :I])
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    if japanese==false
+        title_s = string(start_year, "-", final_year)
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Percentage (%)"
+        legend_t= "Size (mm)"
+    elseif japanese==true 
+        title_s = string(start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="割合 (%)"
+        legend_t= "粒径 (mm)"        
+    end
+
+    p = plot(
+    	title=title_s,
+    	xlabel=x_label,
+    	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(0, 100),
+    	legend=:outerright,
+        label_title=legend_t,
+        palette=:tab20,
+        legend_title_font_pointsize=11,
+        legend_font_pointsize=9
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    sediment_load_each_size = zeros(Float64, flow_size, sediment_size_num)
+
+    percentage_sediment_load_each_size!(
+        sediment_load_each_size,
+        sediment_size_num,
+        flow_size,
+        df,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+
+    sum_sediment_load = zeros(Float64,flow_size)
+    
+    sum!(sum_sediment_load, sediment_load_each_size)
+    
+    sediment_load_each_size.=sediment_load_each_size./sum_sediment_load.*100
+    
+    reverse!(cumsum!(sediment_load_each_size,reverse!(sediment_load_each_size, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_each_size[:,i]),
+            label = round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+        
+    end
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    return p
+
+end
+
+function make_graph_percentage_particle_yearly_mean_bedload(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+    flow_size = length(df[df.T .== 0, :I])
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    if japanese==false
+        title_s = string(start_year, "-", final_year)
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Percentage (%)"
+        legend_t= "Size (mm)"
+    elseif japanese==true 
+        title_s = string(start_year, "-", final_year)
+        x_label="河口からの距離 (km)"
+        y_label="割合 (%)"
+        legend_t= "粒径 (mm)"        
+    end
+
+    p = plot(
+    	title=title_s,
+    	xlabel=x_label,
+    	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(0, 100),
+    	legend=:outerright,
+        label_title=legend_t,
+        palette=:tab20,
+        legend_title_font_pointsize=11,
+        legend_font_pointsize=9
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    sediment_load_each_size = zeros(Float64, flow_size, sediment_size_num)
+
+    percentage_sediment_load_each_size!(
+        sediment_load_each_size,
+        sediment_size_num,
+        flow_size,
+        df,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+
+    sum_sediment_load = zeros(Float64,flow_size)
+    
+    sum!(sum_sediment_load, sediment_load_each_size)
+    
+    sediment_load_each_size.=sediment_load_each_size./sum_sediment_load.*100
+    
+    reverse!(cumsum!(sediment_load_each_size,reverse!(sediment_load_each_size, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_each_size[:,i]),
+            label = round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+        
+    end
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
 
     return p
 

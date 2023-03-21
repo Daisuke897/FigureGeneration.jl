@@ -42,6 +42,8 @@ export
     make_graph_particle_yearly_mean_bedload,
     make_graph_percentage_particle_yearly_mean_suspended,
     make_graph_percentage_particle_yearly_mean_bedload,
+    make_graph_time_series_suspended_load,
+    make_graph_time_series_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
@@ -982,8 +984,6 @@ function make_graph_yearly_mean_bedload(
     
 end
 
-## 20230316
-
 function sediment_load_whole_area_each_year!(
         sediment_load_each_year,
         df::DataFrame,
@@ -1407,6 +1407,159 @@ function make_graph_percentage_particle_yearly_mean_bedload(
     end
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
+
+    return p
+
+end
+
+# 20230320
+# 横軸に時間（秒）、縦軸に流砂量(m3/s)のグラフを作りたい！
+
+function make_graph_time_series_suspended_load(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+
+    time_data = unique(df_vararg[1][:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="浮遊砂量 (m³/s)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Suspended sediment load (m³/s)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 120),
+        ylabel=y_label,
+        title=t_title,
+        legend=:topleft,
+        tickfontsize=11,
+        guidefontsize=11,
+        legend_font_pointsize=8
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+
+    for i in 1:N
+
+        sediment_time_series = zeros(Float64, num_time)
+
+        for j in 1:num_time
+
+            i_first, i_final = decide_index_number(j-1)
+
+            sediment_time_series[j] = df_vararg[i][i_first:i_final, :Qs][area_index]
+
+        end
+
+        legend_label = string("Case ", i)
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series,
+            label=legend_label,
+            linewidth=1
+        )
+
+    end
+
+    return p
+
+end
+
+function make_graph_time_series_bedload(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+
+    time_data = unique(df_vararg[1][:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="掃流砂量 (m³/s)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Bedload (m³/s)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 2),
+        ylabel=y_label,
+        title=t_title,
+        legend=:topleft,
+        tickfontsize=11,
+        guidefontsize=11,
+        legend_font_pointsize=8
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+
+    for i in 1:N
+
+        sediment_time_series = zeros(Float64, num_time)
+
+        for j in 1:num_time
+
+            i_first, i_final = decide_index_number(j-1)
+
+            sediment_time_series[j] = df_vararg[i][i_first:i_final, :Qb][area_index]
+
+        end
+
+        legend_label = string("Case ", i)
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series,
+            label=legend_label,
+            linewidth=1
+        )
+
+    end
 
     return p
 

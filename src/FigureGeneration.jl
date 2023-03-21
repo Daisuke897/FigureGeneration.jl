@@ -99,6 +99,8 @@ export
     make_graph_particle_yearly_mean_bedload,
     make_graph_percentage_particle_yearly_mean_suspended,    
     make_graph_percentage_particle_yearly_mean_bedload,
+    make_graph_time_series_suspended_load,
+    make_graph_time_series_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,

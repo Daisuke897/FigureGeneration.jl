@@ -118,43 +118,6 @@ function _plot_target_array_graph!(
     return p
 end
 
-function _get_target_year_sec!(
-    target_year_sec,
-    each_year_timing
-    )
-    
-    for i in 1:length(each_year_timing)-1
-        target_year = 1965 + i - 1
-        target_year_sec[i] = 3600 * each_year_timing[target_year][1]
-    end
-
-end
-
-function _vline_per_year_timing!(
-    p,
-    each_year_timing
-    )
-
-    target_year_sec=zeros(
-        Int, length(each_year_timing)-1
-    )
-
-    _get_target_year_sec!(
-        target_year_sec,
-        each_year_timing
-    )
-    
-    vline!(p,
-        target_year_sec,
-        label="",
-        linecolor=:black,
-        linestyle=:dash,
-        linewidth=1
-    )
-
-    return p
-end
-
 function make_upstream_discharge_graph(
     data_file,
     time_schedule,

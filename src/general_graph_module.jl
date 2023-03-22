@@ -80,7 +80,7 @@ function _get_target_year_sec!(
     each_year_timing
     )
     
-    for i in 1:length(each_year_timing)-1
+    for i in 1:length(each_year_timing)
         target_year = 1965 + i - 1
         target_year_sec[i] = 3600 * each_year_timing[target_year][1]
     end
@@ -93,7 +93,7 @@ function _vline_per_year_timing!(
     )
 
     target_year_sec=zeros(
-        Int, length(each_year_timing)-1
+        Int, length(each_year_timing)
     )
 
     _get_target_year_sec!(

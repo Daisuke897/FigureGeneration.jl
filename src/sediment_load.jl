@@ -18,12 +18,13 @@
 module SedimentLoad
 
 using Printf,
-      Plots,
-      Statistics,
-      DataFrames,
-      StatsPlots,
-      CSV,
-      ..GeneralGraphModule
+    Plots,
+    Statistics,
+    DataFrames,
+    StatsPlots,
+    CSV,
+    LinearAlgebra,
+    ..GeneralGraphModule
 
 export
     make_graph_sediment_load_each_year_diff_scale_ja,
@@ -44,6 +45,14 @@ export
     make_graph_percentage_particle_yearly_mean_bedload,
     make_graph_time_series_suspended_load,
     make_graph_time_series_bedload,
+    make_graph_time_series_suspended_bedload,
+    make_graph_time_series_particle_suspended_load,
+    make_graph_time_series_particle_bedload,
+    make_graph_time_series_particle_suspended_bedload,
+    make_graph_time_series_percentage_particle_suspended_load,
+    make_graph_time_series_percentage_particle_bedload,
+    make_graph_time_series_amount_percentage_particle_suspended_load,    
+    make_graph_time_series_amount_percentage_particle_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year_ja,
@@ -1522,7 +1531,7 @@ function make_graph_time_series_bedload(
     p = plot(
         xlims=(0, max_num_time),
         xlabel=x_label,
-        ylims=(0, 2),
+        ylims=(0, 1.7),
         ylabel=y_label,
         title=t_title,
         legend=:topleft,
@@ -1563,6 +1572,614 @@ function make_graph_time_series_bedload(
 
     return p
 
+end
+
+function make_graph_time_series_suspended_bedload(
+        area_index::Int,
+        river_length_km::Float64,
+        each_year_timing,
+        df_vector;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+    
+    if japanese == true
+        t_title = string("河口から ", round(area_km, digits=2), " km 上流")
+        y_label = "浮遊砂量 (m³/s)"
+    elseif japanese == false
+        t_title = string(round(area_km, digits=2), " km upstream from the estuary")
+        y_label = "Suspended (m³/s)"
+    end
+    
+    p1 = make_graph_time_series_suspended_load(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df_vector...,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[], legend=:none,
+        title=string("(a) ", t_title),
+        titlelocation=:left,
+        ylabel=y_label
+    )
+    
+    p2 = make_graph_time_series_bedload(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df_vector...,
+        japanese=japanese
+    )
+    
+    plot!(p2, title="(b)",
+        titlelocation=:left
+    )
+
+    p = plot(p1, p2, layout=l)
+    
+    return p
+    
+end
+
+function make_graph_time_series_particle_suspended_load(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+
+    time_data = unique(df[:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="浮遊砂量 (m³/s)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+        t_legend="粒径 (mm)"
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Suspended sediment load (m³/s)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+        t_legend="Size (mm)"
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 120),
+        ylabel=y_label,
+        title=t_title,
+        legend=:outerright,
+        tickfontsize=10,
+        guidefontsize=10,
+        legend_font_pointsize=8,
+        legend_title_font_pointsize=8,
+        palette=:tab20,
+        legend_title=t_legend
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    sediment_time_series = zeros(Float64, num_time, sediment_size_num)
+
+    for i in 1:sediment_size_num
+
+        each_size_tag = Symbol(string("Qs", @sprintf("%02i", i)))
+
+        for j in 1:num_time
+
+            j_first, j_final = decide_index_number(j-1)
+
+            sediment_time_series[j, i] = df[j_first:j_final, each_size_tag][area_index]
+
+        end
+        
+    end
+
+    reverse!(cumsum!(sediment_time_series, reverse!(sediment_time_series, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series[:, i],
+            label=round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+
+    end
+
+    return p
+
+end
+
+function make_graph_time_series_particle_bedload(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+
+    time_data = unique(df[:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="掃流砂量 (m³/s)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+        t_legend="粒径 (mm)"
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Bedload (m³/s)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+        t_legend="Size (mm)"
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 1.7),
+        ylabel=y_label,
+        title=t_title,
+        legend=:outerright,
+        tickfontsize=10,
+        guidefontsize=10,
+        legend_font_pointsize=8,
+        legend_title_font_pointsize=8,
+        palette=:tab20,
+        legend_title=t_legend
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    sediment_time_series = zeros(Float64, num_time, sediment_size_num)
+
+    for i in 1:sediment_size_num
+
+        each_size_tag = Symbol(string("Qb", @sprintf("%02i", i)))
+
+        for j in 1:num_time
+
+            j_first, j_final = decide_index_number(j-1)
+
+            sediment_time_series[j, i] = df[j_first:j_final, each_size_tag][area_index]
+
+        end
+        
+    end
+
+    reverse!(cumsum!(sediment_time_series, reverse!(sediment_time_series, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series[:, i],
+            label=round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+
+    end
+
+    return p
+
+end
+
+function make_graph_time_series_particle_suspended_bedload(
+        area_index::Int,
+        river_length_km::Float64,
+        each_year_timing,
+        df::DataFrame,
+        sediment_size;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+    
+    if japanese == true
+        t_title = string("河口から ", round(area_km, digits=2), " km 上流")
+        y_label = "浮遊砂量 (m³/s)"
+    elseif japanese == false
+        t_title = string(round(area_km, digits=2), " km upstream from the estuary")
+        y_label = "Suspended (m³/s)"
+    end
+    
+    p1 = make_graph_time_series_particle_suspended_load(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[],
+        title=string("(a) ", t_title),
+        titlelocation=:left,
+        ylabel=y_label
+    )
+    
+    p2 = make_graph_time_series_particle_bedload(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p2, title="(b)",
+        titlelocation=:left,
+        legend=:none
+    )
+
+    p = plot(p1, p2, layout=l, 
+        legend_font_pointsize=6,
+        legend_title_font_pointsize=6,   
+    )
+    
+    return p
+    
+end
+
+function make_graph_time_series_percentage_particle_suspended_load(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+
+    time_data = unique(df[:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="割合 (%)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+        t_legend="粒径 (mm)"
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Percentage (%)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+        t_legend="Size (mm)"
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 100),
+        ylabel=y_label,
+        title=t_title,
+        legend=:outerright,
+        tickfontsize=10,
+        guidefontsize=10,
+        legend_font_pointsize=8,
+        legend_title_font_pointsize=8,
+        palette=:tab20,
+        legend_title=t_legend
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    sediment_time_series = zeros(Float64, num_time, sediment_size_num)
+
+    for i in 1:sediment_size_num
+
+        each_size_tag = Symbol(string("Qs", @sprintf("%02i", i)))
+
+        for j in 1:num_time
+
+            j_first, j_final = decide_index_number(j-1)
+
+            sediment_time_series[j, i] = df[j_first:j_final, each_size_tag][area_index]
+
+        end
+        
+    end
+
+    for j in 1:num_time
+
+        normalize!(@view(sediment_time_series[j,:]), 1)
+
+    end
+
+    sediment_time_series = sediment_time_series * 100
+
+    reverse!(cumsum!(sediment_time_series, reverse!(sediment_time_series, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series[:, i],
+            label=round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+
+    end
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )    
+
+    return p
+
+end
+
+function make_graph_time_series_percentage_particle_bedload(
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
+    )
+
+
+    time_data = unique(df[:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    sediment_size_num = size(sediment_size[:, :Np], 1)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="割合 (%)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+        t_legend="粒径 (mm)"
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Percentage (%)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+        t_legend="Size (mm)"
+
+    end
+
+    p = plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+        ylims=(0, 100),
+        ylabel=y_label,
+        title=t_title,
+        legend=:outerright,
+        tickfontsize=10,
+        guidefontsize=10,
+        legend_font_pointsize=8,
+        legend_title_font_pointsize=8,
+        palette=:tab20,
+        legend_title=t_legend
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    sediment_time_series = zeros(Float64, num_time, sediment_size_num)
+
+    for i in 1:sediment_size_num
+
+        each_size_tag = Symbol(string("Qb", @sprintf("%02i", i)))
+
+        for j in 1:num_time
+
+            j_first, j_final = decide_index_number(j-1)
+
+            sediment_time_series[j, i] = df[j_first:j_final, each_size_tag][area_index]
+
+        end
+        
+    end
+
+    for j in 1:num_time
+
+        normalize!(@view(sediment_time_series[j,:]), 1)
+
+    end
+
+    sediment_time_series = sediment_time_series * 100
+
+    reverse!(cumsum!(sediment_time_series, reverse!(sediment_time_series, dims=2), dims=2), dims=2)
+
+    for i in 1:sediment_size_num
+
+        plot!(
+            p,
+            time_data,
+            sediment_time_series[:, i],
+            label=round(sediment_size[i, 3]; sigdigits=3),
+            fillrange=0,
+            linewidth=1
+        )
+
+    end
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )    
+
+    return p
+
+end
+
+function make_graph_time_series_amount_percentage_particle_suspended_load(
+        area_index::Int,
+        river_length_km::Float64,
+        each_year_timing,
+        df::DataFrame,
+        sediment_size;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+    
+    if japanese == true
+        t_title = string("河口から ", round(area_km, digits=2), " km 上流")
+        y_label = "浮遊砂量 (m³/s)"
+    elseif japanese == false
+        t_title = string(round(area_km, digits=2), " km upstream from the estuary")
+        y_label = "Suspended (m³/s)"
+    end
+    
+    p1 = make_graph_time_series_particle_suspended_load(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[],
+        title=string("(a) ", t_title),
+        titlelocation=:left,
+        ylabel=y_label
+    )
+    
+    p2 = make_graph_time_series_percentage_particle_suspended_load(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size;
+        japanese=japanese
+    )
+    
+    plot!(p2, title="(b)",
+        titlelocation=:left,
+        legend=:none
+    )
+
+    p = plot(p1, p2, layout=l, 
+        legend_font_pointsize=6,
+        legend_title_font_pointsize=6,   
+    )
+    
+    return p
+    
+end
+
+function make_graph_time_series_amount_percentage_particle_bedload(
+        area_index::Int,
+        river_length_km::Float64,
+        each_year_timing,
+        df::DataFrame,
+        sediment_size;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+    
+    if japanese == true
+        t_title = string("河口から ", round(area_km, digits=2), " km 上流")
+    elseif japanese == false
+        t_title = string(round(area_km, digits=2), " km upstream from the estuary")
+    end
+    
+    p1 = make_graph_time_series_particle_bedload(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[],
+        title=string("(a) ", t_title),
+        titlelocation=:left
+    )
+    
+    p2 = make_graph_time_series_percentage_particle_bedload(
+        area_index,
+        river_length_km,
+        each_year_timing,
+        df,
+        sediment_size;
+        japanese=japanese
+    )
+    
+    plot!(p2, title="(b)",
+        titlelocation=:left,
+        legend=:none
+    )
+
+    p = plot(p1, p2, layout=l, 
+        legend_font_pointsize=6,
+        legend_title_font_pointsize=6,   
+    )
+    
+    return p
+    
 end
 
 function make_graph_condition_change_yearly_mean_suspended_load(

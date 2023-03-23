@@ -43,6 +43,8 @@ export
     make_graph_particle_yearly_mean_bedload,
     make_graph_percentage_particle_yearly_mean_suspended,
     make_graph_percentage_particle_yearly_mean_bedload,
+    make_graph_amount_percentage_particle_yearly_mean_suspended,
+    make_graph_amount_percentage_particle_yearly_mean_bedload,
     make_graph_time_series_suspended_load,
     make_graph_time_series_bedload,
     make_graph_time_series_suspended_bedload,
@@ -1421,6 +1423,98 @@ function make_graph_percentage_particle_yearly_mean_bedload(
 
 end
 
+function make_graph_amount_percentage_particle_yearly_mean_suspended(
+        start_year::Int,
+        final_year::Int,
+        each_year_timing,
+        df::DataFrame,
+        sediment_size::DataFrame;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    p1 = make_graph_particle_yearly_mean_suspended(
+        start_year,
+        final_year,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[], legend=:outerright,
+        legend_font_pointsize=7,
+        legend_title_font_pointsize=7,
+        title="(a)",
+        titlelocation=:left
+        )
+    
+    p2 = make_graph_percentage_particle_yearly_mean_suspended(
+        start_year,
+        final_year,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p2, legend=:none, title="(b)", titlelocation=:left)
+
+    p = plot(p1, p2, layout=l, tickfontsize=11, guidefontsize=11)
+    
+    return p
+    
+end
+
+function make_graph_amount_percentage_particle_yearly_mean_bedload(
+        start_year::Int,
+        final_year::Int,
+        each_year_timing,
+        df::DataFrame,
+        sediment_size::DataFrame;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a;b]
+    
+    p1 = make_graph_particle_yearly_mean_bedload(
+        start_year,
+        final_year,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p1, xlabel="", xticks=[], legend=:outerright,
+        legend_font_pointsize=7,
+        legend_title_font_pointsize=7,
+        title="(a)",
+        titlelocation=:left
+        )
+    
+    p2 = make_graph_percentage_particle_yearly_mean_bedload(
+        start_year,
+        final_year,
+        each_year_timing,
+        df,
+        sediment_size,
+        japanese=japanese
+    )
+    
+    plot!(p2,
+        legend=:none,
+        title="(b)",
+        titlelocation=:left
+    )
+
+    p = plot(p1, p2, layout=l, tickfontsize=11, guidefontsize=11)
+    
+    return p
+    
+end
+
 # 20230320
 # 横軸に時間（秒）、縦軸に流砂量(m3/s)のグラフを作りたい！
 
@@ -1456,7 +1550,7 @@ function make_graph_time_series_suspended_load(
     p = plot(
         xlims=(0, max_num_time),
         xlabel=x_label,
-        ylims=(0, 120),
+        ylims=(0, 140),
         ylabel=y_label,
         title=t_title,
         legend=:topleft,
@@ -1531,7 +1625,7 @@ function make_graph_time_series_bedload(
     p = plot(
         xlims=(0, max_num_time),
         xlabel=x_label,
-        ylims=(0, 1.7),
+        ylims=(0, 2.5),
         ylabel=y_label,
         title=t_title,
         legend=:topleft,
@@ -1663,7 +1757,7 @@ function make_graph_time_series_particle_suspended_load(
     p = plot(
         xlims=(0, max_num_time),
         xlabel=x_label,
-        ylims=(0, 120),
+        ylims=(0, 140),
         ylabel=y_label,
         title=t_title,
         legend=:outerright,
@@ -1752,7 +1846,7 @@ function make_graph_time_series_particle_bedload(
     p = plot(
         xlims=(0, max_num_time),
         xlabel=x_label,
-        ylims=(0, 1.7),
+        ylims=(0, 2.5),
         ylabel=y_label,
         title=t_title,
         legend=:outerright,

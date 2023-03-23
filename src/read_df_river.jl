@@ -5,13 +5,14 @@ import CSV,
        Printf
 
 export get_main_df,
-       get_time_schedule,
-       get_dict_each_year_timing,
-       get_observed_riverbed_level,
-       get_sediment_size,
-       get_fmini,
-       Section,
-       Exist_riverbed_level
+    get_cross_rb_df,
+    get_time_schedule,
+    get_dict_each_year_timing,
+    get_observed_riverbed_level,
+    get_sediment_size,
+    get_fmini,
+    Section,
+    Exist_riverbed_level
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
@@ -186,6 +187,22 @@ function get_main_df(df_path::String)
     return df
 end
 
+function get_cross_rb_df()
+
+    df = get_cross_rb_df("./")
+
+    return df
+end
+
+function get_cross_rb_df(df_path::String)
+
+    df = CSV.read(
+        string(df_path, "3_riverbed.csv"),
+        DataFrames.DataFrame
+    )
+    
+    return df    
+end
 
 function get_time_schedule()
     time_schedule = get_time_schedule("./")
@@ -288,9 +305,6 @@ struct Exist_riverbed_level
         return new(exist_riverbed_level_years, exist_riverbed_level_timing)
      end
 end
-
-
-#df_cross = CSV.read("./3_riverbed.csv", DataFrame)
 
 #mining_volume = CSV.read("./mining_volume.csv", DataFrames.DataFrame)
 

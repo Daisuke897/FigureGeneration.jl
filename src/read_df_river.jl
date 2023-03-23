@@ -11,6 +11,7 @@ export get_main_df,
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
+    get_river_width,
     Section,
     Exist_riverbed_level
 
@@ -248,6 +249,21 @@ function get_fmini(df_path::String)
     )
     
     return fmini
+end
+
+function get_river_width()
+    river_width = get_river_width("./")
+
+    return river_width
+end
+
+function get_river_width(df_path::String)
+    river_width = CSV.read(
+        string(df_path, "river_width.csv"),
+        DataFrames.DataFrame
+    )
+
+    return river_width
 end
 
 function get_observed_riverbed_level()

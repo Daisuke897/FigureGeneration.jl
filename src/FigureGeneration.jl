@@ -46,6 +46,7 @@ export
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
+    get_river_width,    
     Section,
     Exist_riverbed_level
 

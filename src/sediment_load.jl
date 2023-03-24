@@ -895,7 +895,7 @@ function make_graph_yearly_mean_suspended_load(
 	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	ylims=(0, 5e6),
+	ylims=(0, 4e6),
 	legend=:outerright
         )
 
@@ -1107,7 +1107,7 @@ function make_graph_particle_yearly_mean_suspended(
     	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-    	ylims=(0, 5e6),
+    	ylims=(0, 4e6),
     	legend=:outerright,
         label_title=legend_t,
         palette=:tab20,

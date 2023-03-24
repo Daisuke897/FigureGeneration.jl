@@ -48,7 +48,8 @@ export
     get_fmini,
     get_river_width,    
     Section,
-    Exist_riverbed_level
+    Exist_riverbed_level,
+    get_measured_cross_rb_dict
 
 include("general_graph_module.jl")
 

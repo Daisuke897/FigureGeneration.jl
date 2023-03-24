@@ -13,7 +13,8 @@ export get_main_df,
     get_fmini,
     get_river_width,
     Section,
-    Exist_riverbed_level
+    Exist_riverbed_level,
+    get_measured_cross_rb_dict
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
@@ -320,6 +321,31 @@ struct Exist_riverbed_level
         
         return new(exist_riverbed_level_years, exist_riverbed_level_timing)
      end
+end
+
+function get_measured_cross_rb_dict(
+    exist_riverbed_level::Exist_riverbed_level,
+    df_path::String
+    )
+
+    measured_cross_rb = Dict{Int, DataFrames.DataFrame}()
+
+    for year in exist_riverbed_level.years
+        get!(
+            measured_cross_rb,
+            year,
+            CSV.read(
+                string(
+                    df_path,
+                    year,
+                    "_measured_cross_rb.csv"),
+                DataFrames.DataFrame
+            )
+        )
+    end
+
+    return measured_cross_rb
+
 end
 
 #mining_volume = CSV.read("./mining_volume.csv", DataFrames.DataFrame)

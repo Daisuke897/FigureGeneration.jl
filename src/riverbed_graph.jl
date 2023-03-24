@@ -653,19 +653,20 @@ end
 #河床位の横断図を作るために，横軸の川幅の値の配列を作る関数を用意する
 function river_width_crossing(
     measured_width::DataFrame,
-    measured_rb::Vector{DataFrame},
-    longitudinal_index::Int,
-    year_index::Int
+    measured_cross_rb::Dict{Int, DataFrame},
+    area_index::Int,
+    year::Int
     )
 
-    size_crossing_points = size(measured_rb[year_index])[1]
+    size_crossing_points = size(measured_cross_rb[year], 1)
 
     measured_width_crossing = zeros(Float64, size_crossing_points)
 
     river_width_crossing!(
         measured_width_crossing,
-        size_crossing_points,measured_width,
-        longitudinal_index
+        size_crossing_points,
+        measured_width,
+        area_index
 	)
 
     return measured_width_crossing
@@ -674,16 +675,16 @@ end
 
 function river_width_crossing!(
     measured_width_crossing,
-    size_crossing_points,
+    size_crossing_points::Int,
     measured_width::DataFrame,
-    longitudinal_index::Int
+    area_index::Int
     )
 
-    for i = 2:size_crossing_points
+    for i in 2:size_crossing_points
 
         measured_width_crossing[i] =
             measured_width_crossing[i - 1] +
-            measured_width[longitudinal_index, 1] / (size_crossing_points - 1)
+            measured_width[area_index, 2] / (size_crossing_points - 1)
 
     end
 
@@ -693,31 +694,40 @@ end
 
 # 断面の実測河床位1年分を表示させた．
 function graph_measured_rb_crossing_1_year_en(
-    measured_width, measured_rb,
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
     exist_riverbed_level_years,
-    longitudinal_index::Int,
-    year_index::Int
+    area_index::Int,
+    year::Int
     )
 
-    plot(
-        river_width_crossing(measured_width,measured_rb,longitudinal_index,year_index),
-	measured_rb[year_index][:, Symbol(longitudinal_index)],
-	legend=:outerright, label=string(exist_riverbed_level_years[year_index]),
+    p = plot(
+        river_width_crossing(
+            measured_width,
+            measured_cross_rb,
+            area_index,
+            year
+        ),
+	    measured_rb[year][!, Symbol(longitudinal_index)],
+	    legend=:outerright,
+        label=year,
         xlabel="Distance from Left Bank (m)",
         ylabel="Elevation (m)",
-        title=@sprintf("%.1f km from the estuary", 0.2*(390 - longitudinal_index))
+        title=@sprintf("%.1f km from the estuary", 0.2*(390 - area_index))
     )
+
+    return p
 
 end
 
 # 断面の再現河床位を表示させる関数を作る．
 function graph_simulated_rb_crossing(
-    df_cross,
-    measured_width, measured_rb,
-    exist_riverbed_level_years,
+    df_cross::DataFrame,
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
     time_schedule,
-    longitudinal_index::Int,
-    year_index::Int,
+    area_index::Int,
+    year::Int,
     time_index::Int
     )
 
@@ -726,23 +736,82 @@ function graph_simulated_rb_crossing(
 
     target_cross_rb = Matrix(
                           df_cross[df_cross.T .== 3600 * time_index, Between(:Zb001, :Zb101)]
-			  )'
+	)'
 
-    plot(river_width_crossing(measured_width,measured_rb,longitudinal_index,year_index),
-	measured_rb[year_index][:, Symbol(longitudinal_index)],
-	legend=:top,
-	label=string("Measured in ", exist_riverbed_level_years[year_index]),
-	xlabel="Distance from Left Bank (m)",
+    river_width_x = river_width_crossing(
+        measured_width,
+        measured_cross_rb,
+        area_index,
+        year) ./1000
+
+    p = plot(
+        river_width_x,
+	    measured_cross_rb[year][:, Symbol(area_index)],
+        legend=:outerright,
+	    label=string("Measured in ", year),
+    	xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
-        title=string(@sprintf("%.1f km from the estuary", 0.2*(390 - longitudinal_index)),
-	    " ", want_title)
+        title=string(
+            @sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+	        " ",
+            want_title
+        ),
+        linecolor=:midnightblue
 	)
 
-    plot!(river_width_crossing(measured_width,measured_rb,longitudinal_index,year_index),
-        target_cross_rb[:, longitudinal_index],
-	label="Simulated"
+    size_crossing_points = size(measured_cross_rb[year], 1)
+
+    vec_cross_rb = Matrix(
+        df_cross[
+            df_cross.T .== 3600 * time_index,
+            Between(
+                :Zb001,
+                Symbol(@sprintf("Zb%3i", size_crossing_points))
+            )
+        ]
+    )'[:, area_index]
+
+    plot!(
+        p,
+        river_width_x,
+        vec_cross_rb,
+	    label="Simulated"
 	)
+
+    return p
 	
 end
+
+function graph_simulated_rb_crossing(
+    df_cross::DataFrame,
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
+    time_schedule,
+    area_index::Int,
+    year::Int,
+    time_index::Int,
+    df::DataFrame
+    )
+
+    p = graph_simulated_rb_crossing(
+        df_cross,
+        measured_width,
+        measured_cross_rb,
+        time_schedule,
+        area_index,
+        year,
+        time_index
+    )
+
+    start_index, finish_index = decide_index_number(time_index)
+
+    water_level = df[start_index:finish_index, :Z][area_index]
+
+    hline!(p, [water_level], label="Water Level", color=:dodgerblue)
+
+    return p
+	
+end
+
 
 end

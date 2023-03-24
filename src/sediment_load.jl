@@ -1461,7 +1461,14 @@ function make_graph_amount_percentage_particle_yearly_mean_suspended(
     
     plot!(p2, legend=:none, title="(b)", titlelocation=:left)
 
-    p = plot(p1, p2, layout=l, tickfontsize=11, guidefontsize=11)
+    p = plot(
+        p1,
+        p2,
+        layout=l,
+        tickfontsize=11,
+        guidefontsize=11,
+        top_margin=10Plots.mm   
+    )
     
     return p
     
@@ -1509,7 +1516,14 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
         titlelocation=:left
     )
 
-    p = plot(p1, p2, layout=l, tickfontsize=11, guidefontsize=11)
+    p = plot(
+        p1,
+        p2,
+        layout=l,
+        tickfontsize=11,
+        guidefontsize=11,
+        top_margin=10Plots.mm
+    )
     
     return p
     

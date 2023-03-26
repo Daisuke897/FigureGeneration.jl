@@ -81,7 +81,8 @@ export
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,
     graph_condition_change_in_mean_diameter,
-    graph_condition_ratio_in_mean_diameter
+    graph_condition_ratio_in_mean_diameter,
+    graph_measured_distribution
 
 include("sediment_load.jl")
 using .SedimentLoad

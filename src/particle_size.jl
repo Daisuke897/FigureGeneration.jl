@@ -28,8 +28,8 @@ export
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,
     graph_condition_change_in_mean_diameter,
-    graph_condition_ratio_in_mean_diameter
-    
+    graph_condition_ratio_in_mean_diameter,
+    graph_measured_distribution
 
 #河床の粒度分布を計算する関数
 function simulated_particle_size_dist(
@@ -896,6 +896,59 @@ function _average_simulated_particle_size_ratio(
 
     return mean_particle_ratio
 
+end
+
+function graph_measured_distribution(
+        fmini::DataFrame,
+        sediment_size::DataFrame,
+        distance_km::Vector{Int},
+        max_area_index::Int;
+        japanese::Bool=false
+    )
+    
+    if japanese == true 
+        x_label  = "粒径 (mm)" 
+        y_label  = "累積 (%)"
+        t_legend = "河口からの\n距離 (km)"
+    else
+        x_label  = "Particle size (mm)"
+        y_label  = "Cumulative volume (%)"
+        t_legend = "Distance from\nthe estuary\n(km)"
+    end
+    
+    p = plot(
+        legend=:outerright,
+        ylims=(0, 100),
+        ylabel=y_label,
+        xlims=(0.01, 1000),
+        xlabel=x_label,
+        xscale=:log10,
+        label_title=t_legend
+    )
+    
+    num_class_size = size(sediment_size, 1)
+    
+    for km in distance_km
+    
+        area_index = max_area_index - 5 * km
+        
+        cum_vol = cumsum(
+            [i for i in fmini[area_index, 2:(1+num_class_size)]]
+        ) * 100
+        
+        plot!(
+            p,
+            sediment_size[!, 3],
+            cum_vol,
+            label=km,
+            markershape=:auto,
+            markersize=5
+        )
+        
+    end
+    
+    return p
+    
 end
 
 end

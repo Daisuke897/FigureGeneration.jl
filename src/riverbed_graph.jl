@@ -27,6 +27,10 @@ export comparison_final_average_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
+    graph_observed_rb_level,
+    graph_observed_rb_gradient,
+    graph_transverse_distance,
+    graph_elevation_gradient_width,
     graph_measured_rb_crossing_1_year_en,
     graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing
@@ -651,6 +655,43 @@ function graph_condition_change_in_riverbed(
     return p
 end
 
+# 実測の断面平均河床位を表示する
+function graph_observed_rb_level(
+        observed_riverbed_level::DataFrame,
+        year::Int;
+        japanese::Bool=false
+    )
+    
+    X = [0.2*(i-1) for i in 1:size(observed_riverbed_level, 1)]
+    
+    if japanese == false
+        y_label = "Elevation (m)"
+        x_label = "Distance from the estuary (km)"
+    else
+        y_label = "標高 (m)"
+        x_label = "河口からの距離 (km)"
+    end
+    
+    p=plot(
+        xlims=(X[1], X[end]),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        legend=:none
+    )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    plot!(
+        p,
+        X, 
+        reverse(observed_riverbed_level[!, Symbol(year)])
+    )
+    
+    return p
+
+end
+
 #河床位の横断図を作るために，横軸の川幅の値の配列を作る関数を用意する
 function river_width_crossing(
     measured_width::DataFrame,
@@ -672,6 +713,177 @@ function river_width_crossing(
 
     return measured_width_crossing
 
+end
+
+# 実測の断面平均河床位の勾配を計算する関数
+function observed_riverbed_gradient!(
+        riverbed_gradient,
+        observed_riverbed_level,
+        year
+    )
+    
+    for i in 1:length(riverbed_gradient)
+        riverbed_gradient[i]=(observed_riverbed_level[!, Symbol(year)][i]-observed_riverbed_level[!, Symbol(year)][i+1])/200
+    end
+    
+    return riverbed_gradient
+end
+
+# 実測の断面平均河床位の勾配のグラフを作成
+function graph_observed_rb_gradient(
+        observed_riverbed_level::DataFrame,
+        year::Int;
+        japanese::Bool=false
+    )
+    
+    X1 = [0.2*(i-1) for i in 1:size(observed_riverbed_level, 1)]
+    X2 = [0.2*(i-1)+0.1 for i in 1:(size(observed_riverbed_level, 1)-1)]
+    
+    if japanese == false
+        y_label = "Gradient (-)"
+        x_label = "Distance from the estuary (km)"
+    else
+        y_label = "勾配 (-)"
+        x_label = "河口からの距離 (km)"
+    end
+    
+    p=plot(
+        xlims=(X1[1], X1[end]),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-0.04, 0.04),
+        ylabel=y_label,
+        legend=:none
+    )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    plot!(
+        p,
+        X2, 
+        reverse(
+            observed_riverbed_gradient(
+                observed_riverbed_level,
+                year
+            )
+        )
+    )
+    
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)
+    
+    return p
+
+end
+
+# 実測の河川の川幅を示すグラフ
+function graph_transverse_distance(
+        river_width::DataFrame;
+        japanese::Bool=false
+    )
+    
+    X = [0.2*(i-1) for i in 1:size(river_width, 1)]
+    
+    if japanese == false
+        y_label = "Width (m)"
+        x_label = "Distance from the estuary (km)"
+    else
+        y_label = "川幅 (m)"
+        x_label = "河口からの距離 (km)"
+    end
+    
+    p=plot(
+        xlims=(X[1], X[end]),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(0, 2500),
+        ylabel=y_label,
+        legend=:none
+    )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    
+    plot!(
+        p,
+        X, 
+        reverse(river_width[!, 2])
+    )
+    
+    return p
+
+end
+
+# 実測の河床位、勾配、川幅を表すグラフ
+function graph_elevation_gradient_width(
+        observed_riverbed_level::DataFrame,
+        river_width::DataFrame,
+        year::Int;
+        japanese::Bool=false
+    )
+    
+    l = @layout[a; b; c]
+    
+    p1 = graph_observed_rb_level(
+        observed_riverbed_level,
+        year;
+        japanese=japanese
+    )
+    
+    plot!(
+        p1,
+        xlabel="",
+        title="(a)",
+        titlelocation=:left
+    )
+    
+    p2 = graph_observed_rb_gradient(
+        observed_riverbed_level,
+        year;
+        japanese=japanese
+    )
+    
+    plot!(
+        p2,
+        xlabel="",
+        title="(b)",
+        titlelocation=:left
+    )
+    
+    p3 = graph_transverse_distance(
+        river_width;
+        japanese=japanese
+    )
+    
+    plot!(
+        p3,
+        title="(c)",
+        titlelocation=:left
+    )
+    
+    p = plot(
+        p1,
+        p2,
+        p3,
+        layout = l,
+        size=(600, 500),
+        tickfontsize=13,
+        guidefontsize=13
+    )
+    
+    return p
+    
+end
+
+function observed_riverbed_gradient(
+        observed_riverbed_level::DataFrame,
+        year::Int
+    )
+    size_flow = size(observed_riverbed_level, 1)
+    
+    riverbed_gradient = zeros(Float64,size_flow-1)
+    
+    observed_riverbed_gradient!(riverbed_gradient,observed_riverbed_level,year)
+    
+    return riverbed_gradient
 end
 
 function river_width_crossing!(

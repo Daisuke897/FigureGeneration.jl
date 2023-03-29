@@ -70,6 +70,7 @@ export
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,    
     graph_measured_rb_crossing_1_year_en,
+    graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing
 
 include("particle_size.jl")

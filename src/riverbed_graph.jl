@@ -28,6 +28,7 @@ export comparison_final_average_riverbed,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
     graph_measured_rb_crossing_1_year_en,
+    graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
@@ -708,13 +709,52 @@ function graph_measured_rb_crossing_1_year_en(
             area_index,
             year
         ),
-	    measured_rb[year][!, Symbol(longitudinal_index)],
+	    measured_rb[year][!, Symbol(area_index)],
 	    legend=:outerright,
         label=year,
         xlabel="Distance from Left Bank (m)",
         ylabel="Elevation (m)",
         title=@sprintf("%.1f km from the estuary", 0.2*(390 - area_index))
     )
+
+    return p
+
+end
+
+# 断面の実測河床位を複数年重ねて表示させる。
+function graph_measured_rb_crossing_several_years(
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
+    area_index::Int
+    )
+
+    years = sort(collect(keys(measured_cross_rb)))
+
+    p = plot(
+	    legend=:none,
+        xlabel="Distance from Left Bank (km)",
+        ylabel="Elevation (m)",
+        title=@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+        palette=cgrad(:brg, length(years), categorical = true)
+    )
+    
+    for year in years
+
+        X = river_width_crossing(
+            measured_width,
+            measured_cross_rb,
+            area_index,
+            year
+        ) / 1000
+        
+        plot!(
+            p,
+            X,
+       	    measured_cross_rb[year][!, Symbol(area_index)],
+            linewidth=1
+        )
+
+    end
 
     return p
 

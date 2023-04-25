@@ -22,6 +22,7 @@ using ..GeneralGraphModule
 
 export comparison_final_average_riverbed,
     difference_final_average_riverbed,
+    graph_comparison_difference_average_riverbed,
     graph_cumulative_change_in_riverbed,
     graph_condition_change_in_riverbed,    
     observed_riverbed_average_whole_each_year,
@@ -69,17 +70,17 @@ end
 function comparison_final_average_riverbed(
     hours_calculate_end,
     riverbed_level_data,
-    data_file,
     time_schedule,
-    when_year::Int;
+    when_year::Int,
+    df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
-    )
+    ) where {N}
 
     want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
+    core_comparison_final_average_riverbed_2("", df_vararg[1],
     hours_calculate_end, time_schedule)
 
-    average_riverbed_level = data_file[start_index:finish_index, :Zbave]
+    
     riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     label_vec = String["Measured" "Simulated"]
@@ -92,15 +93,37 @@ function comparison_final_average_riverbed(
         y_label   = "標高 (T.P. m)"
     end
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(distance_from_upstream.*10^-3,
-        [reverse(riverbed_level), reverse(average_riverbed_level)], 
+    p = plot(
+        distance_from_upstream.*10^-3,
+        reverse(riverbed_level), 
         label=label_vec,  
-        ylabel=y_label, xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel=x_label,
-	xticks=[0, 20, 40, 60, 77.8],
-	linecolor=[:midnightblue :orangered],
-	linewidth=2, legend=:topleft)
+        ylabel=y_label, xlims=(0,77.8), ylims=(-10,85),
+	    title=want_title,
+        xlabel=x_label,
+	    xticks=[0, 20, 40, 60, 77.8],
+	    linecolor=:midnightblue,
+        linewidth=2,
+        legend=:topleft
+    )
+
+    for i in 1:N
+        average_riverbed_level = df_vararg[i][start_index:finish_index, :Zbave]
+
+        legend_label = string("Case ", i)
+
+        plot!(
+            p,
+            distance_from_upstream.*10^-3,
+            reverse(average_riverbed_level), 
+            label=legend_label 
+        )
+    end
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    
+    return p
+    
 end
 
 #実測と再現の河床位を比較するグラフを作る関数
@@ -176,6 +199,112 @@ function difference_final_average_riverbed(
 	xlabel=x_label,
 	xticks=[0, 20, 40, 60, 77.8],
 	linewidth=2, legend=:bottomleft, ylims=(-3,3))
+end
+
+function difference_final_average_riverbed(
+    hours_calculate_end,
+    riverbed_level_data,
+    time_schedule,
+    when_year::Int,
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+    
+    want_title, distance_from_upstream, start_index, finish_index =
+    core_comparison_final_average_riverbed_2("", df_vararg[1],
+    hours_calculate_end, time_schedule)
+
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+
+    label_s   = "Error in Riverbed Elevation"
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Errors (T.P. m)"
+
+    if japanese==true
+        label_s   = "実測河床位との誤差"
+        x_label   = "河口からの距離 (km)"
+        y_label   = "誤差 (T.P. m)"
+    end
+    
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    plot!(
+        p,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        title=want_title,
+	    xlabel=x_label,
+	    xticks=[0, 20, 40, 60, 77.8],
+	    legend=:bottomleft,
+        ylims=(-4,4)
+    )
+
+    
+    for i in 1:N
+
+        average_riverbed_level = df_vararg[i][start_index:finish_index, :Zbave]
+        difference_riverbed = average_riverbed_level .- riverbed_level
+        
+        legend_label = string("Case ", i)
+        
+        plot!(
+            distance_from_upstream.*10^-3,
+            reverse(difference_riverbed), 
+            label=legend_label,  
+            linewidth=2
+        )
+        
+    end
+
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    return p
+end
+
+function graph_comparison_difference_average_riverbed(
+    hours_calculate_end,
+    riverbed_level_data,
+    time_schedule,
+    when_year::Int,
+    df_vector;
+    japanese::Bool=false
+)
+    
+    p1 = comparison_final_average_riverbed(
+        hours_calculate_end,
+        riverbed_level_data,
+        time_schedule,
+        when_year,
+        df_vector...;
+        japanese=japanese
+    )
+    
+    plot!(p1, xticks=[], xlabel="")
+    
+    p2 = difference_final_average_riverbed(
+        hours_calculate_end,
+        riverbed_level_data,
+        time_schedule,
+        when_year,
+        df_vector...;
+        japanese=japanese
+    )
+    
+    plot!(p2, title="", legend=:none)
+    
+    l = @layout[a; b]
+    
+    p = plot(
+        p1,
+        p2,
+        layout = l,
+        tickfontsize=11,
+        guidefontsize=11,
+        legend_font_pointsize=9
+    )
+    
+    return p
+    
 end
 
 #累積の河床変動量のグラフを作成したい．

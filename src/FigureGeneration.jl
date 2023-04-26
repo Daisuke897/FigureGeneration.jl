@@ -148,7 +148,14 @@ using .Parameters
 export make_figure_energy_slope,
        make_figure_friction_velocity,
        make_figure_non_dimensional_shear_stress,
+       make_figure_area,    
+       make_figure_width,        
        make_figure_velocity,
+       make_figure_discharge,        
+       make_graph_time_series_area_water,
+       make_graph_time_series_width_water,
+       make_graph_time_series_velocity_water,
+       make_graph_time_series_discharge_water,
        params
 
 end

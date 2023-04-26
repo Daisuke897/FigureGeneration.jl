@@ -1062,4 +1062,28 @@ function make_graph_time_series_water_level(
 
 end
 
+function _count_times_exceed_water_level(
+    area_index::Int,
+    water_level_threshold,
+    df::DataFrames.DataFrame
+)
+
+    num_time = length(unique(df[!, :T]))
+
+    cnt::Int = 0
+
+    for j in 1:num_time
+
+        i_first, i_final = GeneralGraphModule.decide_index_number(j-1)
+
+        if df[i_first:i_final, :Z][area_index] > water_level_threshold
+            cnt = cnt + 1
+        end
+
+    end
+
+    return cnt
+
+end
+
 end

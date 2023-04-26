@@ -1137,7 +1137,8 @@ function graph_simulated_rb_crossing(
 	        " ",
             want_title
         ),
-        linecolor=:midnightblue
+        linecolor=:midnightblue,
+        legend_font_pointsize=10
 	)
 
     size_crossing_points = size(measured_cross_rb[year], 1)

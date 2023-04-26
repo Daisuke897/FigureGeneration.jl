@@ -139,23 +139,27 @@ export
 
 include("hydraulic_conditions.jl")
 using .Hydraulic_conditions
-export make_upstream_discharge_graph,
-       make_downstream_water_level_graph,
-       make_up_discharge_down_water_lev_graph
+export
+    make_upstream_discharge_graph,
+    make_downstream_water_level_graph,
+    make_up_discharge_down_water_lev_graph
 
 include("parameters.jl")
 using .Parameters
-export make_graph_energy_slope,
-       make_graph_friction_velocity,
-       make_graph_non_dimensional_shear_stress,
-       make_graph_area,    
-       make_graph_width,        
-       make_graph_velocity,
-       make_graph_discharge,        
-       make_graph_time_series_area,
-       make_graph_time_series_width,
-       make_graph_time_series_velocity,
-       make_graph_time_series_discharge,
-       params
+export
+    make_graph_energy_slope,
+    make_graph_friction_velocity,
+    make_graph_non_dimensional_shear_stress,
+    make_graph_area,   
+    make_graph_width,
+    make_graph_velocity,
+    make_graph_discharge,
+    make_graph_water_level,
+    make_graph_time_series_area,
+    make_graph_time_series_width,
+    make_graph_time_series_velocity,
+    make_graph_time_series_discharge,
+    make_graph_time_series_water_level,
+    params
 
 end

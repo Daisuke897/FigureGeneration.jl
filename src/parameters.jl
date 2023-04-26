@@ -22,17 +22,17 @@ import Plots,
        ..GeneralGraphModule,
        ..ParticleSize
 
-export make_figure_energy_slope,
-    make_figure_friction_velocity,
-    make_figure_non_dimensional_shear_stress,
-    make_figure_area,    
-    make_figure_width,    
-    make_figure_velocity,
-    make_figure_discharge,    
-    make_graph_time_series_area_water,
-    make_graph_time_series_width_water,
-    make_graph_time_series_velocity_water,
-    make_graph_time_series_discharge_water,        
+export make_graph_energy_slope,
+    make_graph_friction_velocity,
+    make_graph_non_dimensional_shear_stress,
+    make_graph_area,    
+    make_graph_width,    
+    make_graph_velocity,
+    make_graph_discharge,
+    make_graph_time_series_area,
+    make_graph_time_series_width,
+    make_graph_time_series_velocity,
+    make_graph_time_series_discharge,        
     params
 
 struct Param{T<:AbstractFloat}
@@ -230,7 +230,7 @@ function calc_non_dimensional_shear_stress(
     return τₛ
 end
 
-function make_figure_energy_slope(
+function make_graph_energy_slope(
     df,
     time_schedule,
     param::Param,
@@ -263,7 +263,7 @@ function make_figure_energy_slope(
 
 end
 
-function make_figure_friction_velocity(
+function make_graph_friction_velocity(
     df,
     time_schedule,
     param::Param,
@@ -300,7 +300,7 @@ function make_figure_friction_velocity(
                 title=want_title)
 end
 
-function make_figure_non_dimensional_shear_stress(
+function make_graph_non_dimensional_shear_stress(
     df,
     sediment_size,
     time_schedule,
@@ -338,7 +338,7 @@ function make_figure_non_dimensional_shear_stress(
 
 end
 
-function make_figure_area(
+function make_graph_area(
     time_schedule,
     target_hour::Int,
     df::DataFrames.DataFrame;
@@ -392,7 +392,7 @@ function make_figure_area(
 
 end
 
-function make_figure_width(
+function make_graph_width(
     time_schedule,
     target_hour::Int,
     df::DataFrames.DataFrame;
@@ -446,7 +446,7 @@ function make_figure_width(
 
 end
 
-function make_figure_velocity(
+function make_graph_velocity(
     time_schedule,
     target_hour::Int,
     df::DataFrames.DataFrame;
@@ -500,7 +500,7 @@ function make_figure_velocity(
 
 end
 
-function make_figure_velocity(
+function make_graph_velocity(
     time_schedule,
     target_hour::Int,
     df_vararg::Vararg{DataFrames.DataFrame, N};
@@ -555,7 +555,7 @@ function make_figure_velocity(
 
 end
 
-function make_figure_discharge(
+function make_graph_discharge(
     time_schedule,
     target_hour::Int,
     df::DataFrames.DataFrame;
@@ -609,7 +609,7 @@ function make_figure_discharge(
 
 end
 
-function make_graph_time_series_area_water(
+function make_graph_time_series_area(
     area_index::Int,
     target_hours::Int,
     river_length_km::Float64,
@@ -687,7 +687,7 @@ function make_graph_time_series_area_water(
 
 end
 
-function make_graph_time_series_width_water(
+function make_graph_time_series_width(
     area_index::Int,
     target_hours::Int,
     river_length_km::Float64,
@@ -765,7 +765,7 @@ function make_graph_time_series_width_water(
 
 end
 
-function make_graph_time_series_velocity_water(
+function make_graph_time_series_velocity(
     area_index::Int,
     target_hours::Int,
     river_length_km::Float64,
@@ -843,7 +843,7 @@ function make_graph_time_series_velocity_water(
 
 end
 
-function make_graph_time_series_discharge_water(
+function make_graph_time_series_discharge(
     area_index::Int,
     target_hours::Int,
     river_length_km::Float64,

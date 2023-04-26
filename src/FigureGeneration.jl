@@ -145,17 +145,17 @@ export make_upstream_discharge_graph,
 
 include("parameters.jl")
 using .Parameters
-export make_figure_energy_slope,
-       make_figure_friction_velocity,
-       make_figure_non_dimensional_shear_stress,
-       make_figure_area,    
-       make_figure_width,        
-       make_figure_velocity,
-       make_figure_discharge,        
-       make_graph_time_series_area_water,
-       make_graph_time_series_width_water,
-       make_graph_time_series_velocity_water,
-       make_graph_time_series_discharge_water,
+export make_graph_energy_slope,
+       make_graph_friction_velocity,
+       make_graph_non_dimensional_shear_stress,
+       make_graph_area,    
+       make_graph_width,        
+       make_graph_velocity,
+       make_graph_discharge,        
+       make_graph_time_series_area,
+       make_graph_time_series_width,
+       make_graph_time_series_velocity,
+       make_graph_time_series_discharge,
        params
 
 end

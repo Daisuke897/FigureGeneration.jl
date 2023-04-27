@@ -630,25 +630,32 @@ function make_graph_bedload_volume_flow_dist(
 end
 
 function make_graph_sediment_volume_flow_dist(
-data_file::DataFrame,
-target_year::Int,
-each_year_timing)
+    data_file::DataFrame,
+    target_year::Int,
+    each_year_timing
+)
 
-p1 = make_graph_suspended_volume_flow_dist(
-data_file,target_year,each_year_timing)
+    p1 = make_graph_suspended_volume_flow_dist(
+        data_file,target_year,each_year_timing
+    )
 
-plot!(p1, xlabel="", ylabel="Yearly\n Suspended\n Load\n (m³/year)",
-ylims=(0, 1.4e7))
+    plot!(
+        p1, xlabel="", ylabel="Yearly\n Suspended\n Load\n (m³/year)",
+        ylims=(0, 1.4e7)
+    )
 
-p2 = make_graph_bedload_volume_flow_dist(
-data_file,target_year,each_year_timing)
+    p2 = make_graph_bedload_volume_flow_dist(
+        data_file,target_year,each_year_timing
+    )
 
-plot!(p2, title="", ylabel="Yearly\n Bedload\n (m³/year)",
-ylims=(0, 2.0e5))
+    plot!(
+        p2, title="", ylabel="Yearly\n Bedload\n (m³/year)",
+        ylims=(0, 2.0e5)
+    )
 
-l = @layout[a; b]
+    l = @layout[a; b]
 
-plot(p1, p2, layout=l)
+    plot(p1, p2, layout=l)
 
 end
 

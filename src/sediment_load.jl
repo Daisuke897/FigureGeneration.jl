@@ -61,7 +61,7 @@ export
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_particle_suspended_volume_each_year,
     make_graph_particle_bedload_volume_each_year,
-    make_graph_particle_sediment_volume_each_year_ja,
+    make_graph_particle_sediment_volume_each_year,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
@@ -330,26 +330,38 @@ function make_graph_particle_bedload_volume_each_year(
 
 end
 
-function make_graph_particle_sediment_volume_each_year_ja(
-    area_index::Int, data_file::DataFrame,
-    each_year_timing, sediment_size, river_length_km
+function make_graph_particle_sediment_volume_each_year(
+    area_index::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    sediment_size,
+    river_length_km;
+    japanese::Bool=false
     )
 
     p1 = make_graph_particle_suspended_volume_each_year_ja(
         area_index, data_file,
         each_year_timing, sediment_size, river_length_km,
-        japanese=true
+        japanese=japanese
     )
 
-    plot!(p1, xlabel="", legend=:none, ylabel="浮遊 (m³/年)")
+    if japanese == true
+        plot!(p1, xlabel="", legend=:none, ylabel="浮遊 (m³/年)")
+    else
+        plot!(p1, xlabel="", legend=:none, ylabel="SSL (m³/year)")
+    end
 
     p2 = make_graph_particle_bedload_volume_each_year_ja(
         area_index, data_file,
         each_year_timing, sediment_size, river_length_km,
-        japanese=true
+        japanese=japanese
     )
-
-    plot!(p2, title="", bottom_margin=30Plots.mm, ylabel="掃流 (m³/年)")
+    
+    if japanese == true
+        plot!(p2, title="", bottom_margin=30Plots.mm, ylabel="掃流 (m³/年)")
+    else
+        plot!(p2, title="", bottom_margin=30Plots.mm, ylabel="Bedload (m³/year)")
+    end
 
     plot(p1, p2, layout=Plots.@layout[a; b])
 

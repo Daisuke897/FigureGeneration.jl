@@ -395,8 +395,11 @@ function _graph_average_simulated_particle_size_fluc!(
     each_year_timing,
     i_begin::Int,
     i_end::Int,
-    df_vararg::NTuple{N, DataFrame}
+    df_vararg::NTuple{N, DataFrame};
+    japanese::Bool=false
     ) where {N}
+
+    base_ylims = 0.0
 
     for i in 1:N
         
@@ -412,6 +415,10 @@ function _graph_average_simulated_particle_size_fluc!(
 
             fluc_average_value[index] =
                 mean(average_simulated_particle_size_dist[i_begin:i_end])
+            if index == 1
+                base_ylims = fluc_average_value[index]
+            end
+            
         end
 
         average_simulated_particle_size_dist =
@@ -426,10 +433,22 @@ function _graph_average_simulated_particle_size_fluc!(
 
         i_max = length(average_simulated_particle_size_dist)
 
-        title_s = @sprintf("%.1f km - %.1f km", 0.2*(i_max-i_end), 0.2*(i_max-i_begin))
-        
         legend_label = string("Case ", i)
-                    
+
+        if japanese == true
+            title_s = @sprintf(
+                "区間平均 %.1f km - %.1f km",
+                0.2*(i_max-i_end),
+                0.2*(i_max-i_begin)
+            )
+        else
+            title_s = @sprintf(
+                "Average for the section %.1f km - %.1f km",
+                0.2*(i_max-i_end),
+                0.2*(i_max-i_begin)
+            )
+        end
+        
         plot!(
             p,
             [keys_year; keys_year[end]+1],
@@ -440,6 +459,20 @@ function _graph_average_simulated_particle_size_fluc!(
         )
         
     end
+
+    hline!(
+        p,
+        [base_ylims],
+        label="",
+        linecolor=:black,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    plot!(
+        p,
+        ylims=(max(base_ylims - 35, 0), base_ylims + 2)
+    )
 
     return p
 end
@@ -455,12 +488,21 @@ function _graph_average_simulated_particle_size_fluc(
         y_label="平均粒径 (mm)"
     end        
 
-    p = vline([0], line=:black, label="", linestyle=:dot, linewidth=1)
+    p = vline(
+        [1975],
+        line=:black,
+        label="",
+        linestyle=:dot,
+        linewidth=1
+    )
+    
     plot!(
         p,
         ylabel=y_label,
         xlims=(keys_year[begin], keys_year[end]+1),
-        legend=:bottomleft
+        legend=:outerright,
+        legend_font_pointsize=10,
+        tickfontsize=14
     )
 
     return p
@@ -514,7 +556,8 @@ function graph_average_simulated_particle_size_fluc(
         each_year_timing,
         i_begin,
         i_end,
-        df_vararg
+        df_vararg,
+        japanese=japanese
     )
 
     return p

@@ -20,6 +20,8 @@ module RiverbedGraph
 using Printf, Plots, Statistics, DataFrames
 using ..GeneralGraphModule
 
+import ..Exist_riverbed_level
+
 export comparison_final_average_riverbed,
     difference_final_average_riverbed,
     graph_comparison_difference_average_riverbed,
@@ -28,6 +30,7 @@ export comparison_final_average_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
+    graph_variation_per_year_simulated_riverbed_level,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,
@@ -455,7 +458,7 @@ function graph_cumulative_change_in_riverbed(
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
-        ylims=(-3, 3),
+        ylims=(-4, 4),
         ylabel=y_label,
         title=title_s
     )
@@ -686,6 +689,136 @@ function graph_simulated_riverbed_fluctuation(
         df_vararg
     ) 
     
+    return p
+end
+
+function graph_variation_per_year_simulated_riverbed_level(
+    measured_riverbed,
+    exist_riverbed_level::Exist_riverbed_level,
+    each_year_timing,
+    first_area_index::Int,
+    final_area_index::Int,
+    df_vararg::Vararg{DataFrame, N};
+    japanese=false
+    ) where {N}
+
+    keys_year = sort(collect(keys(each_year_timing)))
+
+    y_label = "Riverbed Elevation (T.P. m)"
+
+    if japanese==true
+        y_label="河床位 (T.P. m)" 
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(keys_year[begin],keys_year[end]+1),
+        legend=:outerright,
+        legend_font_pointsize=10,
+        tickfontsize=14
+    )
+
+    fluc_average_value_measured = zeros(length(exist_riverbed_level.years))
+
+    for (index, year) in enumerate(exist_riverbed_level.years)
+
+        fluc_average_value_measured[index] = mean(
+            measured_riverbed[first_area_index:final_area_index, Symbol(year)]
+        )
+
+    end
+
+    if japanese == true
+        label_measured = "実測"
+    else
+        label_measured = "Measured"
+    end
+    
+    plot!(
+        p,
+        exist_riverbed_level.years .+ 0.5,
+        fluc_average_value_measured,
+        markershape=:rect,
+        label=label_measured
+    )
+    
+
+    base_ylims = 0.0    
+
+    for i in 1:N
+        
+        fluc_average_value = zeros(length(keys_year)+1)
+
+        for (index, year) in enumerate(keys_year)
+
+            first_i, final_i = decide_index_number(each_year_timing[year][1])            
+            
+            fluc_average_value[index] = mean(
+                df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
+            )
+
+            if index == 1
+                base_ylims = fluc_average_value[index]
+            end
+
+        end
+
+        first_i, final_i = decide_index_number(each_year_timing[keys_year[end]][2])
+
+        fluc_average_value[end] = mean(
+            df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
+        )
+
+        i_max = final_i - first_i + 1
+
+        if japanese == true
+            title_s = @sprintf(
+                "区間平均 %.1f km - %.1f km",
+                0.2*(i_max-final_area_index), 0.2*(i_max-first_area_index)
+            )    
+        else 
+            title_s = @sprintf(
+                "Average for the section %.1f km - %.1f km",
+                0.2*(i_max-final_area_index), 0.2*(i_max-first_area_index)
+            )
+        end
+                
+        legend_label = string("Case ", i)
+                    
+        plot!(
+            p,
+            [keys_year; keys_year[end]+1],
+            fluc_average_value,
+            markershape=:auto,
+            label=legend_label,
+            title=title_s
+        )
+        
+    end
+
+    vline!(
+        p,
+        [1975],
+        label="",
+        linecolor=:black,
+        linestyle=:dot,
+        linewidth=1
+    )
+    
+    hline!(
+        p,
+        [base_ylims],
+        label="",
+        linecolor=:black,
+        linestyle=:dash,
+        linewidth=1
+    )
+    
+    plot!(
+        p,
+        ylims=(base_ylims - 1.2, base_ylims + 0.4)
+    )
+
     return p
 end
 

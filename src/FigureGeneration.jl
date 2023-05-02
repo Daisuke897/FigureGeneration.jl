@@ -70,6 +70,7 @@ export
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
+    graph_variation_per_year_simulated_riverbed_level,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,

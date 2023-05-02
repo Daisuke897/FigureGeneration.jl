@@ -161,6 +161,7 @@ export
     make_graph_time_series_velocity,
     make_graph_time_series_discharge,
     make_graph_time_series_water_level,
+    make_graph_time_series_water_level_with_measured,
     params
 
 end

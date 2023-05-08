@@ -658,7 +658,7 @@ function graph_cumulative_condition_change_in_mean_diameter(
         japanese=japanese
     )
     
-    plot!(p2, title="", legend=:bottomright, ylims=(-20, 20))
+    plot!(p2, title="", legend=:bottomright, ylims=(-40, 40))
     
     p = plot(
         p1,

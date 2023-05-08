@@ -32,11 +32,13 @@ export
     make_graph_velocity,
     make_graph_discharge,
     make_graph_water_level,
+    make_graph_condition_change_water_level,    
     make_graph_time_series_area,
     make_graph_time_series_width,
     make_graph_time_series_velocity,
     make_graph_time_series_discharge,
     make_graph_time_series_water_level,
+    make_graph_time_series_water_level_with_measured,
     params
 
 struct Param{T<:AbstractFloat}
@@ -646,7 +648,7 @@ function make_graph_water_level(
                 xlims=(0, 77.8),
                 xlabel=xlabel_title,
                 xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, Inf),
+                ylims=(-5, 80),
                 ylabel=ylabel_title,
                 legend=:none, title=want_title)
 
@@ -662,6 +664,135 @@ function make_graph_water_level(
         linecolor=:dodgerblue
     )
         
+
+    return p
+
+end
+
+function make_graph_water_level(
+    time_schedule,
+    target_hour::Int,
+    df_vararg::Vararg{DataFrames.DataFrame, N};
+    japanese::Bool=false
+) where {N}
+
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
+
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        time_schedule
+    ) * "Discharge " * string(df_vararg[1][start_index, :Qw]) * " m³/s"
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Water Level (T.P. m)"
+    
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="水位 (T.P. m)"
+    end
+    
+    p = Plots.plot(
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylims=(-5, 85),
+                ylabel=ylabel_title,
+                legend=:topleft, title=want_title)
+
+    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    for i in 1:N
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(df_vararg[i][start_index:finish_index, :Z]),
+            label=string("Case ", i)
+        )
+
+    end
+
+    return p
+
+end
+
+function make_graph_condition_change_water_level(
+    time_schedule,
+    target_hour::Int,
+    df_base::DataFrames.DataFrame,
+    df_with_mining::DataFrames.DataFrame,
+    df_with_dam::DataFrames.DataFrame,
+    df_with_mining_and_dam::DataFrames.DataFrame;
+    japanese::Bool=false
+)
+
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
+
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        time_schedule
+    ) * "Discharge " * string(df_base[start_index, :Qw]) * " m³/s"
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Differences (m)"
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
+    
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="変化 (m)"
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+    end
+    
+    p = Plots.plot(
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylabel=ylabel_title,
+                ylims=(-1.6,1.6),
+                legend=:topleft, title=want_title)
+
+    Plots.hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)    
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_mining[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[1]
+    )
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_dam[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[2]
+    )
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_mining_and_dam[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[3]
+    )
+
+    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
     return p
 
@@ -1056,6 +1187,113 @@ function make_graph_time_series_water_level(
         time_data[1:target_hours],
         water_level_time_series[1:target_hours],
         linecolor=:dodgerblue
+    )
+
+    return p
+
+end
+
+function make_graph_time_series_water_level_with_measured(
+    area_index::Int,
+    target_hours::Int,
+    river_length_km::Float64,
+    each_year_timing,
+    df::DataFrames.DataFrame,
+    df_measured::DataFrames.DataFrame;
+    japanese::Bool=false
+)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+    
+    if japanese == true
+
+        x_label="時間 (s)"
+        y_label="水位 (m)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+        t_label_1="再現値"
+        t_label_2="観測値"
+
+    elseif japanese == false
+
+        x_label="Time (s)"
+        y_label="Water Level (m)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+        t_label_1="Simulated"
+        t_label_2="Measured"
+
+    end
+
+    time_data = unique(df[:, :T])
+    max_num_time = maximum(time_data)
+    num_time = length(time_data)
+
+    p = Plots.plot(
+        xlims=(0, max_num_time),
+        xlabel=x_label,
+#        ylims=(0, 140),
+        ylabel=y_label,
+        title=t_title,
+        legend=:best,
+        tickfontsize=10,
+        guidefontsize=10,
+        legend_font_pointsize=8,
+        legend_title_font_pointsize=8,
+#        palette=:tab20,
+#        legend_title=t_legend
+    )
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
+
+    water_level_time_series = zeros(Float64, num_time)
+
+    for j in 1:num_time
+
+        i_first, i_final = GeneralGraphModule.decide_index_number(j-1)
+
+        water_level_time_series[j] = df[i_first:i_final, :Z][area_index]
+
+    end
+
+    Plots.plot!(
+        p,
+        time_data,
+        water_level_time_series,
+        linewidth=1,
+        linestyle=:dot,
+        linecolor=:black,
+        label=""
+    )
+
+    Plots.plot!(
+        p,
+        time_data[1:target_hours],
+        water_level_time_series[1:target_hours],
+        linecolor=:dodgerblue,
+        label=t_label_1
+    )
+
+    Plots.plot!(
+        p,
+        time_data[1:target_hours],        
+        df_measured[!, :water_level],
+        label=t_label_2,
+        seriestype=:scatter,
+        markersize=3,
+        color=:red
+    )
+
+    Plots.vline!(
+        [each_year_timing[1965][1],
+         each_year_timing[1975][1],
+         each_year_timing[1997][1],
+         each_year_timing[1998][1]] .* 3600,
+        label="",
+        linewidth=1,
+        linestyle=:dash,
+        linecolor=:orangered
     )
 
     return p

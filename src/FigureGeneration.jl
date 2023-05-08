@@ -156,11 +156,13 @@ export
     make_graph_velocity,
     make_graph_discharge,
     make_graph_water_level,
+    make_graph_condition_change_water_level,
     make_graph_time_series_area,
     make_graph_time_series_width,
     make_graph_time_series_velocity,
     make_graph_time_series_discharge,
     make_graph_time_series_water_level,
+    make_graph_time_series_water_level_with_measured,
     params
 
 end

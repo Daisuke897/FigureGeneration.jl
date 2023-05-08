@@ -1500,9 +1500,7 @@ function make_graph_amount_percentage_particle_yearly_mean_suspended(
     
     plot!(p1, xlabel="", xticks=[], legend=:outerright,
         legend_font_pointsize=7,
-        legend_title_font_pointsize=7,
-        title="(a)",
-        titlelocation=:left
+        legend_title_font_pointsize=7
         )
     
     p2 = make_graph_percentage_particle_yearly_mean_suspended(
@@ -1514,7 +1512,7 @@ function make_graph_amount_percentage_particle_yearly_mean_suspended(
         japanese=japanese
     )
     
-    plot!(p2, legend=:none, title="(b)", titlelocation=:left)
+    plot!(p2, legend=:none)
 
     p = plot(
         p1,
@@ -1551,9 +1549,7 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
     
     plot!(p1, xlabel="", xticks=[], legend=:outerright,
         legend_font_pointsize=7,
-        legend_title_font_pointsize=7,
-        title="(a)",
-        titlelocation=:left
+        legend_title_font_pointsize=7
         )
     
     p2 = make_graph_percentage_particle_yearly_mean_bedload(
@@ -1566,9 +1562,7 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
     )
     
     plot!(p2,
-        legend=:none,
-        title="(b)",
-        titlelocation=:left
+        legend=:none
     )
 
     p = plot(
@@ -1766,8 +1760,7 @@ function make_graph_time_series_suspended_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[], legend=:none,
-        title=string("(a) ", t_title),
-        titlelocation=:left,
+        title=string(t_title),
         ylabel=y_label
     )
     
@@ -1779,9 +1772,7 @@ function make_graph_time_series_suspended_bedload(
         japanese=japanese
     )
     
-    plot!(p2, title="(b)",
-        titlelocation=:left
-    )
+    plot!(p2, title="")
 
     p = plot(p1, p2, layout=l)
     
@@ -2186,8 +2177,7 @@ function make_graph_time_series_particle_suspended_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string("(a) ", t_title),
-        titlelocation=:left,
+        title=string(t_title),
         ylabel=y_label
     )
     
@@ -2200,8 +2190,7 @@ function make_graph_time_series_particle_suspended_bedload(
         japanese=japanese
     )
     
-    plot!(p2, title="(b)",
-        titlelocation=:left,
+    plot!(p2, 
         legend=:none
     )
 
@@ -2449,8 +2438,7 @@ function make_graph_time_series_amount_percentage_particle_suspended_load(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string("(a) ", t_title),
-        titlelocation=:left,
+        title=string(t_title),
         ylabel=y_label
     )
     
@@ -2463,8 +2451,7 @@ function make_graph_time_series_amount_percentage_particle_suspended_load(
         japanese=japanese
     )
     
-    plot!(p2, title="(b)",
-        titlelocation=:left,
+    plot!(p2,
         legend=:none
     )
 
@@ -2506,8 +2493,7 @@ function make_graph_time_series_amount_percentage_particle_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string("(a) ", t_title),
-        titlelocation=:left
+        title=string(t_title)
     )
     
     p2 = make_graph_time_series_percentage_particle_bedload(
@@ -2519,8 +2505,7 @@ function make_graph_time_series_amount_percentage_particle_bedload(
         japanese=japanese
     )
     
-    plot!(p2, title="(b)",
-        titlelocation=:left,
+    plot!(p2,
         legend=:none
     )
 
@@ -2555,7 +2540,7 @@ function make_graph_condition_change_yearly_mean_suspended_load(
         title_s = string("年平均浮遊砂量 ", start_year, "-", final_year)
         x_label="河口からの距離 (km)"
         y_label="変化量 (m³/年)"
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]        
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
     end
     
     p = plot(

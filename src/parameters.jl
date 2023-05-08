@@ -32,6 +32,7 @@ export
     make_graph_velocity,
     make_graph_discharge,
     make_graph_water_level,
+    make_graph_condition_change_water_level,    
     make_graph_time_series_area,
     make_graph_time_series_width,
     make_graph_time_series_velocity,
@@ -647,7 +648,7 @@ function make_graph_water_level(
                 xlims=(0, 77.8),
                 xlabel=xlabel_title,
                 xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, Inf),
+                ylims=(-5, 80),
                 ylabel=ylabel_title,
                 legend=:none, title=want_title)
 
@@ -663,6 +664,135 @@ function make_graph_water_level(
         linecolor=:dodgerblue
     )
         
+
+    return p
+
+end
+
+function make_graph_water_level(
+    time_schedule,
+    target_hour::Int,
+    df_vararg::Vararg{DataFrames.DataFrame, N};
+    japanese::Bool=false
+) where {N}
+
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
+
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        time_schedule
+    ) * "Discharge " * string(df_vararg[1][start_index, :Qw]) * " m³/s"
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Water Level (T.P. m)"
+    
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="水位 (T.P. m)"
+    end
+    
+    p = Plots.plot(
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylims=(-5, 85),
+                ylabel=ylabel_title,
+                legend=:topleft, title=want_title)
+
+    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+
+    for i in 1:N
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(df_vararg[i][start_index:finish_index, :Z]),
+            label=string("Case ", i)
+        )
+
+    end
+
+    return p
+
+end
+
+function make_graph_condition_change_water_level(
+    time_schedule,
+    target_hour::Int,
+    df_base::DataFrames.DataFrame,
+    df_with_mining::DataFrames.DataFrame,
+    df_with_dam::DataFrames.DataFrame,
+    df_with_mining_and_dam::DataFrames.DataFrame;
+    japanese::Bool=false
+)
+
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
+
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        time_schedule
+    ) * "Discharge " * string(df_base[start_index, :Qw]) * " m³/s"
+
+    xlabel_title="Distance from the Estuary (km)"
+    ylabel_title="Differences (m)"
+    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
+    
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="変化 (m)"
+        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+    end
+    
+    p = Plots.plot(
+                xlims=(0, 77.8),
+                xlabel=xlabel_title,
+                xticks=[0, 20, 40, 60, 77.8],
+                ylabel=ylabel_title,
+                ylims=(-1.6,1.6),
+                legend=:topleft, title=want_title)
+
+    Plots.hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)    
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_mining[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[1]
+    )
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_dam[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[2]
+    )
+
+    Plots.plot!(
+        p,
+        X,
+        reverse(
+            df_with_mining_and_dam[start_index:finish_index, :Z]-df_base[start_index:finish_index, :Z]
+        ),
+        label=label_s[3]
+    )
+
+    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
     return p
 

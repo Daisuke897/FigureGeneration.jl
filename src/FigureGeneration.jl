@@ -36,9 +36,6 @@ export default_setting_plots,
     check_dir_exist_if_no_mkdir,
     Plots
 
-function __init__()
-    default_setting_plots()
-end
 
 include("read_df_river.jl")
 using .Read_df_river

@@ -78,7 +78,9 @@ export
     graph_elevation_gradient_width,    
     graph_measured_rb_crossing_1_year_en,
     graph_measured_rb_crossing_several_years,
-    graph_simulated_rb_crossing
+    graph_simulated_rb_crossing,
+    heatmap_measured_cross_rb_elevation,
+    heatmap_std_measured_cross_rb_elevation    
 
 include("particle_size.jl")
 using .ParticleSize

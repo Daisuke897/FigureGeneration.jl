@@ -17,10 +17,14 @@
 
 module RiverbedGraph
 
-using Printf, Plots, Statistics, DataFrames
+using Printf, Plots, DataFrames
+import Statistics
+
 using ..GeneralGraphModule
 
-import ..Exist_riverbed_level
+import
+    ..Exist_riverbed_level,
+    ..Measured_cross_rb
 
 export comparison_final_average_riverbed,
     difference_final_average_riverbed,
@@ -37,7 +41,9 @@ export comparison_final_average_riverbed,
     graph_elevation_gradient_width,
     graph_measured_rb_crossing_1_year_en,
     graph_measured_rb_crossing_several_years,
-    graph_simulated_rb_crossing
+    graph_simulated_rb_crossing,
+    heatmap_measured_cross_rb_elevation,
+    heatmap_std_measured_cross_rb_elevation
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
@@ -518,7 +524,7 @@ end
 # 全区間の実測河床位の年ごとの平均値を出力する関数
 function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::Int)
     
-    average_riverbed_whole = mean(
+    average_riverbed_whole = Statistics.mean(
         Tables.columntable(riverbed_level[:, :])[Symbol(when_year)]
         )
 	
@@ -529,7 +535,7 @@ end
 function observed_riverbed_average_section(riverbed_level::DataFrame,when_year::Int,
     section_index)
     
-    #average_riverbed_level_whole = mean(
+    #average_riverbed_level_whole = Statistics.mean(
     #    Tables.columntable(riverbed_level[:, :])[Symbol(when_year)]
     #    )
 	
@@ -545,7 +551,7 @@ function observed_riverbed_average_section!(average_riverbed_section,
     riverbed_level::DataFrame,when_year::Int,section_index)
     	
     for i in 1:length(section_index)
-        average_riverbed_section[i]=mean(
+        average_riverbed_section[i]=Statistics.mean(
 	    Tables.columntable(riverbed_level[:, :])[Symbol(when_year)][section_index[i][1]:section_index[i][2]]
 	    )
     end
@@ -623,7 +629,7 @@ function _graph_simulated_riverbed_fluctuation!(
         start_i, finish_i = decide_index_number(
             each_year_timing[keys_year[1]][1]
         )
-        std_average_value = mean(df_vararg[i][start_i:finish_i, :Zbave])        
+        std_average_value = Statistics.mean(df_vararg[i][start_i:finish_i, :Zbave])        
 
         for (index, year) in enumerate(keys_year)
             start_i, finish_i = decide_index_number(
@@ -631,7 +637,7 @@ function _graph_simulated_riverbed_fluctuation!(
             )
 
             fluc_average_value[index] =
-                mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
+                Statistics.mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
         end
 
         start_i, finish_i = decide_index_number(
@@ -639,7 +645,7 @@ function _graph_simulated_riverbed_fluctuation!(
         )
 
         fluc_average_value[length(keys_year)+1] =
-            mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
+            Statistics.mean(df_vararg[i][start_i:finish_i, :Zbave]) - std_average_value
         
 
         legend_label = string("Case ", i)
@@ -722,7 +728,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
     for (index, year) in enumerate(exist_riverbed_level.years)
 
-        fluc_average_value_measured[index] = mean(
+        fluc_average_value_measured[index] = Statistics.mean(
             measured_riverbed[first_area_index:final_area_index, Symbol(year)]
         )
 
@@ -753,7 +759,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
             first_i, final_i = decide_index_number(each_year_timing[year][1])            
             
-            fluc_average_value[index] = mean(
+            fluc_average_value[index] = Statistics.mean(
                 df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
             )
 
@@ -765,7 +771,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
         first_i, final_i = decide_index_number(each_year_timing[keys_year[end]][2])
 
-        fluc_average_value[end] = mean(
+        fluc_average_value[end] = Statistics.mean(
             df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
         )
 
@@ -1394,5 +1400,139 @@ function graph_simulated_rb_crossing(
 	
 end
 
+function heatmap_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    year::Int;
+    japanese::Bool=false
+    )
+    
+    X = 0:0.2:((size(measured_cross_rb.dict[year], 2)-1) * 0.2)
+    
+    Y = 1:size(measured_cross_rb.dict[year], 1)
+    
+    if japanese == true 
+        cl_t = "河床位 (T. P. m)"
+        xl   = "河口からの距離 (km)"
+        yl   = "断面方向のインデックス数"
+    else
+        cl_t = "Riverbed elevation (T. P. m)"
+        xl   = "Distance from the estuary (km)"
+        yl   = "Index in \ncross sectional direction"
+    end
+    
+    p = heatmap(
+      X,
+      Y, 
+      reverse!(Matrix(measured_cross_rb.dict[year]), dims=2), 
+      color=:heat,
+      colorbar_title=cl_t,
+      colorbar_titlefontsize=13,
+      colorbar_tickfontsize=11,
+      xticks=[0, 20, 40, 60, 77.8],
+      xlabel=xl,
+      ylabel=yl
+    )
+    
+    return p
+    
+end
+
+function calc_std_cross_rb_elevation!(
+    std_cross_rb_ele::Matrix{T},
+    measured_cross_rb::Measured_cross_rb,
+    years::Vector{Int}
+    ) where T <: AbstractFloat
+   
+    for i in 1:size(measured_cross_rb.dict[years[1]], 2)
+    
+        for j in 1:size(measured_cross_rb.dict[years[1]], 1)
+    
+            stock_rb_ele = zeros(length(years))
+
+            for (k, year) in enumerate(years)
+   
+                stock_rb_ele[k] = measured_cross_rb.dict[year][j, i]
+    
+            end
+        
+            std_cross_rb_ele[j, i] = Statistics.std(stock_rb_ele)
+        
+        end
+    
+    end
+    
+end
+
+function calc_std_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb
+    )
+
+    years = sort(collect(keys(measured_cross_rb.dict)))
+    std_cross_rb_ele = zeros(size(measured_cross_rb.dict[years[1]]))
+    
+    calc_std_cross_rb_elevation!(
+        std_cross_rb_ele,
+        measured_cross_rb,
+        years
+    )
+    
+    return std_cross_rb_ele 
+    
+end
+
+function heatmap_std_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    japanese::Bool=false
+    )
+    
+    years = sort(collect(keys(measured_cross_rb.dict)))
+    
+    std_cross_rb_ele = zeros(size(measured_cross_rb.dict[years[1]]))
+    
+    calc_std_cross_rb_elevation!(
+        std_cross_rb_ele,
+        measured_cross_rb,
+        years
+    )
+    
+    X = 0:0.2:((size(measured_cross_rb.dict[years[1]], 2)-1) * 0.2)
+    
+    Y = 1:size(measured_cross_rb.dict[years[1]], 1)
+    
+    if japanese == true 
+        cl_t = "標準偏差 (m)"
+        xl   = "河口からの距離 (km)"
+        yl   = "断面方向のインデックス数"
+    else
+        cl_t = "Standard deviation (m)"
+        xl   = "Distance from the estuary (km)"
+        yl   = "Index in \ncross sectional direction"
+    end
+    
+    p = heatmap(
+      X,
+      Y, 
+      reverse!(std_cross_rb_ele, dims=2), 
+      color=:heat,
+      colorbar_title=cl_t,
+      colorbar_titlefontsize=13,
+      colorbar_tickfontsize=11,
+      xticks=[0, 20, 40, 60, 77.8],
+      xlabel=xl,
+      ylabel=yl
+    )
+    
+    vline!(
+      p,
+      [40.2,24.4,14.6],
+      line=:black,
+      label="",
+      linestyle=:dot,
+      linewidth=1
+    )
+    
+    return p
+    
+end
 
 end

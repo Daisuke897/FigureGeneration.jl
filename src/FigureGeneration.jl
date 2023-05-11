@@ -15,10 +15,10 @@
 
 module FigureGeneration
 
-using Plots
+using Plots, PythonPlot
 
 function default_setting_plots()
-    pyplot(fontfamily="IPAexGothic")
+    pythonplot(fontfamily="IPAexGothic")
 
     default(tickfontsize=18, legend_font_pointsize=13,
         titlefontsize=13, guidefontsize=18,
@@ -33,8 +33,12 @@ function check_dir_exist_if_no_mkdir(path_string::String)
 end
 
 export default_setting_plots,
-       check_dir_exist_if_no_mkdir
+    check_dir_exist_if_no_mkdir,
+    Plots
 
+function __init__()
+    default_setting_plots()
+end
 
 include("read_df_river.jl")
 using .Read_df_river

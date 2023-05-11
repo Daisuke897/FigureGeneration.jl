@@ -1298,6 +1298,72 @@ function graph_simulated_rb_crossing(
 end
 
 function graph_simulated_rb_crossing(
+    df_cross::Vector{DataFrame},
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
+    time_schedule::DataFrame,
+    area_index::Int,
+    year::Int,
+    time_index::Int
+    )
+
+    want_title = making_time_series_title("",
+        time_index, time_schedule)
+
+    target_cross_rb = Matrix(
+                          df_cross[1][df_cross[1].T .== 3600 * time_index, Between(:Zb001, :Zb101)]
+	)'
+
+    river_width_x = river_width_crossing(
+        measured_width,
+        measured_cross_rb,
+        area_index,
+        year) ./1000
+
+    p = plot(
+        river_width_x,
+	    measured_cross_rb[year][:, Symbol(area_index)],
+        legend=:outerright,
+	    label=string("Measured in ", year),
+    	xlabel="Distance from Left Bank (km)",
+        ylabel="Elevation (m)",
+        title=string(
+            @sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+	        " ",
+            want_title
+        ),
+        linecolor=:midnightblue,
+        legend_font_pointsize=10
+	)
+
+    size_crossing_points = size(measured_cross_rb[year], 1)
+
+    for i in 1:length(df_cross)
+        
+        vec_cross_rb = Matrix(
+            df_cross[i][
+                df_cross[i].T .== 3600 * time_index,
+                Between(
+                    :Zb001,
+                    Symbol(@sprintf("Zb%3i", size_crossing_points))
+                    )
+            ]
+        )'[:, area_index]
+
+        plot!(
+            p,
+            river_width_x,
+            vec_cross_rb,
+	        label=string("Scenario ", i)
+	    )
+
+    end
+    
+    return p
+	
+end
+
+function graph_simulated_rb_crossing(
     df_cross::DataFrame,
     measured_width::DataFrame,
     measured_cross_rb::Dict{Int, DataFrame},

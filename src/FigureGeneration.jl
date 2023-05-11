@@ -50,7 +50,7 @@ export
     get_river_width,    
     Section,
     Exist_riverbed_level,
-    get_measured_cross_rb_dict
+    Measured_cross_rb
 
 include("general_graph_module.jl")
 

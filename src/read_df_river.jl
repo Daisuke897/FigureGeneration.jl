@@ -14,7 +14,7 @@ export get_main_df,
     get_river_width,
     Section,
     Exist_riverbed_level,
-    get_measured_cross_rb_dict
+    Measured_cross_rb
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
@@ -323,7 +323,13 @@ struct Exist_riverbed_level
      end
 end
 
-function get_measured_cross_rb_dict(
+struct Measured_cross_rb{T<:Int, U<:DataFrames.AbstractDataFrame}
+
+    dict::Dict{T, U}
+
+end
+
+function Measured_cross_rb(
     exist_riverbed_level::Exist_riverbed_level,
     df_path::String
     )
@@ -344,7 +350,7 @@ function get_measured_cross_rb_dict(
         )
     end
 
-    return measured_cross_rb
+    return Measured_cross_rb(measured_cross_rb)
 
 end
 

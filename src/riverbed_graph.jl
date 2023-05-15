@@ -43,7 +43,9 @@ export comparison_final_average_riverbed,
     graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing,
     heatmap_measured_cross_rb_elevation,
-    heatmap_std_measured_cross_rb_elevation
+    heatmap_std_measured_cross_rb_elevation,
+    heatmap_diff_measured_cross_rb_elevation,
+    heatmap_diff_per_year_measured_cross_rb_elevation
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
@@ -1428,9 +1430,11 @@ function heatmap_measured_cross_rb_elevation(
       colorbar_title=cl_t,
       colorbar_titlefontsize=13,
       colorbar_tickfontsize=11,
+      clims=(-10, 90),  
       xticks=[0, 20, 40, 60, 77.8],
       xlabel=xl,
-      ylabel=yl
+      ylabel=yl,
+      title=year  
     )
     
     return p
@@ -1532,6 +1536,192 @@ function heatmap_std_measured_cross_rb_elevation(
     )
     
     return p
+    
+end
+
+function diff_measured_cross_rb_elevation!(
+        diff_cross_rb_ele::Matrix{T},
+        measured_cross_rb::Measured_cross_rb,
+        start_year::Int,
+        final_year::Int
+    ) where T <: AbstractFloat
+    
+    for i in 1:size(diff_cross_rb_ele, 2)
+    
+        for j in 1:size(diff_cross_rb_ele, 1)
+        
+            diff_cross_rb_ele[j, i] = 
+                measured_cross_rb.dict[final_year][j, i] - 
+                measured_cross_rb.dict[start_year][j, i]
+        
+        end
+    
+    end
+    
+end
+
+function diff_measured_cross_rb_elevation(
+        measured_cross_rb::Measured_cross_rb,
+        start_year::Int,
+        final_year::Int
+        )
+    
+    years = sort(collect(keys(measured_cross_rb.dict)))
+    
+    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
+        diff_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
+        
+        diff_measured_cross_rb_elevation!(
+            diff_cross_rb_ele,
+            measured_cross_rb,
+            start_year,
+            final_year
+        )
+        
+        return diff_cross_rb_ele
+
+    else
+        
+        error("There is no actual measured river bed elevation for that year.")
+        
+    end
+     
+end
+
+function heatmap_diff_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int;
+    japanese::Bool=false
+    )
+    
+    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
+        diff_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
+        
+        diff_measured_cross_rb_elevation!(
+            diff_cross_rb_ele,
+            measured_cross_rb,
+            start_year,
+            final_year
+        )
+        
+    
+        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
+    
+        Y = 1:size(measured_cross_rb.dict[start_year], 1)
+        
+        if japanese == true 
+            cl_t = "変化 (m)"
+            xl   = "河口からの距離 (km)"
+            yl   = "断面方向のインデックス数"
+        else
+            cl_t = "Variation (m)"
+            xl   = "Distance from the estuary (km)"
+            yl   = "Index in \ncross sectional direction"
+        end
+        
+        figure_title = string(start_year, " - ", final_year)
+
+        p = heatmap(
+            X,
+            Y, 
+            reverse!(diff_cross_rb_ele, dims=2), 
+            color=:bluesreds,
+            colorbar_title=cl_t,
+            colorbar_titlefontsize=13,
+            colorbar_tickfontsize=11,
+            clims=(-15, 15),
+            xticks=[0, 20, 40, 60, 77.8],
+            xlabel=xl,
+            ylabel=yl,
+            title=figure_title
+        )
+    
+        vline!(
+            p,
+            [40.2,24.4,14.6],
+            line=:black,
+            label="",
+            linestyle=:dot,
+            linewidth=1
+        )
+    
+        return p
+        
+    else
+        
+        error("There is no actual measured river bed elevation for that year.")
+        
+    end
+    
+end
+
+function heatmap_diff_per_year_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int;
+    japanese::Bool=false
+    )
+    
+    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
+        diff_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
+        
+        diff_measured_cross_rb_elevation!(
+            diff_cross_rb_ele,
+            measured_cross_rb,
+            start_year,
+            final_year
+        )
+        
+        diff_cross_rb_ele ./= (final_year - start_year + 1)
+    
+        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
+    
+        Y = 1:size(measured_cross_rb.dict[start_year], 1)
+        
+        if japanese == true 
+            cl_t = "変化 (m/年)"
+            xl   = "河口からの距離 (km)"
+            yl   = "断面方向のインデックス数"
+        else
+            cl_t = "Variation (m/year)"
+            xl   = "Distance from the estuary (km)"
+            yl   = "Index in \ncross sectional direction"
+        end
+        
+        figure_title = string(start_year, " - ", final_year)
+
+        p = heatmap(
+            X,
+            Y, 
+            reverse!(diff_cross_rb_ele, dims=2), 
+            color=:bluesreds,
+            colorbar_title=cl_t,
+            colorbar_titlefontsize=13,
+            colorbar_tickfontsize=11,
+            clims=(-2, 2),
+            xticks=[0, 20, 40, 60, 77.8],
+            xlabel=xl,
+            ylabel=yl,
+            title=figure_title
+        )
+    
+        vline!(
+            p,
+            [40.2,24.4,14.6],
+            line=:black,
+            label="",
+            linestyle=:dot,
+            linewidth=1
+        )
+    
+        return p
+        
+    else
+        
+        error("There is no actual measured river bed elevation for that year.")
+        
+    end
     
 end
 

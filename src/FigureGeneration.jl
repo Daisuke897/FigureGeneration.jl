@@ -80,7 +80,9 @@ export
     graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing,
     heatmap_measured_cross_rb_elevation,
-    heatmap_std_measured_cross_rb_elevation    
+    heatmap_std_measured_cross_rb_elevation,
+    heatmap_diff_measured_cross_rb_elevation,
+    heatmap_diff_per_year_measured_cross_rb_elevation
 
 include("particle_size.jl")
 using .ParticleSize

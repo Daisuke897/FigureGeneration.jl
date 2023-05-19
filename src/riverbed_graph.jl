@@ -17,8 +17,8 @@
 
 module RiverbedGraph
 
-using Printf, Plots, DataFrames
-import Statistics
+using Plots, DataFrames
+import Printf, Statistics
 
 using ..GeneralGraphModule
 
@@ -780,12 +780,12 @@ function graph_variation_per_year_simulated_riverbed_level(
         i_max = final_i - first_i + 1
 
         if japanese == true
-            title_s = @sprintf(
+            title_s = Printf.@sprintf(
                 "区間平均 %.1f km - %.1f km",
                 0.2*(i_max-final_area_index), 0.2*(i_max-first_area_index)
             )    
         else 
-            title_s = @sprintf(
+            title_s = Printf.@sprintf(
                 "Average for the section %.1f km - %.1f km",
                 0.2*(i_max-final_area_index), 0.2*(i_max-first_area_index)
             )
@@ -1196,7 +1196,7 @@ function graph_measured_rb_crossing_1_year_en(
         label=year,
         xlabel="Distance from Left Bank (m)",
         ylabel="Elevation (m)",
-        title=@sprintf("%.1f km from the estuary", 0.2*(390 - area_index))
+        title=Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index))
     )
 
     return p
@@ -1216,7 +1216,7 @@ function graph_measured_rb_crossing_several_years(
 	    legend=:none,
         xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
-        title=@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+        title=Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
         palette=cgrad(:brg, length(years), categorical = true)
     )
     
@@ -1274,7 +1274,7 @@ function graph_simulated_rb_crossing(
     	xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=string(
-            @sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+            Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
 	        " ",
             want_title
         ),
@@ -1289,7 +1289,7 @@ function graph_simulated_rb_crossing(
             df_cross.T .== 3600 * time_index,
             Between(
                 :Zb001,
-                Symbol(@sprintf("Zb%3i", size_crossing_points))
+                Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))
             )
         ]
     )'[:, area_index]
@@ -1336,7 +1336,7 @@ function graph_simulated_rb_crossing(
     	xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=string(
-            @sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+            Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
 	        " ",
             want_title
         ),
@@ -1353,7 +1353,7 @@ function graph_simulated_rb_crossing(
                 df_cross[i].T .== 3600 * time_index,
                 Between(
                     :Zb001,
-                    Symbol(@sprintf("Zb%3i", size_crossing_points))
+                    Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))
                     )
             ]
         )'[:, area_index]

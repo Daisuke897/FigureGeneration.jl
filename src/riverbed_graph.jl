@@ -18,7 +18,7 @@
 module RiverbedGraph
 
 using Plots, DataFrames
-import Printf, Statistics
+import Printf, Statistics, GLM
 
 using ..GeneralGraphModule
 
@@ -26,7 +26,8 @@ import
     ..Exist_riverbed_level,
     ..Measured_cross_rb
 
-export comparison_final_average_riverbed,
+export
+    comparison_final_average_riverbed,
     difference_final_average_riverbed,
     graph_comparison_difference_average_riverbed,
     graph_cumulative_change_in_riverbed,
@@ -35,6 +36,8 @@ export comparison_final_average_riverbed,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
     graph_variation_per_year_simulated_riverbed_level,
+    graph_variation_per_year_mearsured_riverbed_level,    
+    graph_variation_per_year_mearsured_riverbed_level_with_liner_model,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,
@@ -45,7 +48,8 @@ export comparison_final_average_riverbed,
     heatmap_measured_cross_rb_elevation,
     heatmap_std_measured_cross_rb_elevation,
     heatmap_diff_measured_cross_rb_elevation,
-    heatmap_diff_per_year_measured_cross_rb_elevation
+    heatmap_diff_per_year_measured_cross_rb_elevation,
+    heatmap_slope_by_model_measured_cross_rb_elevation
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
@@ -1626,7 +1630,7 @@ function heatmap_diff_measured_cross_rb_elevation(
             X,
             Y, 
             reverse!(diff_cross_rb_ele, dims=2), 
-            color=:bluesreds,
+            color=:seismic,
             colorbar_title=cl_t,
             colorbar_titlefontsize=13,
             colorbar_tickfontsize=11,
@@ -1695,7 +1699,7 @@ function heatmap_diff_per_year_measured_cross_rb_elevation(
             X,
             Y, 
             reverse!(diff_cross_rb_ele, dims=2), 
-            color=:bluesreds,
+            color=:seismic,
             colorbar_title=cl_t,
             colorbar_titlefontsize=13,
             colorbar_tickfontsize=11,
@@ -1722,6 +1726,298 @@ function heatmap_diff_per_year_measured_cross_rb_elevation(
         error("There is no actual measured river bed elevation for that year.")
         
     end
+    
+end
+
+function graph_variation_per_year_mearsured_riverbed_level(
+    measured_cross_rb::Measured_cross_rb,
+    area_index_flow::Int,
+    area_index_cross::Int;
+    japanese=false
+    )
+
+    years = sort(collect(keys(measured_cross_rb.dict)))
+
+    y_label = "Riverbed Elevation (T.P. m)"
+
+    if japanese==true
+        y_label="河床位 (T.P. m)" 
+        label_measured = "実測"
+        title_figure = string("河口から ", round(0.2 * (390 - area_index_flow), digits=1), " km ", "断面 ", area_index_cross)
+    else
+        y_label = "Riverbed Elevation (T.P. m)"
+        label_measured = "Measured"
+        title_figure = string(round(0.2 * (390 - area_index_flow), digits=1), " km from the estuary ", "cross-section ", area_index_cross)
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(years[begin]-1, years[end]+1),
+        xticks=1965:5:2000,
+        legend=:bottomleft,
+        legend_font_pointsize=10,
+        tickfontsize=14,
+        title=title_figure
+    )
+
+    fluc = zeros(length(measured_cross_rb.dict))
+
+    for (index, year) in enumerate(years)
+
+        fluc[index] = 
+            measured_cross_rb.dict[year][area_index_cross, area_index_flow]
+
+    end
+    
+    plot!(
+        p,
+        years,
+        fluc,
+        markershape=:rect,
+        label=label_measured
+    )    
+
+    base_ylims = fluc[1]
+
+    vline!(
+        p,
+        [1975],
+        label="",
+        linecolor=:black,
+        linestyle=:dot,
+        linewidth=1
+    )
+    
+    hline!(
+        p,
+        [base_ylims],
+        label="",
+        linecolor=:black,
+        linestyle=:dash,
+        linewidth=1
+    )
+    
+    plot!(
+        p,
+        ylims=(base_ylims - 7.6, base_ylims + 4.4)
+    )
+
+    return p
+    
+end
+
+function fit_linear_variation_per_year_mearsured_riverbed_level(
+    measured_cross_rb::Measured_cross_rb,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    start_year::Int,
+    final_year::Int
+    )
+
+    years = Int[]
+    fluc = Float64[]
+    
+    for year in start_year:final_year
+        
+        if haskey(measured_cross_rb.dict, year)
+            push!(years, year)
+            push!(fluc,  measured_cross_rb.dict[year][area_index_cross, area_index_flow])
+        end
+        
+    end
+    
+    fluc_df = DataFrame(years=years, riverbed=fluc)
+
+    rb_model = GLM.lm(GLM.@formula(riverbed ~ years), fluc_df)
+    
+    return rb_model
+    
+end
+
+function graph_variation_per_year_mearsured_riverbed_level_with_liner_model(
+    measured_cross_rb::Measured_cross_rb,
+    area_index_flow::Int,
+    area_index_cross::Int;
+    japanese=false
+    )
+    
+    function f(
+        x,
+        intercept,
+        slope
+        )
+        
+        y = intercept + slope * x
+        
+        return y
+    end
+
+    p = graph_variation_per_year_mearsured_riverbed_level(
+      measured_cross_rb,
+      area_index_flow,
+      area_index_cross;
+      japanese=false
+    )
+    
+    rb_model = fit_linear_variation_per_year_mearsured_riverbed_level(
+      measured_cross_rb,
+      area_index_flow,
+      area_index_cross,
+      1965,
+      1975
+    )
+    
+    coefs = GLM.coef(rb_model)
+    
+    years = 1965:1975
+    
+    plot!(
+      p,
+      years,
+      f.(years, coefs[1], coefs[2]),
+      linestyle=:dash,
+      label="Before 1975"
+    )
+    
+    rb_model = fit_linear_variation_per_year_mearsured_riverbed_level(
+      measured_cross_rb,
+      area_index_flow,
+      area_index_cross,
+      1975,
+      1999
+    )
+    
+    coefs = GLM.coef(rb_model)
+    
+    years = 1975:1999
+    
+    plot!(
+      p,
+      years,
+      f.(years, coefs[1], coefs[2]),
+      linestyle=:dash,
+      label="After 1975"
+    )
+    
+    plot!(
+      p,
+      legend=:outerright
+    )
+    
+    return p
+end
+
+function slope_liner_model_measured_cross_rb_elevation!(
+    slope_cross_rb_ele::Matrix{T},
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int
+    ) where T <: AbstractFloat
+    
+    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
+        
+        for i in 1:size(slope_cross_rb_ele, 2)
+            
+            for j in 1:size(slope_cross_rb_ele, 1) 
+            
+                rb_model_liner = fit_linear_variation_per_year_mearsured_riverbed_level(
+                    measured_cross_rb,
+                    i,
+                    j,
+                    start_year,
+                    final_year
+                )
+                
+                slope_cross_rb_ele[j, i] = GLM.coef(rb_model_liner)[2]
+            
+            end
+            
+        end
+        
+    else
+        
+        error("There is no actual measured river bed elevation for that year.")
+        
+    end
+    
+end
+
+function slope_liner_model_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int
+    )
+        
+    slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
+       
+    slope_liner_model_measured_cross_rb_elevation!(
+        slope_cross_rb_ele,
+        measured_cross_rb,
+        start_year,
+        final_year
+    )
+        
+    return slope_cross_rb_ele
+    
+end
+
+function heatmap_slope_by_model_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int;
+    japanese::Bool=false
+    )
+
+        slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
+        
+        slope_liner_model_measured_cross_rb_elevation!(
+            slope_cross_rb_ele,
+            measured_cross_rb,
+            start_year,
+            final_year
+        )
+    
+        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
+    
+        Y = 1:size(measured_cross_rb.dict[start_year], 1)
+        
+        if japanese == true 
+            cl_t = "線形回帰式の傾き (m/年)"
+            xl   = "河口からの距離 (km)"
+            yl   = "断面方向のインデックス数"
+        else
+            cl_t = "Slope of linear regression (m/year)"
+            xl   = "Distance from the estuary (km)"
+            yl   = "Index in \ncross sectional direction"
+        end
+        
+        figure_title = string(start_year, " - ", final_year)
+
+        p = heatmap(
+            X,
+            Y, 
+            reverse!(slope_cross_rb_ele, dims=2), 
+            color=:seismic,
+            colorbar_title=cl_t,
+            colorbar_titlefontsize=13,
+            colorbar_tickfontsize=11,
+            clims=(-1.6, 1.6),
+            xticks=[0, 20, 40, 60, 77.8],
+            xlabel=xl,
+            ylabel=yl,
+            title=figure_title
+        )
+    
+        vline!(
+            p,
+            [40.2,24.4,14.6],
+            line=:black,
+            label="",
+            linestyle=:dot,
+            linewidth=1
+        )
+    
+        return p
     
 end
 

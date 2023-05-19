@@ -72,6 +72,8 @@ export
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
     graph_variation_per_year_simulated_riverbed_level,
+    graph_variation_per_year_mearsured_riverbed_level,
+    graph_variation_per_year_mearsured_riverbed_level_with_liner_model,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,
@@ -82,7 +84,8 @@ export
     heatmap_measured_cross_rb_elevation,
     heatmap_std_measured_cross_rb_elevation,
     heatmap_diff_measured_cross_rb_elevation,
-    heatmap_diff_per_year_measured_cross_rb_elevation
+    heatmap_diff_per_year_measured_cross_rb_elevation,
+    heatmap_slope_by_model_measured_cross_rb_elevation
 
 include("particle_size.jl")
 using .ParticleSize

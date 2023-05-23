@@ -40,7 +40,7 @@ export default_setting_plots,
 include("read_df_river.jl")
 using .Read_df_river
 export
-    get_main_df,
+    Main_df,
     get_cross_rb_df,
     get_time_schedule,
     get_dict_each_year_timing,

@@ -4,7 +4,8 @@ import CSV,
        DataFrames,
        Printf
 
-export get_main_df,
+export
+    Main_df,
     get_cross_rb_df,
     get_time_schedule,
     get_dict_each_year_timing,
@@ -170,6 +171,32 @@ function get_string_section(section_index)
     get_string_section!(section_string, section_index)    
     
     return section_string
+end
+
+struct Main_df{N, T<:DataFrames.AbstractDataFrame}
+
+    tuple::NTuple
+
+end
+
+function Main_df(df_vararg::Vararg{T, N}) where T where N
+
+    return Main_df{N, T}(df_vararg)
+
+end
+
+function Main_df(
+    file_paths::Vararg{String, N}
+    ) where N
+
+    df_vec = Vector{DataFrames.DataFrame}(undef, N)
+    
+    for i in 1:N
+        df_vec[i] = get_main_df(file_paths[i])
+    end
+
+    return Main_df(df_vec...)
+
 end
 
 function get_main_df()

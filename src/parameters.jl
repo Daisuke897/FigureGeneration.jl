@@ -21,7 +21,8 @@ import
     Plots,
     DataFrames,
     ..GeneralGraphModule,
-    ..ParticleSize
+    ..ParticleSize,
+    ..FigureGeneration.Main_df
 
 export
     make_graph_energy_slope,
@@ -45,9 +46,10 @@ struct Param{T<:AbstractFloat}
     manning_n::T
     g::T
     specific_gravity::T
+    kinematic_viscosity::T
 end
 
-params = Param{Float64}(0.30, 9.81, 1.65)
+params = Param{Float64}(0.30, 9.81, 1.65, 1.004e-6)
 
 function average_neighbors_target_hour!(
     return_array::AbstractVector{T},
@@ -107,7 +109,11 @@ function calc_energy_slope(
     return i_e
 end
 
-function calc_energy_slope(df, param::Param, target_hour::Int)
+function calc_energy_slope(
+    df::DataFrames.DataFrame,
+    param::Param,
+    target_hour::Int
+    )
 
     area      = average_neighbors_target_hour(df, :Aw, target_hour)
     width     = average_neighbors_target_hour(df, :Bw, target_hour)
@@ -236,6 +242,26 @@ function calc_non_dimensional_shear_stress(
     return τₛ
 end
 
+"""
+
+    calc_settling_velocity_by_rubey(param::Param{T}, diameter_m::T) where {T<:AbstractFloat}
+
+Rubey式による沈降速度を計算する関数
+`diameter_m`は粒径であり、単位はメートルである。
+"""
+function calc_settling_velocity_by_rubey(
+    param::Param{T},
+    diameter_m::T
+    ) where {T<:AbstractFloat}
+    
+    tmp = 36 * param.kinematic_viscosity^2 / (param.specific_gravity * param.g * diameter_m^3)
+    
+    w_f = (sqrt(2.0/3.0 + tmp) - sqrt(tmp)) * sqrt(param.specific_gravity * param.g * diameter_m)
+    
+    return w_f
+    
+end
+
 function make_graph_energy_slope(
     df,
     time_schedule,
@@ -270,15 +296,12 @@ function make_graph_energy_slope(
 end
 
 function make_graph_friction_velocity(
-    df,
+    df_main::Main_df{N, T},
     time_schedule,
     param::Param,
     target_hour::Int;
     japanese::Bool=false
-)
-
-    u_star = calc_friction_velocity(df, param, target_hour)
-    X      = average_neighbors_target_hour(df, :I, target_hour) ./ 1000
+) where {N, T<:DataFrames.AbstractDataFrame}
 
     want_title = GeneralGraphModule.making_time_series_title(
         "",
@@ -295,19 +318,42 @@ function make_graph_friction_velocity(
         ylabel_title="摩擦速度 (m/s)"
     end
     
-    Plots.vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    Plots.plot!(X, reverse(u_star),
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, 4.0),
-                ylabel=ylabel_title,
-                legend=:none,
-                title=want_title)
+    p = Plots.vline(
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dot,
+        linewidth=2,
+        legend=:topleft
+    )
+
+    for i in 1:N
+
+        u_star = calc_friction_velocity(df_main.tuple[i], param, target_hour)
+        X      = average_neighbors_target_hour(df_main.tuple[i], :I, target_hour) ./ 1000
+
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(u_star),
+            xlims=(0, 77.8),
+            xlabel=xlabel_title,
+            xticks=[0, 20, 40, 60, 77.8],
+            ylims=(0, 4.0),
+            ylabel=ylabel_title,
+            label=string("Case ", i),
+            title=want_title
+        )
+
+    end
+
+    return p
+    
 end
 
 function make_graph_non_dimensional_shear_stress(
-    df,
+    df::DataFrames.DataFrame,
     sediment_size,
     time_schedule,
     param::Param,

@@ -1210,25 +1210,25 @@ end
 # 断面の実測河床位を複数年重ねて表示させる。
 function graph_measured_rb_crossing_several_years(
     measured_width::DataFrame,
-    measured_cross_rb::Dict{Int, DataFrame},
+    measured_cross_rb::Measured_cross_rb,
     area_index::Int
     )
 
-    years = sort(collect(keys(measured_cross_rb)))
+    years = sort(collect(keys(measured_cross_rb.dict)))
 
     p = plot(
 	    legend=:none,
         xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
-        palette=cgrad(:brg, length(years), categorical = true)
+        palette=:roma25
     )
     
     for year in years
 
         X = river_width_crossing(
             measured_width,
-            measured_cross_rb,
+            measured_cross_rb.dict,
             area_index,
             year
         ) / 1000
@@ -1236,7 +1236,7 @@ function graph_measured_rb_crossing_several_years(
         plot!(
             p,
             X,
-       	    measured_cross_rb[year][!, Symbol(area_index)],
+       	    measured_cross_rb.dict[year][!, Symbol(area_index)],
             linewidth=1
         )
 
@@ -1489,7 +1489,7 @@ function calc_std_cross_rb_elevation(
 end
 
 function heatmap_std_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb,
+    measured_cross_rb::Measured_cross_rb;
     japanese::Bool=false
     )
     
@@ -1542,6 +1542,31 @@ function heatmap_std_measured_cross_rb_elevation(
     return p
     
 end
+
+function heatmap_std_measured_cross_rb_elevation(
+    measured_cross_rb::Measured_cross_rb,
+    vline_area_index::Int;
+    japanese::Bool=false
+    )
+    
+    p = heatmap_std_measured_cross_rb_elevation(
+        measured_cross_rb,
+        japanese = japanese
+    )
+
+    vline!(
+        p,
+        [0.2 * (390 - vline_area_index)],
+        linestyle=:dash,
+        linewidth=2,
+        linecolor=:black,
+        label=""
+    )
+    
+    return p
+    
+end
+
 
 function diff_measured_cross_rb_elevation!(
         diff_cross_rb_ele::Matrix{T},

@@ -350,9 +350,9 @@ struct Exist_riverbed_level
      end
 end
 
-struct Measured_cross_rb{T<:Int, U<:DataFrames.AbstractDataFrame}
+struct Measured_cross_rb{T<:DataFrames.AbstractDataFrame}
 
-    dict::Dict{T, U}
+    dict::Dict{Int, T}
 
 end
 

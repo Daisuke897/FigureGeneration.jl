@@ -20,6 +20,7 @@ module Parameters
 import
     Plots,
     DataFrames,
+    Statistics,
     ..GeneralGraphModule,
     ..ParticleSize,
     ..FigureGeneration.Main_df
@@ -1279,20 +1280,30 @@ function make_graph_time_series_water_level_with_measured(
 #        ylims=(0, 140),
         ylabel=y_label,
         title=t_title,
-        legend=:best,
-        tickfontsize=10,
-        guidefontsize=10,
-        legend_font_pointsize=8,
-        legend_title_font_pointsize=8,
+        legend=:bottomleft,
+        tickfontsize=12,
+        guidefontsize=12,
+        legend_font_pointsize=11,
+        legend_title_font_pointsize=11,
 #        palette=:tab20,
 #        legend_title=t_legend
     )
 
-    GeneralGraphModule._vline_per_year_timing!(
-        p,
-        each_year_timing
-    )
+    # GeneralGraphModule._vline_per_year_timing!(
+    #     p,
+    #     each_year_timing
+    # )
 
+    Plots.vline!(
+        [each_year_timing[1975][1],
+         each_year_timing[1985][1],
+         each_year_timing[1995][1]] .* 3600,
+        label="",
+        linewidth=1,
+        linestyle=:dash,
+        linecolor=:black
+    )
+    
     water_level_time_series = zeros(Float64, num_time)
 
     for j in 1:num_time
@@ -1331,16 +1342,9 @@ function make_graph_time_series_water_level_with_measured(
         color=:red
     )
 
-    Plots.vline!(
-        [each_year_timing[1965][1],
-         each_year_timing[1975][1],
-         each_year_timing[1997][1],
-         each_year_timing[1998][1]] .* 3600,
-        label="",
-        linewidth=1,
-        linestyle=:dash,
-        linecolor=:orangered
-    )
+    mean_water_level = Statistics.mean(water_level_time_series)
+
+    Plots.plot!(p, ylims=(mean_water_level-4.0, mean_water_level+5.0))
 
     return p
 

@@ -1527,7 +1527,8 @@ function heatmap_std_measured_cross_rb_elevation(
       colorbar_tickfontsize=11,
       xticks=[0, 20, 40, 60, 77.8],
       xlabel=xl,
-      ylabel=yl
+      ylabel=yl,
+      clims=(0, 4.2) 
     )
     
     vline!(

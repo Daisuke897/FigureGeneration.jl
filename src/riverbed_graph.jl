@@ -1523,7 +1523,7 @@ function heatmap_std_measured_cross_rb_elevation(
       reverse!(std_cross_rb_ele, dims=2), 
       color=:heat,
       colorbar_title=cl_t,
-      colorbar_titlefontsize=13,
+      colorbar_titlefontsize=14,
       colorbar_tickfontsize=11,
       xticks=[0, 20, 40, 60, 77.8],
       xlabel=xl,

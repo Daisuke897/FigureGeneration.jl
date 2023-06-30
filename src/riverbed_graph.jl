@@ -37,7 +37,8 @@ export
     graph_simulated_riverbed_fluctuation,
     graph_variation_per_year_simulated_riverbed_level,
     graph_variation_per_year_mearsured_riverbed_level,    
-    graph_variation_per_year_mearsured_riverbed_level_with_liner_model,
+    graph_variation_per_year_mearsured_riverbed_level_with_linear_model,
+    graph_variation_per_year_simulated_riverbed_level_with_linear_model,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,
@@ -47,6 +48,7 @@ export
     graph_simulated_rb_crossing,
     heatmap_measured_cross_rb_elevation,
     heatmap_std_measured_cross_rb_elevation,
+    heatmap_std_simulated_cross_rb_elevation,
     heatmap_diff_measured_cross_rb_elevation,
     heatmap_diff_per_year_measured_cross_rb_elevation,
     heatmap_slope_by_model_measured_cross_rb_elevation
@@ -1521,7 +1523,7 @@ function heatmap_std_measured_cross_rb_elevation(
       X,
       Y, 
       reverse!(std_cross_rb_ele, dims=2), 
-      color=:heat,
+      color=:haline,
       colorbar_title=cl_t,
       colorbar_titlefontsize=14,
       colorbar_tickfontsize=11,
@@ -1860,7 +1862,7 @@ function fit_linear_variation_per_year_mearsured_riverbed_level(
     
 end
 
-function graph_variation_per_year_mearsured_riverbed_level_with_liner_model(
+function graph_variation_per_year_mearsured_riverbed_level_with_linear_model(
     measured_cross_rb::Measured_cross_rb,
     area_index_flow::Int,
     area_index_cross::Int;
@@ -1933,7 +1935,7 @@ function graph_variation_per_year_mearsured_riverbed_level_with_liner_model(
     return p
 end
 
-function slope_liner_model_measured_cross_rb_elevation!(
+function slope_linear_model_measured_cross_rb_elevation!(
     slope_cross_rb_ele::Matrix{T},
     measured_cross_rb::Measured_cross_rb,
     start_year::Int,
@@ -1946,7 +1948,7 @@ function slope_liner_model_measured_cross_rb_elevation!(
             
             for j in 1:size(slope_cross_rb_ele, 1) 
             
-                rb_model_liner = fit_linear_variation_per_year_mearsured_riverbed_level(
+                rb_model_linear = fit_linear_variation_per_year_mearsured_riverbed_level(
                     measured_cross_rb,
                     i,
                     j,
@@ -1954,7 +1956,7 @@ function slope_liner_model_measured_cross_rb_elevation!(
                     final_year
                 )
                 
-                slope_cross_rb_ele[j, i] = GLM.coef(rb_model_liner)[2]
+                slope_cross_rb_ele[j, i] = GLM.coef(rb_model_linear)[2]
             
             end
             
@@ -1968,7 +1970,7 @@ function slope_liner_model_measured_cross_rb_elevation!(
     
 end
 
-function slope_liner_model_measured_cross_rb_elevation(
+function slope_linear_model_measured_cross_rb_elevation(
     measured_cross_rb::Measured_cross_rb,
     start_year::Int,
     final_year::Int
@@ -1976,7 +1978,7 @@ function slope_liner_model_measured_cross_rb_elevation(
         
     slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
        
-    slope_liner_model_measured_cross_rb_elevation!(
+    slope_linear_model_measured_cross_rb_elevation!(
         slope_cross_rb_ele,
         measured_cross_rb,
         start_year,
@@ -1996,7 +1998,7 @@ function heatmap_slope_by_model_measured_cross_rb_elevation(
 
         slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
         
-        slope_liner_model_measured_cross_rb_elevation!(
+        slope_linear_model_measured_cross_rb_elevation!(
             slope_cross_rb_ele,
             measured_cross_rb,
             start_year,
@@ -2044,6 +2046,446 @@ function heatmap_slope_by_model_measured_cross_rb_elevation(
         )
     
         return p
+    
+end
+
+function variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level::Vector{Float64},
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        year::Vector{Int}
+    )
+
+    
+    vec_i_first = zeros(Int, length(years))
+    
+    for (k, year) in enumerate(years)
+        
+        vec_i_first[k] = GeneralGraphModule.decide_index_number(
+            each_year_timing[year][1],
+            n_x
+        )[1]
+        
+    end
+    
+    vec_i_first[end] = GeneralGraphModule.decide_index_number(
+        each_year_timing[years[end-1]][2],
+        n_x
+    )[1]
+    
+    for (k, t) in enumerate(vec_i_first)
+                    
+        vec_riverbed_level[k] = cross_rb[t+area_index_flow-1, Symbol(Printf.@sprintf("Zb%03i", area_index_cross))]                    
+                    
+    end
+    
+    return vec_riverbed_level
+    
+end
+
+function variation_per_year_simulated_riverbed_level(
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        year::Vector{Int}
+    )
+
+    vec_riverbed_level = zeros(Float64, length(year))
+
+    variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level,
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        year
+    )
+    
+    return vec_riverbed_level
+    
+end
+
+function graph_variation_per_year_simulated_riverbed_level(
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int;
+        japanese=false
+    )
+    
+    
+    years = sort(collect(keys(each_year_timing)))
+    push!(years, years[end]+1)
+
+    vec_riverbed_level = zeros(Float64, length(years))
+
+    variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level,
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        years
+    )
+    
+    if japanese==true
+        y_label="河床位 (T.P. m)" 
+        label_simulated = "再現"
+        title_figure = string("河口から ", round(0.2 * (390 - area_index_flow), digits=1), " km ", "断面 ", area_index_cross)
+    else
+        y_label = "Riverbed Elevation (T.P. m)"
+        label_simulated = "Simulated"
+        title_figure = string(round(0.2 * (390 - area_index_flow), digits=1), " km from the estuary ", "cross-section ", area_index_cross)
+    end
+    
+    p = plot(
+        ylabel=y_label,
+        xlims=(years[begin]-1, years[end]+1),
+        xticks=1965:5:2000,
+        legend=:bottomleft,
+        legend_font_pointsize=10,
+        tickfontsize=14,
+        title=title_figure
+    )
+    
+    
+    plot!(
+        p,
+        years,
+        vec_riverbed_level,
+        markershape=:rect,
+        label=label_simulated
+    )
+    
+    base_ylims = vec_riverbed_level[begin]
+    
+    vline!(
+        p,
+        [1975],
+        label="",
+        linecolor=:black,
+        linestyle=:dot,
+        linewidth=1
+    )
+    
+    hline!(
+        p,
+        [base_ylims],
+        label="",
+        linecolor=:black,
+        linestyle=:dash,
+        linewidth=1
+    )
+    
+    plot!(
+        p,
+        ylims=(base_ylims - 7.6, base_ylims + 4.4)
+    )
+    
+    return p
+    
+end
+
+function variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level::Vector{Float64},
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        years::Vector{Int}
+    )
+
+    
+    vec_i_first = zeros(Int, length(years))
+    
+    for (k, year) in enumerate(years[begin:end-1])
+        
+        vec_i_first[k] = decide_index_number(
+            each_year_timing[year][1],
+            n_x
+        )[1]
+        
+    end
+    
+    vec_i_first[end] = decide_index_number(
+        each_year_timing[years[end-1]][2],
+        n_x
+    )[1]
+    
+    for (k, t) in enumerate(vec_i_first)
+                    
+        vec_riverbed_level[k] = cross_rb[t+area_index_flow-1, Symbol(Printf.@sprintf("Zb%03i", area_index_cross))]                    
+                    
+    end
+    
+    return vec_riverbed_level
+    
+end
+
+function variation_per_year_simulated_riverbed_level(
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        years::Vector{Int}
+    )
+
+    vec_riverbed_level = zeros(Float64, length(years))
+
+    variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level,
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        years
+    )
+    
+    return vec_riverbed_level
+    
+end
+
+function fit_linear_variation_per_year_simulated_riverbed_level(
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        start_year::Int,
+        final_year::Int
+    )
+    
+    years = collect(start_year:final_year+1)
+    
+    vec_riverbed_level = zeros(Float64, length(years))
+
+    variation_per_year_simulated_riverbed_level!(
+        vec_riverbed_level,
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        years
+    )
+    
+    fluc_df = DataFrame(years=years, riverbed=vec_riverbed_level)
+
+    rb_model = GLM.lm(GLM.@formula(riverbed ~ years), fluc_df)
+    
+    return rb_model
+    
+end
+
+function calc_std_simulated_cross_rb_elevation!(
+        std_cross_rb_ele,
+        cross_rb::DataFrame,
+        time_schedule::DataFrame,
+        each_year_timing
+    )
+   
+    n = length(each_year_timing) + 1
+    
+    n_x, n_y = size(std_cross_rb_ele)
+        
+    years = sort(collect(keys(each_year_timing)))
+        
+    vec_i_first = zeros(Int, n)
+        
+    vec_i_first[1] = GeneralGraphModule.decide_index_number(
+        each_year_timing[years[1]][1],
+        n_x
+    )[1]
+    
+    for (k, year) in enumerate(years)
+           
+        vec_i_first[k+1] = GeneralGraphModule.decide_index_number(
+            each_year_timing[year][2],
+            n_x
+        )[1]
+            
+    end
+        
+    for i in 1:n_y
+            
+        for j in 1:n_x
+                
+            temp_std = zeros(Float64, n)
+            
+            for (k, t) in enumerate(vec_i_first)
+                    
+                temp_std[k] = cross_rb[t+j-1, Symbol(Printf.@sprintf("Zb%03i", i))]                    
+                    
+            end
+                
+            std_cross_rb_ele[j, i] = Statistics.std(temp_std)
+             
+        end
+            
+    end
+    
+    return std_cross_rb_ele 
+    
+end
+
+function calc_std_simulated_cross_rb_elevation(
+        cross_rb::DataFrame,
+        time_schedule::DataFrame,
+        each_year_timing,
+        n_x::Int,
+        n_y::Int
+    )
+        
+    std_cross_rb_ele = zeros(Float64, n_x, n_y)
+    
+
+    calc_std_simulated_cross_rb_elevation!(
+        std_cross_rb_ele,
+        cross_rb,
+        time_schedule,
+        each_year_timing
+    )
+        
+    return std_cross_rb_ele 
+    
+end
+
+function heatmap_std_simulated_cross_rb_elevation(
+        cross_rb::DataFrame,
+        time_schedule::DataFrame,
+        each_year_timing,
+        n_x::Int,
+        n_y::Int;
+        japanese::Bool=false
+    )
+    
+    if japanese == true 
+        cl_t = "標準偏差 (m)"
+        xl   = "河口からの距離 (km)"
+        yl   = "断面方向のインデックス数"
+    else
+        cl_t = "Standard deviation (m)"
+        xl   = "Distance from the estuary (km)"
+        yl   = "Index in \ncross sectional direction"
+    end
+    
+    std_cross_rb_ele = zeros(Float64, n_x, n_y)
+
+    calc_std_simulated_cross_rb_elevation!(
+        std_cross_rb_ele,
+        cross_rb,
+        time_schedule,
+        each_year_timing
+    )
+    
+    X = 0:0.2:((n_x-1) * 0.2)
+    Y = 1:n_y
+    
+    p = Plots.heatmap(
+        X,
+        Y,
+        reverse!(std_cross_rb_ele', dims=2),
+        xlabel=xl,
+        ylabel=yl,
+        colorbar_title=cl_t,
+        colorbar_titlefontsize=14,
+        colorbar_tickfontsize=11,
+        clims=(0, 4.2),  
+        xticks=[0, 20, 40, 60, 77.8],
+        color=:haline
+    )
+    
+    
+end
+
+function graph_variation_per_year_simulated_riverbed_level_with_linear_model(
+        cross_rb::DataFrame,
+        each_year_timing,
+        area_index_flow::Int,
+        area_index_cross::Int,
+        n_x::Int,
+        start_year::Int,
+        final_year::Int,
+        mid_year::Int;
+        japanese::Bool=false
+    )
+
+    function f(
+        x,
+        intercept,
+        slope
+        )
+        
+        y = intercept + slope * x
+        
+        return y
+    end
+    
+    p = graph_variation_per_year_simulated_riverbed_level(
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x;
+        japanese=japanese
+    )
+    
+    rb_model = fit_linear_variation_per_year_simulated_riverbed_level(
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        start_year,
+        mid_year-1
+    )
+    
+    coefs = GLM.coef(rb_model)
+    
+    years = start_year:mid_year
+    
+    plot!(
+        p,
+        years,
+        f.(years, coefs[1], coefs[2]),
+        linestyle=:dash,
+        label=string("Before ", mid_year)
+    )
+    
+    rb_model = fit_linear_variation_per_year_simulated_riverbed_level(
+        cross_rb,
+        each_year_timing,
+        area_index_flow,
+        area_index_cross,
+        n_x,
+        mid_year,
+        final_year
+    )
+    
+    coefs = GLM.coef(rb_model)
+    
+    years = mid_year:final_year+1
+    
+    plot!(
+        p,
+        years,
+        f.(years, coefs[1], coefs[2]),
+        linestyle=:dash,
+        label=string("After ", mid_year)
+    )
+    
+    return p
     
 end
 

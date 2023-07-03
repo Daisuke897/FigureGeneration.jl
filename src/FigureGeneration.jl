@@ -15,7 +15,7 @@
 
 module FigureGeneration
 
-using Plots, PythonPlot
+using Plots
 
 function default_setting_plots()
     pythonplot(fontfamily="IPAexGothic")

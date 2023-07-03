@@ -17,7 +17,8 @@
 
 module SedimentLoad
 
-using Printf,
+using
+    Printf,
     Plots,
     Statistics,
     DataFrames,
@@ -25,6 +26,8 @@ using Printf,
     CSV,
     LinearAlgebra,
     ..GeneralGraphModule
+
+include("./sub_sediment_load/sediment_load_each_year.jl")
 
 export
     make_graph_sediment_load_each_year_diff_scale_ja,
@@ -59,13 +62,21 @@ export
     make_graph_time_series_amount_percentage_particle_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
-    make_graph_particle_suspended_volume_each_year,
-    make_graph_particle_bedload_volume_each_year,
     make_graph_particle_sediment_volume_each_year,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
-    make_bedload_sediment_mean_year_csv
+    make_bedload_sediment_mean_year_csv,
+    # sediment_load_each_year.jl
+    make_graph_particle_suspended_volume_each_year,
+    make_graph_particle_suspended_volume_each_year_with_average_line,
+    make_graph_condition_change_suspended_volume_each_year,
+    make_graph_condition_change_suspended_volume_each_year_with_average_line,
+    make_graph_particle_bedload_volume_each_year,
+    make_graph_particle_bedload_volume_each_year_with_average_line,
+    make_graph_condition_change_bedload_volume_each_year,
+    make_graph_condition_change_bedload_volume_each_year_with_average_line
+    
     
 #特定位置の各年の年間掃流砂量の配列を出力する関数
 function bedload_sediment_volume_each_year!(
@@ -220,115 +231,6 @@ function particle_bedload_volume_each_year(
 end
 
 #積み上げの図をつくる
-function make_graph_particle_suspended_volume_each_year(
-    area_index::Int,
-    data_file::DataFrame,
-    each_year_timing,
-    sediment_size::DataFrame,
-    river_length_km;
-    japanese::Bool=false
-    )
-
-    suspended_sediment = particle_suspended_volume_each_year(
-        area_index, data_file,
-        each_year_timing, sediment_size
-        )
-
-    strings_sediment_size =
-        string.(round.(sediment_size[:,:diameter_mm], digits=3))
-
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))
-
-    if japanese == true
-        title_graph = string(
-            "河口から ", round(area_km, digits=2), " km"
-        )
-        y_label = "浮遊砂量 (m³/年)"
-        l_title = "粒径 (mm)"
-    else
-        title_graph = string(
-            round(area_km, digits=2), " km from the estuary"
-        )
-        y_label = "Suspended sediment (m³/year)"
-        l_title = "Size (mm)"        
-    end    
-    
-    p = vline([1975], line=:black, label="", linestyle=:dot, linewidth=1)
-
-    StatsPlots.groupedbar!(
-        p,
-        collect(1965:1999), suspended_sediment,
-        bar_position = :stack,
-        legend = :outerright,
-        ylims=(0, 2e7),
-        xlims=(1964, 2000),
-        ylabel=y_label,
-        xticks=[1965, 1975, 1985, 1995],
-        label=permutedims(strings_sediment_size),
-        label_title=l_title,
-        legend_font_pointsize=10,
-        title = title_graph,
-        palette=:tab20
-    )
-
-    return p
-
-end    
-
-function make_graph_particle_bedload_volume_each_year(
-    area_index::Int,
-    data_file::DataFrame,
-    each_year_timing,
-    sediment_size::DataFrame,
-    river_length_km;
-    japanese::Bool=false
-    )
-
-    bedload_sediment = particle_bedload_volume_each_year(
-        area_index, data_file,
-        each_year_timing, sediment_size
-        )
-
-    strings_sediment_size =
-        string.(round.(sediment_size[:,:diameter_mm], digits=3))
-
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))
-
-    if japanese == true
-        title_graph = string(
-            "河口から ", round(area_km, digits=2), " km"
-        )
-        y_label = "掃流砂量 (m³/年)"
-        l_title = "粒径 (mm)"
-    else
-        title_graph = string(
-            round(area_km, digits=2), " km from the estuary"
-        )
-        y_label = "Bedload (m³/year)"
-        l_title = "Size (mm)"        
-    end
-    
-    p = vline([1975], line=:black, label="", linestyle=:dot, linewidth=1)
-    
-    StatsPlots.groupedbar!(
-        p,
-        collect(1965:1999), bedload_sediment,
-        bar_position = :stack,
-        legend = :outerright,
-        ylims=(0, 1.5e5),
-        xlims=(1964, 2000),
-        ylabel=y_label,
-        xticks=[1965, 1975, 1985, 1995],
-        label=permutedims(strings_sediment_size),
-        label_title=l_title,
-        legend_font_pointsize=10,
-        title = title_graph,
-        palette=:tab20
-    )
-
-    return p
-
-end
 
 function make_graph_particle_sediment_volume_each_year(
     area_index::Int,

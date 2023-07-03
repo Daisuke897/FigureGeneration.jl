@@ -140,13 +140,20 @@ export
     make_graph_time_series_amount_percentage_particle_bedload,    
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
-    make_graph_particle_suspended_volume_each_year,
-    make_graph_particle_bedload_volume_each_year,
     make_graph_particle_sediment_volume_each_year_ja,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
-    make_bedload_sediment_mean_year_csv
+    make_bedload_sediment_mean_year_csv,
+    # sediment_load_each_year.jl
+    make_graph_particle_suspended_volume_each_year,
+    make_graph_particle_suspended_volume_each_year_with_average_line,
+    make_graph_condition_change_suspended_volume_each_year,
+    make_graph_condition_change_suspended_volume_each_year_with_average_line,
+    make_graph_particle_bedload_volume_each_year,
+    make_graph_particle_bedload_volume_each_year_with_average_line,
+    make_graph_condition_change_bedload_volume_each_year,
+    make_graph_condition_change_bedload_volume_each_year_with_average_line
 
 include("hydraulic_conditions.jl")
 using .Hydraulic_conditions

@@ -165,7 +165,8 @@ function make_RMSE_fluctuation_graph_each(
         each_year_timing,data_file,initial_and_final_riverbed_level)
     
     plot!(p, year_list, list_RMSE, label="0.0-77.8 km", linewidth=4,
-        markershape=markershapes[end], markersize=8)
+          markershape=markershapes[end], markersize=8,
+          legend_font_pointsize=10)
     
     return p
     
@@ -178,14 +179,14 @@ function make_RMSE_df!(df_rmse::DataFrame,
 
     year_list=collect(exist_riverbed_level_years)
 
-    df_rmse[!, :year]  = year_list
+    df_rmse.year  = year_list
 
     #全区間
     list_RMSE=zeros(Float64, length(exist_riverbed_level_years))
     calculate_each_year_RMSE!(list_RMSE,exist_riverbed_level_years,
         each_year_timing,data_file,initial_and_final_riverbed_level)
 
-    df_rmse[!, :whole] = list_RMSE
+    df_rmse.whole = list_RMSE
 
     #区間に分けた場合
     for section_number in 1:length(section_index)

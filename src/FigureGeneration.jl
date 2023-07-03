@@ -15,10 +15,10 @@
 
 module FigureGeneration
 
-using Plots
+using Plots, PythonPlot
 
 function default_setting_plots()
-    pyplot(fontfamily="IPAexGothic")
+    pythonplot(fontfamily="IPAexGothic")
 
     default(tickfontsize=18, legend_font_pointsize=13,
         titlefontsize=13, guidefontsize=18,
@@ -33,20 +33,24 @@ function check_dir_exist_if_no_mkdir(path_string::String)
 end
 
 export default_setting_plots,
-       check_dir_exist_if_no_mkdir
+    check_dir_exist_if_no_mkdir,
+    Plots
 
 
 include("read_df_river.jl")
 using .Read_df_river
 export
-    get_main_df,
+    Main_df,
+    get_cross_rb_df,
     get_time_schedule,
     get_dict_each_year_timing,
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
+    get_river_width,    
     Section,
-    Exist_riverbed_level
+    Exist_riverbed_level,
+    Measured_cross_rb
 
 include("general_graph_module.jl")
 
@@ -61,13 +65,29 @@ using .RiverbedGraph
 export
     comparison_final_average_riverbed,
     difference_final_average_riverbed,
+    graph_comparison_difference_average_riverbed,    
     graph_cumulative_change_in_riverbed,
     graph_condition_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
-    graph_simulated_riverbed_fluctuation,    
+    graph_simulated_riverbed_fluctuation,
+    graph_variation_per_year_simulated_riverbed_level,
+    graph_variation_per_year_mearsured_riverbed_level,
+    graph_variation_per_year_mearsured_riverbed_level_with_linear_model,
+    graph_variation_per_year_simulated_riverbed_level_with_linear_model,    
+    graph_observed_rb_level,
+    graph_observed_rb_gradient,
+    graph_transverse_distance,
+    graph_elevation_gradient_width,    
     graph_measured_rb_crossing_1_year_en,
-    graph_simulated_rb_crossing
+    graph_measured_rb_crossing_several_years,
+    graph_simulated_rb_crossing,
+    heatmap_measured_cross_rb_elevation,
+    heatmap_std_measured_cross_rb_elevation,
+    heatmap_std_simulated_cross_rb_elevation,    
+    heatmap_diff_measured_cross_rb_elevation,
+    heatmap_diff_per_year_measured_cross_rb_elevation,
+    heatmap_slope_by_model_measured_cross_rb_elevation
 
 include("particle_size.jl")
 using .ParticleSize
@@ -77,8 +97,13 @@ export
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,
+    graph_cumulative_rate_in_mean_diameter,
+    graph_cumulative_rate_variation_in_mean_diameter,
     graph_condition_change_in_mean_diameter,
-    graph_condition_ratio_in_mean_diameter
+    graph_condition_ratio_in_mean_diameter,
+    graph_cumulative_condition_change_in_mean_diameter,
+    graph_cumulative_condition_rate_in_mean_diameter,
+    graph_measured_distribution
 
 include("sediment_load.jl")
 using .SedimentLoad
@@ -95,10 +120,28 @@ export
     make_graph_suspended_bedload_target_hour_ja,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
+    make_graph_particle_yearly_mean_suspended,
+    make_graph_particle_yearly_mean_bedload,
+    make_graph_percentage_particle_yearly_mean_suspended,    
+    make_graph_percentage_particle_yearly_mean_bedload,
+    make_graph_amount_percentage_particle_yearly_mean_suspended,
+    make_graph_amount_percentage_particle_yearly_mean_bedload,    
+    make_graph_time_series_suspended_load,
+    make_graph_time_series_bedload,
+    make_graph_time_series_suspended_bedload,
+    make_graph_time_series_variation_suspended_load,
+    make_graph_time_series_variation_bedload,    
+    make_graph_time_series_particle_suspended_load,
+    make_graph_time_series_particle_bedload,
+    make_graph_time_series_particle_suspended_bedload,    
+    make_graph_time_series_percentage_particle_suspended_load,
+    make_graph_time_series_percentage_particle_bedload,
+    make_graph_time_series_amount_percentage_particle_suspended_load,    
+    make_graph_time_series_amount_percentage_particle_bedload,    
     make_graph_condition_change_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
-    make_graph_particle_suspended_volume_each_year_ja,
-    make_graph_particle_bedload_volume_each_year_ja,
+    make_graph_particle_suspended_volume_each_year,
+    make_graph_particle_bedload_volume_each_year,
     make_graph_particle_sediment_volume_each_year_ja,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
@@ -107,16 +150,29 @@ export
 
 include("hydraulic_conditions.jl")
 using .Hydraulic_conditions
-export make_upstream_discharge_graph,
-       make_downstream_water_level_graph,
-       make_up_discharge_down_water_lev_graph
+export
+    make_upstream_discharge_graph,
+    make_downstream_water_level_graph,
+    make_up_discharge_down_water_lev_graph
 
 include("parameters.jl")
 using .Parameters
-export make_figure_energy_slope,
-       make_figure_friction_velocity,
-       make_figure_non_dimensional_shear_stress,
-       make_figure_velocity,
-       params
+export
+    make_graph_energy_slope,
+    make_graph_friction_velocity,
+    make_graph_non_dimensional_shear_stress,
+    make_graph_area,   
+    make_graph_width,
+    make_graph_velocity,
+    make_graph_discharge,
+    make_graph_water_level,
+    make_graph_condition_change_water_level,
+    make_graph_time_series_area,
+    make_graph_time_series_width,
+    make_graph_time_series_velocity,
+    make_graph_time_series_discharge,
+    make_graph_time_series_water_level,
+    make_graph_time_series_water_level_with_measured,
+    params
 
 end

@@ -4,14 +4,18 @@ import CSV,
        DataFrames,
        Printf
 
-export get_main_df,
-       get_time_schedule,
-       get_dict_each_year_timing,
-       get_observed_riverbed_level,
-       get_sediment_size,
-       get_fmini,
-       Section,
-       Exist_riverbed_level
+export
+    Main_df,
+    get_cross_rb_df,
+    get_time_schedule,
+    get_dict_each_year_timing,
+    get_observed_riverbed_level,
+    get_sediment_size,
+    get_fmini,
+    get_river_width,
+    Section,
+    Exist_riverbed_level,
+    Measured_cross_rb
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
@@ -169,6 +173,32 @@ function get_string_section(section_index)
     return section_string
 end
 
+struct Main_df{N, T<:DataFrames.AbstractDataFrame}
+
+    tuple::NTuple
+
+end
+
+function Main_df(df_vararg::Vararg{T, N}) where T where N
+
+    return Main_df{N, T}(df_vararg)
+
+end
+
+function Main_df(
+    file_paths::Vararg{String, N}
+    ) where N
+
+    df_vec = Vector{DataFrames.DataFrame}(undef, N)
+    
+    for i in 1:N
+        df_vec[i] = get_main_df(file_paths[i])
+    end
+
+    return Main_df(df_vec...)
+
+end
+
 function get_main_df()
 
     df = get_main_df("./")
@@ -186,6 +216,22 @@ function get_main_df(df_path::String)
     return df
 end
 
+function get_cross_rb_df()
+
+    df = get_cross_rb_df("./")
+
+    return df
+end
+
+function get_cross_rb_df(df_path::String)
+
+    df = CSV.read(
+        string(df_path, "3_riverbed.csv"),
+        DataFrames.DataFrame
+    )
+    
+    return df    
+end
 
 function get_time_schedule()
     time_schedule = get_time_schedule("./")
@@ -231,6 +277,21 @@ function get_fmini(df_path::String)
     )
     
     return fmini
+end
+
+function get_river_width()
+    river_width = get_river_width("./")
+
+    return river_width
+end
+
+function get_river_width(df_path::String)
+    river_width = CSV.read(
+        string(df_path, "river_width.csv"),
+        DataFrames.DataFrame
+    )
+
+    return river_width
 end
 
 function get_observed_riverbed_level()
@@ -289,8 +350,36 @@ struct Exist_riverbed_level
      end
 end
 
+struct Measured_cross_rb{T<:DataFrames.AbstractDataFrame}
 
-#df_cross = CSV.read("./3_riverbed.csv", DataFrame)
+    dict::Dict{Int, T}
+
+end
+
+function Measured_cross_rb(
+    exist_riverbed_level::Exist_riverbed_level,
+    df_path::String
+    )
+
+    measured_cross_rb = Dict{Int, DataFrames.DataFrame}()
+
+    for year in exist_riverbed_level.years
+        get!(
+            measured_cross_rb,
+            year,
+            CSV.read(
+                string(
+                    df_path,
+                    year,
+                    "_measured_cross_rb.csv"),
+                DataFrames.DataFrame
+            )
+        )
+    end
+
+    return Measured_cross_rb(measured_cross_rb)
+
+end
 
 #mining_volume = CSV.read("./mining_volume.csv", DataFrames.DataFrame)
 

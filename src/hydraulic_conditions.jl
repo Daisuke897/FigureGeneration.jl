@@ -118,43 +118,6 @@ function _plot_target_array_graph!(
     return p
 end
 
-function _get_target_year_sec!(
-    target_year_sec,
-    each_year_timing
-    )
-    
-    for i in 1:length(each_year_timing)-1
-        target_year = 1965 + i - 1
-        target_year_sec[i] = 3600 * each_year_timing[target_year][1]
-    end
-
-end
-
-function _vline_per_year_timing!(
-    p,
-    each_year_timing
-    )
-
-    target_year_sec=zeros(
-        Int, length(each_year_timing)-1
-    )
-
-    _get_target_year_sec!(
-        target_year_sec,
-        each_year_timing
-    )
-    
-    vline!(p,
-        target_year_sec,
-        label="",
-        linecolor=:black,
-        linestyle=:dash,
-        linewidth=1
-    )
-
-    return p
-end
-
 function make_upstream_discharge_graph(
     data_file,
     time_schedule,
@@ -196,7 +159,7 @@ function make_upstream_discharge_graph(
 
     p = _base_upstream_discharge_graph(japanese, max_num_time)
 
-    _vline_per_year_timing!(
+    GeneralGraphModule._vline_per_year_timing!(
         p,
         each_year_timing
     )
@@ -228,6 +191,38 @@ function make_downstream_water_level_graph(
     water_level_data = time_schedule[:, :water_level_m]
 
     p = _base_downstream_water_level_graph(japanese, max_num_time)
+
+    _plot_target_array_graph!(
+        p,
+        time_data,
+        water_level_data,
+        :midnightblue,
+        target_hours
+    )
+    
+    return p
+
+end
+
+function make_downstream_water_level_graph(
+    data_file,
+    time_schedule,
+    each_year_timing,
+    target_hours;
+    japanese::Bool=false    
+    )
+
+    time_data = unique(data_file[:, :T])
+    max_num_time = maximum(time_data)
+    
+    water_level_data = time_schedule[:, :water_level_m]
+
+    p = _base_downstream_water_level_graph(japanese, max_num_time)
+
+    GeneralGraphModule._vline_per_year_timing!(
+        p,
+        each_year_timing
+    )
 
     _plot_target_array_graph!(
         p,
@@ -275,5 +270,40 @@ function make_up_discharge_down_water_lev_graph(
     return p
 end   
 
+function make_up_discharge_down_water_lev_graph(
+    data_file,
+    time_schedule,
+    each_year_timing,
+    target_hours;
+    japanese::Bool=false
+    )
+
+    p1 = make_upstream_discharge_graph(
+        data_file,
+        time_schedule,
+        each_year_timing,
+        target_hours,
+        japanese=japanese
+    )
+
+    plot!(p1, xticks=0, xlabel="", title="(a)")
+
+    p2 = make_downstream_water_level_graph(
+        data_file,
+        time_schedule,
+        each_year_timing,
+        target_hours,
+        japanese=japanese
+    )
+
+    plot!(p2, title="(b)")
+
+    p = plot(p1, p2,
+             titlelocation=:left,
+             layout=Plots.@layout[a;b],
+             top_margin=8Plots.mm)
+    
+    return p
+end   
 
 end

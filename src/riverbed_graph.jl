@@ -2049,68 +2049,6 @@ function heatmap_slope_by_model_measured_cross_rb_elevation(
     
 end
 
-function variation_per_year_simulated_riverbed_level!(
-        vec_riverbed_level::Vector{Float64},
-        cross_rb::DataFrame,
-        each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        year::Vector{Int}
-    )
-
-    
-    vec_i_first = zeros(Int, length(years))
-    
-    for (k, year) in enumerate(years)
-        
-        vec_i_first[k] = GeneralGraphModule.decide_index_number(
-            each_year_timing[year][1],
-            n_x
-        )[1]
-        
-    end
-    
-    vec_i_first[end] = GeneralGraphModule.decide_index_number(
-        each_year_timing[years[end-1]][2],
-        n_x
-    )[1]
-    
-    for (k, t) in enumerate(vec_i_first)
-                    
-        vec_riverbed_level[k] = cross_rb[t+area_index_flow-1, Symbol(Printf.@sprintf("Zb%03i", area_index_cross))]                    
-                    
-    end
-    
-    return vec_riverbed_level
-    
-end
-
-function variation_per_year_simulated_riverbed_level(
-        cross_rb::DataFrame,
-        each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        year::Vector{Int}
-    )
-
-    vec_riverbed_level = zeros(Float64, length(year))
-
-    variation_per_year_simulated_riverbed_level!(
-        vec_riverbed_level,
-        cross_rb,
-        each_year_timing,
-        area_index_flow,
-        area_index_cross,
-        n_x,
-        year
-    )
-    
-    return vec_riverbed_level
-    
-end
-
 function graph_variation_per_year_simulated_riverbed_level(
         cross_rb::DataFrame,
         each_year_timing,

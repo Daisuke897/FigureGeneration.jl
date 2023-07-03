@@ -928,6 +928,7 @@ function make_graph_yearly_mean_suspended_load(
     start_year::Int,
     final_year::Int,
     each_year_timing,
+    vec_label::Vector{String},
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
@@ -936,7 +937,7 @@ function make_graph_yearly_mean_suspended_load(
 
     title_s = string(start_year, "-", final_year)
     x_label = "Distance from the Estuary (km)"
-    y_label = "Suspended Load (m³/year)"
+    y_label = "Suspended (m³/year)"
 
     if japanese==true 
         title_s = string(start_year, "-", final_year)
@@ -946,12 +947,13 @@ function make_graph_yearly_mean_suspended_load(
     
     p = plot(
     	title=title_s,
-	xlabel=x_label,
-	xlims=(0,77.8),
+	    xlabel=x_label,
+     	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	ylims=(0, 4e6),
-	legend=:outerright
+    	ylims=(0, 4e6),
+    	legend=:outerright,
+        palette=:Dark2_4
         )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
@@ -965,20 +967,20 @@ function make_graph_yearly_mean_suspended_load(
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	    df_vararg[i],
+	        df_vararg[i],
             start_year,
             final_year,
             each_year_timing,
-	    :Qsall
+	        :Qsall
         )
         
-        legend_label = string("Case ", i)
+        legend_label = vec_label[i]
         
         plot!(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	    label=legend_label
+	        label=legend_label
         )
 
     end
@@ -991,6 +993,7 @@ function make_graph_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
     each_year_timing,
+    vec_label::Vector{String},
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
@@ -1009,12 +1012,13 @@ function make_graph_yearly_mean_bedload(
     
     p = plot(
     	title=title_s,
-	xlabel=x_label,
-	xlims=(0,77.8),
+	    xlabel=x_label,
+	    xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	ylims=(0, 6e4),
-	legend=:outerright
+	    ylims=(0, 6e4),
+	    legend=:outerright,
+        palette=:Dark2_4
         )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
@@ -1028,14 +1032,14 @@ function make_graph_yearly_mean_bedload(
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	    df_vararg[i],
+	        df_vararg[i],
             start_year,
             final_year,
             each_year_timing,
-	    :Qball
+	        :Qball
         )
         
-        legend_label = string("Case ", i)
+        legend_label = vec_label[i]
         
         plot!(
             p,
@@ -2531,10 +2535,10 @@ function make_graph_condition_change_yearly_mean_suspended_load(
 
     flow_size = length(df_base[df_base.T .== 0, :I])
 
-    title_s = string("Annual mean suspended load ", start_year, "-", final_year)
+    title_s = string("Annual average suspended sediment load ", start_year, "-", final_year)
     x_label = "Distance from the Estuary (km)"
     y_label = "Variation (m³/year)"
-    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]    
+    label_s = ["by Mining (Case 3 - Case 4)", "by Dam (Case 2 - Case 4)", "by Mining and Dam (Case 1 - Case 4)"]    
 
     if japanese==true 
         title_s = string("年平均浮遊砂量 ", start_year, "-", final_year)
@@ -2545,15 +2549,16 @@ function make_graph_condition_change_yearly_mean_suspended_load(
     
     p = plot(
     	title=title_s,
-	xlabel=x_label,
-	xlims=(0,77.8),
+    	xlabel=x_label,
+    	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	ylims=(-7e5, 7e5),
-	legend=:best
+    	ylims=(-7e5, 7e5),
+	    legend=:best,
+        palette=cgrad(:Set1_3, rev = true)
         )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)        
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)        
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -2613,12 +2618,12 @@ function make_graph_condition_change_yearly_mean_suspended_load(
     
     sediment_load_yearly_mean_mining_dam .=
         sediment_load_yearly_mean_mining_dam .- sediment_load_yearly_mean_base
-    
+
     plot!(
         p,
         X,
-        reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1]
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3]
     )
 
     plot!(
@@ -2626,13 +2631,13 @@ function make_graph_condition_change_yearly_mean_suspended_load(
         X,
         reverse(sediment_load_yearly_mean_dam),
         label=label_s[2]
-    )
-    
+    )    
+
     plot!(
         p,
         X,
-        reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3]
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1]
     )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
@@ -2654,10 +2659,10 @@ function make_graph_condition_change_yearly_mean_bedload(
 
     flow_size = length(df_base[df_base.T .== 0, :I])
 
-    title_s = string("Annual mean bedload ", start_year, "-", final_year)
+    title_s = string("Annual average bedload ", start_year, "-", final_year)
     x_label = "Distance from the Estuary (km)"
     y_label = "Variation (m³/year)"
-    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]    
+    label_s = ["by Mining (Case 3 - Case 4)", "by Dam (Case 2 - Case 4)", "by Mining and Dam (Case 1 - Case 4)"]    
 
     if japanese==true 
         title_s = string("年平均掃流砂量 ", start_year, "-", final_year)
@@ -2668,15 +2673,16 @@ function make_graph_condition_change_yearly_mean_bedload(
     
     p = plot(
     	title=title_s,
-	xlabel=x_label,
-	xlims=(0,77.8),
+	    xlabel=x_label,
+	    xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	ylims=(-20000, 20000),
-	legend=:best
+	    ylims=(-20000, 20000),
+	    legend=:best,
+        palette=cgrad(:Set1_3, rev = true)
         )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)    
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)    
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -2736,12 +2742,12 @@ function make_graph_condition_change_yearly_mean_bedload(
     
     sediment_load_yearly_mean_mining_dam .=
         sediment_load_yearly_mean_mining_dam .- sediment_load_yearly_mean_base
-    
+
     plot!(
         p,
         X,
-        reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1]
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3]
     )
 
     plot!(
@@ -2754,8 +2760,8 @@ function make_graph_condition_change_yearly_mean_bedload(
     plot!(
         p,
         X,
-        reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3]
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1]
     )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)

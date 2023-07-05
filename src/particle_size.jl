@@ -21,6 +21,8 @@ using Printf, Plots, Statistics, DataFrames
 using LinearAlgebra
 using ..GeneralGraphModule
 
+import ..Read_df_river: Main_df
+
 export
     graph_ratio_simulated_particle_size_dist,
     graph_average_simulated_particle_size_dist,
@@ -270,9 +272,10 @@ function graph_average_simulated_particle_size_dist(
 
     distance_from_estuary = 0:0.2:77.8
 
-    legend_label = "Initial Condition"
     if japanese==true
         legend_label="初期条件"
+    else
+        legend_label="Measured in 1996 and 1997 (Initial condition)"
     end
     
     start_index, finish_index = decide_index_number(0)
@@ -308,6 +311,62 @@ function graph_average_simulated_particle_size_dist(
     return p
 end
 
+function graph_average_simulated_particle_size_dist(
+    time_schedule::DataFrame,
+    hours_now::Int,
+    vec_label_string::Vector{String},
+    df_vararg::Vararg{DataFrame, N};
+    japanese::Bool=false
+    ) where {N}
+
+    p = _graph_average_simulated_particle_size_dist(
+            time_schedule,
+            hours_now,
+            japanese=japanese
+        ) 
+
+    distance_from_estuary = 0:0.2:77.8
+
+    if japanese==true
+        legend_label="初期条件"
+    else
+        legend_label="Measured in 1996 and 1997 (Initial condition)"
+    end
+    
+    start_index, finish_index = decide_index_number(0)
+    
+    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
+    
+    plot!(
+        p, distance_from_estuary,
+        reverse(simu_particle_size_dist),
+        label=legend_label,
+        linecolor=:midnightblue,
+        linewidth=1
+    )
+    
+    start_index, finish_index = decide_index_number(hours_now)
+        
+    for i in 1:N
+
+        simu_particle_size_dist = df_vararg[i][start_index:finish_index, :Dmave] * 1000
+    
+        legend_label = vec_label_string[i]
+            
+        plot!(
+            p, distance_from_estuary,
+            reverse(simu_particle_size_dist),
+            label=legend_label,
+            linewidth=1
+        )
+
+    end
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)    
+
+    return p
+end
+
 function _graph_average_simulated_particle_size_dist(
     time_schedule::DataFrame,
     hours_now::Int;
@@ -317,12 +376,12 @@ function _graph_average_simulated_particle_size_dist(
     want_title = making_time_series_title("",
         hours_now, time_schedule)
 
-    x_label="Distance from the estuary (km)"
-    y_label="Mean Diameter (mm)"
-
     if japanese==true
         x_label="河口からの距離 (km)"
         y_label="平均粒径 (mm)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Mean diameter (mm)"
     end        
 
     p = plot(
@@ -331,8 +390,9 @@ function _graph_average_simulated_particle_size_dist(
         xlabel=x_label,
         ylabel=y_label,
         xlims=(0,77.8),
-        ylims=(0, 200),
-        legend=:topleft
+        ylims=(-10, 200),
+        legend=:topleft,
+        legend_font_pointsize=10
     )
 
     return p
@@ -386,6 +446,68 @@ function _graph_average_simulated_particle_size_fluc!(
     end
 
     return p
+end
+
+#平均粒径の時系列的な変化を示すグラフを作りたい
+function graph_temporal_variation_average_simulated_particle_size_fluc(
+    df_main::Main_df,
+    target_df::Int,
+    time_schedule::DataFrame,
+    title::String,
+    target_hour::Vararg{Int, N};
+    japanese::Bool=false
+    ) where {N}
+
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Mean diameter (mm)"
+    end        
+
+    line_colors = cgrad(:reds, N, categorical = true)
+    
+    p = plot(
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-10, 200),
+        legend=:topleft,
+        legend_font_pointsize=10,
+        title=title
+    )
+
+    distance_from_estuary = 0:0.2:77.8
+
+    for i in 1:N
+
+        start_index, finish_index = decide_index_number(target_hour[i])
+        
+        simu_particle_size_dist = df_main.tuple[target_df][start_index:finish_index, :Dmave] * 1000
+    
+        legend_label = making_time_series_title(
+            "",
+            target_hour[i],
+            time_schedule
+        )
+            
+        plot!(
+            p, distance_from_estuary,
+            reverse(simu_particle_size_dist),
+            label=legend_label,
+            linewidth=1,
+            linecolor=line_colors[i]
+        )
+
+    end
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+
+    return p
+
 end
 
 function _graph_average_simulated_particle_size_fluc!(
@@ -561,6 +683,117 @@ function graph_average_simulated_particle_size_fluc(
     )
 
     return p
+end
+
+#変動率を求める（1965年〜1974年と1975年〜1999年）
+function calc_change_rate_in_mean_diameter(
+    df_main::Main_df,
+    target_df_base::Int,
+    target_df::Int,
+    target_hour::Int
+    )
+
+    start_index, finish_index = decide_index_number(target_hour)
+    
+    mean_diameter_base = df_main.tuple[target_df_base      ][start_index:finish_index, :Dmave] * 1000
+    mean_diameter      = df_main.tuple[target_df           ][start_index:finish_index, :Dmave] * 1000
+
+    change_rate = (mean_diameter ./ mean_diameter_base .- 1.0) * 100
+
+    return change_rate
+
+end
+
+function graph_change_rate_in_mean_diameter(
+    df_main::Main_df,
+    target_df_base::Int,
+    target_df_mining_dam::Int,
+    target_df_dam::Int,
+    target_df_mining::Int,
+    time_schedule::DataFrame,
+    target_hour::Int;
+    japanese::Bool=false
+    )
+
+    want_title = making_time_series_title(
+        "",
+        target_hour,
+        time_schedule
+    )
+    
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径の変化率 (%)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Change in mean diameter (%)"
+    end
+
+    p = plot(
+        title=want_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        yticks=[-80, -60, -40, -20, 0, 20, 40, 60, 80],
+        ylims=(-85, 85),
+        legend=:topleft,
+        legend_font_pointsize=11,
+        titlefontsize=16
+    )
+    
+    distance_from_estuary = 0:0.2:77.8
+
+    change_rate_mining_dam = calc_change_rate_in_mean_diameter(
+        df_main,
+        target_df_base,
+        target_df_mining_dam,
+        target_hour
+    )
+
+    change_rate_dam = calc_change_rate_in_mean_diameter(
+        df_main,
+        target_df_base,
+        target_df_dam,
+        target_hour
+    )
+
+    change_rate_mining = calc_change_rate_in_mean_diameter(
+        df_main,
+        target_df_base,
+        target_df_mining,
+        target_hour
+    )
+    
+    plot!(
+        p,
+        distance_from_estuary,
+        reverse(change_rate_mining_dam),
+        label="by gravel mining and the Ikeda Dam (Case 1 - Case 4)",
+        linecolor=cgrad(:Set1_3)[1]
+    )
+
+    plot!(
+        p,
+        distance_from_estuary,
+        reverse(change_rate_dam),
+        label="by the Ikeda Dam (Case 2 - Case 4)",
+        linecolor=cgrad(:Set1_3)[2]
+    )
+
+    plot!(
+        p,
+        distance_from_estuary,
+        reverse(change_rate_mining),
+        label="by gravel mining (Case 3 - Case 4)",
+        linecolor=cgrad(:Set1_3)[3]
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    return p
+
 end
 
 function graph_cumulative_change_in_mean_diameter(

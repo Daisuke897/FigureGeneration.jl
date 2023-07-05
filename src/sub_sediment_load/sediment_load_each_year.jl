@@ -1,6 +1,7 @@
 function make_graph_particle_suspended_volume_each_year(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64;
@@ -25,6 +26,7 @@ function make_graph_particle_suspended_volume_each_year(
     p = make_graph_particle_suspended_volume_each_year(
         area_index,
         data_file,
+        index_df,
         each_year_timing,
         sediment_size,
         string_sediment_size,
@@ -39,7 +41,8 @@ end
 
 function make_graph_particle_suspended_volume_each_year(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     string_sediment_size::Vector{String},
@@ -49,7 +52,7 @@ function make_graph_particle_suspended_volume_each_year(
     )
 
     suspended_sediment = particle_suspended_volume_each_year(
-        area_index, data_file,
+        area_index, data_file.tuple[index_df],
         each_year_timing, sediment_size
         )
 
@@ -103,7 +106,8 @@ end
 
 function make_graph_particle_suspended_volume_each_year_with_average_line(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64,
@@ -118,6 +122,7 @@ function make_graph_particle_suspended_volume_each_year_with_average_line(
     p = make_graph_particle_suspended_volume_each_year(
         area_index,
         data_file,
+        index_df,
         each_year_timing,
         sediment_size,
         river_length_km;
@@ -127,7 +132,7 @@ function make_graph_particle_suspended_volume_each_year_with_average_line(
 
     vec_suspended = suspended_sediment_volume_each_year(
         area_index, 
-        data_file, 
+        data_file.tuple[index_df], 
         each_year_timing
     )
 
@@ -156,25 +161,26 @@ function make_graph_particle_suspended_volume_each_year_with_average_line(
 end
 
 function make_graph_condition_change_suspended_volume_each_year(
-        area_index::Int,
-        data_file_base::DataFrame,
-        data_file::DataFrame,
-        each_year_timing,
-        sediment_size::DataFrame,
-        string_sediment_size::Vector{String},
-        river_length_km::Float64;
-        added_title::String="",
-        japanese::Bool=false
-        )
+    area_index::Int,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
+    each_year_timing,
+    sediment_size::DataFrame,
+    string_sediment_size::Vector{String},
+    river_length_km::Float64;
+    added_title::String="",
+    japanese::Bool=false
+    )
 
     variation_suspended = particle_suspended_volume_each_year(
         area_index, 
-        data_file,
+        data_file.tuple[index_df],
         each_year_timing, 
         sediment_size
     ) - particle_suspended_volume_each_year(
         area_index, 
-        data_file_base,
+        data_file.tuple[index_df_base],
         each_year_timing, 
         sediment_size
     )
@@ -228,8 +234,9 @@ end
 
 function make_graph_condition_change_suspended_volume_each_year(
     area_index::Int,
-    data_file_base::DataFrame,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64;
@@ -253,8 +260,9 @@ function make_graph_condition_change_suspended_volume_each_year(
 
     p = make_graph_condition_change_suspended_volume_each_year(
         area_index,
-        data_file_base,
         data_file,
+        index_df_base,
+        index_df,
         each_year_timing,
         sediment_size,
         string_sediment_size,
@@ -269,8 +277,9 @@ end
 
 function make_graph_condition_change_suspended_volume_each_year_with_average_line(
     area_index::Int,
-    data_file_base::DataFrame,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64,
@@ -284,8 +293,9 @@ function make_graph_condition_change_suspended_volume_each_year_with_average_lin
 
     p = make_graph_condition_change_suspended_volume_each_year(
         area_index,
-        data_file_base,
         data_file,
+        index_df_base,
+        index_df,
         each_year_timing,
         sediment_size,
         river_length_km;
@@ -296,11 +306,11 @@ function make_graph_condition_change_suspended_volume_each_year_with_average_lin
 
     vec_suspended = suspended_sediment_volume_each_year(
         area_index, 
-        data_file, 
+        data_file.tuple[index_df], 
         each_year_timing
     ) - suspended_sediment_volume_each_year(
         area_index, 
-        data_file_base, 
+        data_file.tuple[index_df_base], 
         each_year_timing
     ) 
 
@@ -330,7 +340,8 @@ end
 
 function make_graph_particle_bedload_volume_each_year(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64;
@@ -355,6 +366,7 @@ function make_graph_particle_bedload_volume_each_year(
     p = make_graph_particle_bedload_volume_each_year(
         area_index,
         data_file,
+        index_df,        
         each_year_timing,
         sediment_size,
         string_sediment_size,
@@ -369,7 +381,8 @@ end
 
 function make_graph_particle_bedload_volume_each_year(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     string_sediment_size::Vector{String},
@@ -379,7 +392,7 @@ function make_graph_particle_bedload_volume_each_year(
     )
 
     bedload_sediment = particle_bedload_volume_each_year(
-        area_index, data_file,
+        area_index, data_file.tuple[index_df],
         each_year_timing, sediment_size
         )
 
@@ -433,7 +446,8 @@ end
 
 function make_graph_particle_bedload_volume_each_year_with_average_line(
     area_index::Int,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64,
@@ -448,6 +462,7 @@ function make_graph_particle_bedload_volume_each_year_with_average_line(
     p = make_graph_particle_bedload_volume_each_year(
         area_index,
         data_file,
+        index_df,
         each_year_timing,
         sediment_size,
         river_length_km;
@@ -457,7 +472,7 @@ function make_graph_particle_bedload_volume_each_year_with_average_line(
 
     vec_bedload = bedload_sediment_volume_each_year(
         area_index, 
-        data_file, 
+        data_file.tuple[index_df], 
         each_year_timing
     )
 
@@ -486,25 +501,26 @@ function make_graph_particle_bedload_volume_each_year_with_average_line(
 end
 
 function make_graph_condition_change_bedload_volume_each_year(
-        area_index::Int,
-        data_file_base::DataFrame,
-        data_file::DataFrame,
-        each_year_timing,
-        sediment_size::DataFrame,
-        string_sediment_size::Vector{String},
-        river_length_km::Float64;
-        added_title::String="",
-        japanese::Bool=false
-        )
+    area_index::Int,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
+    each_year_timing,
+    sediment_size::DataFrame,
+    string_sediment_size::Vector{String},
+    river_length_km::Float64;
+    added_title::String="",
+    japanese::Bool=false
+    )
 
     variation_bedload = particle_bedload_volume_each_year(
         area_index, 
-        data_file,
+        data_file.tuple[index_df],
         each_year_timing, 
         sediment_size
     ) - particle_bedload_volume_each_year(
         area_index, 
-        data_file_base,
+        data_file.tuple[index_df_base],
         each_year_timing, 
         sediment_size
     )
@@ -558,8 +574,9 @@ end
 
 function make_graph_condition_change_bedload_volume_each_year(
     area_index::Int,
-    data_file_base::DataFrame,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64;
@@ -583,8 +600,9 @@ function make_graph_condition_change_bedload_volume_each_year(
 
     p = make_graph_condition_change_bedload_volume_each_year(
         area_index,
-        data_file_base,
         data_file,
+        index_df_base,
+        index_df,
         each_year_timing,
         sediment_size,
         string_sediment_size,
@@ -599,8 +617,9 @@ end
 
 function make_graph_condition_change_bedload_volume_each_year_with_average_line(
     area_index::Int,
-    data_file_base::DataFrame,
-    data_file::DataFrame,
+    data_file::Main_df,
+    index_df_base::Int,
+    index_df::Int,
     each_year_timing,
     sediment_size::DataFrame,
     river_length_km::Float64,
@@ -614,8 +633,9 @@ function make_graph_condition_change_bedload_volume_each_year_with_average_line(
 
     p = make_graph_condition_change_bedload_volume_each_year(
         area_index,
-        data_file_base,
         data_file,
+        index_df_base,
+        index_df,
         each_year_timing,
         sediment_size,
         river_length_km;
@@ -626,11 +646,11 @@ function make_graph_condition_change_bedload_volume_each_year_with_average_line(
 
     vec_bedload = bedload_sediment_volume_each_year(
         area_index, 
-        data_file, 
+        data_file.tuple[index_df], 
         each_year_timing
     ) - bedload_sediment_volume_each_year(
         area_index, 
-        data_file_base, 
+        data_file.tuple[index_df_base], 
         each_year_timing
     ) 
 

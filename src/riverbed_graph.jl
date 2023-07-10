@@ -943,22 +943,24 @@ function graph_observed_rb_level(
     X = [0.2*(i-1) for i in 1:size(observed_riverbed_level, 1)]
     
     if japanese == false
-        y_label = "Elevation (m)"
+        y_label = "Elevation (T.P. m)"
         x_label = "Distance from the estuary (km)"
     else
-        y_label = "標高 (m)"
+        y_label = "標高 (T.P. m)"
         x_label = "河口からの距離 (km)"
     end
     
     p=plot(
         xlims=(X[1], X[end]),
+        ylims=(-10, 90),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
         ylabel=y_label,
+        xflip=true,
         legend=:none
     )
     
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
     
     plot!(
         p,
@@ -1073,12 +1075,13 @@ function graph_transverse_distance(
         xlims=(X[1], X[end]),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
+        xflip=true,
         ylims=(0, 2500),
         ylabel=y_label,
         legend=:none
     )
     
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
     
     plot!(
         p,

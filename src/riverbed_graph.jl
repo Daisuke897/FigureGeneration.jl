@@ -26,6 +26,8 @@ import
     ..Exist_riverbed_level,
     ..Measured_cross_rb
 
+include("./sub_riverbed/heatmap_riverbed.jl")
+
 export
     comparison_final_average_riverbed,
     difference_final_average_riverbed,

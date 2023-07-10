@@ -1542,4 +1542,93 @@ function graph_measured_distribution(
     
 end
 
+# 初期粒度分布の積み上げのグラフ
+function graph_longutitude_measured_particle_distribution(
+        fmini::DataFrame,
+        sediment_size::DataFrame,
+        df_main::Main_df;
+        japanese::Bool=false
+    )
+    
+    num_class_size = size(sediment_size, 1)
+    flow_size = length(df_main.tuple[1][df_main.tuple[1].T .== 0, :I])
+    
+    X = [0.2*(i-1) for i in 1:flow_size]
+    
+    if japanese == true 
+        x_label  = "河口からの距離 (km)" 
+        y_label  = "割合 (%)"
+        t_legend = "粒径 (mm)"
+    else
+        x_label  = "Distance from the estuary (km)"
+        y_label  = "Percentage (%)"
+        t_legend = "Size (mm)"
+    end
+    
+    long_measured_particle_dist = zeros(Float64, size(fmini[!, 2:(1+num_class_size)]))
+    
+
+    reverse!(
+        reverse!(
+            cumsum!(
+                long_measured_particle_dist,
+                reverse!(Matrix(fmini[:, 2:(1+num_class_size)]), dims=2),
+                dims=2
+            ),
+            dims=2
+        ),
+        dims=1
+    )
+    
+    p = plot(
+        legend=:outerright,
+        ylims=(0, 100),
+        ylabel=y_label,
+        xlims=(0, X[end]),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        xflip=true,
+        label_title=t_legend,
+        palette=palette(:vik, num_class_size+2),
+        legend_title_font_pointsize=10,
+        legend_font_pointsize=10
+    )
+    
+    hline!([0], label="", linecolor=:black)
+    
+    digits_n = [3,2,2,2,2,2,2,1,1,1,1,0,0]
+    
+    for i in 1:num_class_size
+        
+        if i == 1
+            s_label = Printf.@sprintf("%5.3f", sediment_size[i, 3])
+        elseif 1 < i <= 8
+            s_label = Printf.@sprintf("%5.2f", sediment_size[i, 3])
+        elseif 8 < i <= 11
+            s_label = Printf.@sprintf("%5.1f", sediment_size[i, 3])
+        else
+            s_label = Printf.@sprintf("%5.0f", sediment_size[i, 3])
+        end
+        
+        plot!(
+            p,
+            X,
+            long_measured_particle_dist[:, i] * 100,
+            fillrange=0,
+            linewidth=1,
+            label=s_label
+            #round(sediment_size[i, 3]; sigdigits=3)
+        )
+        
+    end
+    
+    plot!(p, bottommargin=3.0Plots.mm)
+    
+    vline!([40.2,24.4,14.6], label="", linestyle=:dash, linewidth=1, linecolor=:black)
+    
+    return p
+    
+end
+
+
 end

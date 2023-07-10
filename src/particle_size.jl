@@ -201,6 +201,53 @@ end
 function graph_average_simulated_particle_size_dist(
     sediment_size::DataFrame,
     time_schedule::DataFrame,
+    df_main::Main_df;
+    japanese::Bool=false
+    )
+
+    
+    distance_from_estuary = 0:0.2:77.8
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Mean diameter (mm)"
+    end        
+
+    p = plot(
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-10, 200),
+        legend=:none,
+        legend_font_pointsize=10,
+        xflip=true
+    )
+    
+    average_simulated_particle_size_dist =
+        get_average_simulated_particle_size_dist(
+            df_main.tuple[1],
+            sediment_size,
+            0
+        )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)    
+
+    plot!(
+        p,
+        distance_from_estuary,
+        reverse(average_simulated_particle_size_dist),
+    )    
+    
+    return p
+end
+
+function graph_average_simulated_particle_size_dist(
+    sediment_size::DataFrame,
+    time_schedule::DataFrame,
     hours_now::Int,
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false

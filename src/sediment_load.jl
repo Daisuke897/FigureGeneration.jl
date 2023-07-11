@@ -64,8 +64,10 @@ export
     make_graph_time_series_percentage_particle_bedload,
     make_graph_time_series_amount_percentage_particle_suspended_load,    
     make_graph_time_series_amount_percentage_particle_bedload,
-    make_graph_condition_change_yearly_mean_suspended_load,    
+    make_graph_condition_change_yearly_mean_suspended_load,
+    make_graph_condition_rate_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
+    make_graph_condition_rate_yearly_mean_bedload,    
     make_graph_particle_sediment_volume_each_year,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
@@ -843,7 +845,7 @@ function make_graph_yearly_mean_suspended_load(
 
     title_s = string(start_year, "-", final_year)
     x_label = "Distance from the Estuary (km)"
-    y_label = "Suspended (m³/year)"
+    y_label = "SSL (m³/year)"
 
     if japanese==true 
         title_s = string(start_year, "-", final_year)
@@ -858,11 +860,12 @@ function make_graph_yearly_mean_suspended_load(
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
     	ylims=(0, 4e6),
-    	legend=:outerright,
-        palette=:Dark2_4
+    	legend=:best,
+        palette=:Set1_9,
+        xflip=true
         )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -886,7 +889,9 @@ function make_graph_yearly_mean_suspended_load(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	        label=legend_label
+	        label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
         )
 
     end
@@ -924,10 +929,11 @@ function make_graph_yearly_mean_bedload(
         ylabel=y_label,
 	    ylims=(0, 6e4),
 	    legend=:outerright,
-        palette=:Dark2_4
+        palette=:Set1_9,
+        xflip=true
         )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -951,7 +957,9 @@ function make_graph_yearly_mean_bedload(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	    label=legend_label
+	        label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
         )
 
     end
@@ -2441,16 +2449,20 @@ function make_graph_condition_change_yearly_mean_suspended_load(
 
     flow_size = length(df_base[df_base.T .== 0, :I])
 
-    title_s = string("Annual average suspended sediment load ", start_year, "-", final_year)
-    x_label = "Distance from the Estuary (km)"
-    y_label = "Variation (m³/year)"
-    label_s = ["by Mining (Case 3 - Case 4)", "by Dam (Case 2 - Case 4)", "by Mining and Dam (Case 1 - Case 4)"]    
+    title_s = string(start_year, "-", final_year)
 
     if japanese==true 
-        title_s = string("年平均浮遊砂量 ", start_year, "-", final_year)
         x_label="河口からの距離 (km)"
         y_label="変化量 (m³/年)"
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Variation (m³/year)"
+        label_s = [
+            "by gravel mining (Case 3 - Case 4)",
+            "by the Ikeda Dam (Case 2 - Case 4)",
+            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"
+        ]
     end
     
     p = plot(
@@ -2461,10 +2473,12 @@ function make_graph_condition_change_yearly_mean_suspended_load(
         ylabel=y_label,
     	ylims=(-7e5, 7e5),
 	    legend=:best,
-        palette=cgrad(:Set1_3, rev = true)
-        )
+        palette=:Set1_3,
+        xflip=true
+    )
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)        
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)        
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -2529,25 +2543,162 @@ function make_graph_condition_change_yearly_mean_suspended_load(
         p,
         X,
         reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3]
+        label=label_s[3],
+        linecolor=palette(:Set1_3)[1],
+        linewidth=1
     )
 
     plot!(
         p,
         X,
         reverse(sediment_load_yearly_mean_dam),
-        label=label_s[2]
-    )    
+        label=label_s[2],
+        linecolor=palette(:Set1_3)[2],
+        linewidth=1
+    )
 
     plot!(
         p,
         X,
         reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1]
+        label=label_s[1],
+        linecolor=palette(:Set1_3)[3],
+        linewidth=1
+    )    
+
+    return p
+    
+end
+
+function make_graph_condition_rate_yearly_mean_suspended_load(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    flow_size = length(df_base[df_base.T .== 0, :I])
+
+    title_s = string(start_year, "-", final_year)
+
+    if japanese==true 
+        x_label="河口からの距離 (km)"
+        y_label="変化率 (%)"
+        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Rate of variation (%)"
+        label_s = [
+            "by gravel mining (Case 3 - Case 4)",
+            "by the Ikeda Dam (Case 2 - Case 4)",
+            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"]    
+    end
     
+    p = plot(
+    	title=title_s,
+    	xlabel=x_label,
+    	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(-25, 25),
+	    legend=:best,
+        palette=:Set1_3,
+        xflip=true
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)        
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_base,
+        flow_size,
+        df_base,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+
+    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining,
+        flow_size,
+        df_with_mining,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+
+    sediment_load_yearly_mean_mining .=
+        ((sediment_load_yearly_mean_mining ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_dam,
+        flow_size,
+        df_with_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+
+    sediment_load_yearly_mean_dam .=
+        ((sediment_load_yearly_mean_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining_dam,
+        flow_size,
+        df_with_mining_and_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qsall
+    )
+    
+    sediment_load_yearly_mean_mining_dam .=
+        ((sediment_load_yearly_mean_mining_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3],
+        linecolor=palette(:Set1_3)[1],
+        linewidth=1
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_dam),
+        label=label_s[2],
+        linecolor=palette(:Set1_3)[2],
+        linewidth=1
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1],
+        linecolor=palette(:Set1_3)[3],
+        linewidth=1
+    )    
+
     return p
     
 end
@@ -2565,16 +2716,20 @@ function make_graph_condition_change_yearly_mean_bedload(
 
     flow_size = length(df_base[df_base.T .== 0, :I])
 
-    title_s = string("Annual average bedload ", start_year, "-", final_year)
-    x_label = "Distance from the Estuary (km)"
-    y_label = "Variation (m³/year)"
-    label_s = ["by Mining (Case 3 - Case 4)", "by Dam (Case 2 - Case 4)", "by Mining and Dam (Case 1 - Case 4)"]    
-
+    title_s = string(start_year, "-", final_year)
+    
     if japanese==true 
-        title_s = string("年平均掃流砂量 ", start_year, "-", final_year)
         x_label="河口からの距離 (km)"
         y_label="変化量 (m³/年)"
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]        
+        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]        
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Variation (m³/year)"
+        label_s = [
+            "by gravel mining (Case 3 - Case 4)",
+            "by the Ikeda Dam (Case 2 - Case 4)",
+            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"
+        ]    
     end
     
     p = plot(
@@ -2585,10 +2740,12 @@ function make_graph_condition_change_yearly_mean_bedload(
         ylabel=y_label,
 	    ylims=(-20000, 20000),
 	    legend=:best,
-        palette=cgrad(:Set1_3, rev = true)
-        )
-
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)    
+        palette=:Set1_3,
+        xflip=true
+    )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)    
 
     X = [0.2*(i-1) for i in 1:flow_size]    
     
@@ -2653,25 +2810,163 @@ function make_graph_condition_change_yearly_mean_bedload(
         p,
         X,
         reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3]
+        label=label_s[3],
+        linecolor=palette(:Set1_3)[1],
+        linewidth=1
     )
 
     plot!(
         p,
         X,
         reverse(sediment_load_yearly_mean_dam),
-        label=label_s[2]
+        label=label_s[2],
+        linecolor=palette(:Set1_3)[2],
+        linewidth=1
     )
     
     plot!(
         p,
         X,
         reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1]
+        label=label_s[1],
+        linecolor=palette(:Set1_3)[3],
+        linewidth=1
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    return p
     
+end
+
+function make_graph_condition_rate_yearly_mean_bedload(
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    df_base::DataFrame,
+    df_with_mining::DataFrame,
+    df_with_dam::DataFrame,
+    df_with_mining_and_dam::DataFrame;
+    japanese::Bool=false
+    )
+
+    flow_size = length(df_base[df_base.T .== 0, :I])
+
+    title_s = string(start_year, "-", final_year)
+    
+    if japanese==true 
+        x_label="河口からの距離 (km)"
+        y_label="変化率 (%)"
+        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]        
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Rate of variation (%)"
+        label_s = [
+            "by gravel mining (Case 3 - Case 4)",
+            "by the Ikeda Dam (Case 2 - Case 4)",
+            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"
+        ]    
+    end
+    
+    p = plot(
+    	title=title_s,
+	    xlabel=x_label,
+	    xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	    ylims=(-400, 400),
+	    legend=:best,
+        palette=:Set1_3,
+        xflip=true
+    )
+    
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)    
+
+    X = [0.2*(i-1) for i in 1:flow_size]    
+    
+    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_base,
+        flow_size,
+        df_base,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+
+    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining,
+        flow_size,
+        df_with_mining,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+
+    sediment_load_yearly_mean_mining .=
+        ((sediment_load_yearly_mean_mining ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_dam,
+        flow_size,
+        df_with_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+
+    sediment_load_yearly_mean_dam .=
+        ((sediment_load_yearly_mean_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_mining_dam,
+        flow_size,
+        df_with_mining_and_dam,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball
+    )
+    
+    sediment_load_yearly_mean_mining_dam .=
+        ((sediment_load_yearly_mean_mining_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining_dam),
+        label=label_s[3],
+        linecolor=palette(:Set1_3)[1],
+        linewidth=1
+    )
+
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_dam),
+        label=label_s[2],
+        linecolor=palette(:Set1_3)[2],
+        linewidth=1
+    )
+    
+    plot!(
+        p,
+        X,
+        reverse(sediment_load_yearly_mean_mining),
+        label=label_s[1],
+        linecolor=palette(:Set1_3)[3],
+        linewidth=1
+    )
+
     return p
     
 end

@@ -111,7 +111,9 @@ export
     heatmap_std_simulated_cross_rb_elevation,    
     heatmap_diff_measured_cross_rb_elevation,
     heatmap_diff_per_year_measured_cross_rb_elevation,
-    heatmap_slope_by_model_measured_cross_rb_elevation
+    heatmap_diff_per_year_simulated_cross_rb_elevation,    
+    heatmap_slope_by_model_measured_cross_rb_elevation,
+    heatmap_slope_by_model_simulated_cross_rb_elevation    
 
 include("particle_size.jl")
 using .ParticleSize

@@ -20,6 +20,9 @@ module RiverbedGraph
 using Plots, DataFrames
 import Printf, Statistics, GLM
 
+import
+    ..Read_df_river: Main_df
+
 using ..GeneralGraphModule
 
 import
@@ -53,7 +56,9 @@ export
     heatmap_std_simulated_cross_rb_elevation,
     heatmap_diff_measured_cross_rb_elevation,
     heatmap_diff_per_year_measured_cross_rb_elevation,
-    heatmap_slope_by_model_measured_cross_rb_elevation
+    heatmap_diff_per_year_simulated_cross_rb_elevation,
+    heatmap_slope_by_model_measured_cross_rb_elevation,
+    heatmap_slope_by_model_simulated_cross_rb_elevation  
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
@@ -87,27 +92,32 @@ end
 #実測と再現の河床位を比較するグラフを作る関数
 #実測河床位が存在する場合
 function comparison_final_average_riverbed(
-    hours_calculate_end,
+    hours_calculate_end::Int,
     riverbed_level_data,
     time_schedule,
     when_year::Int,
-    df_vararg::Vararg{DataFrame, N};
+    vec_label::Vector{String},
+    df_main::Main_df;
     japanese::Bool=false
-    ) where {N}
+    )
 
     want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", df_vararg[1],
-    hours_calculate_end, time_schedule)
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[1],
+            hours_calculate_end,
+            time_schedule
+        )
 
     
     riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
-    label_vec = String["Measured" "Simulated"]
+    label_vec = String[string("Measured in ", when_year) "Simulated"]
     x_label   = "Distance from the estuary (km)"
     y_label   = "Elevation (T.P. m)"
 
     if japanese==true
-        label_vec = String["実測河床位" "再現河床位"]
+        label_vec = String[string(when_year, " 実測河床位") "再現河床位"]
         x_label   = "河口からの距離 (km)"
         y_label   = "標高 (T.P. m)"
     end
@@ -116,30 +126,98 @@ function comparison_final_average_riverbed(
         distance_from_upstream.*10^-3,
         reverse(riverbed_level), 
         label=label_vec,  
-        ylabel=y_label, xlims=(0,77.8), ylims=(-10,85),
+        ylabel=y_label, xlims=(0,77.8), ylims=(-10,90),
 	    title=want_title,
         xlabel=x_label,
 	    xticks=[0, 20, 40, 60, 77.8],
 	    linecolor=:midnightblue,
-        linewidth=2,
-        legend=:topleft
+        legend=:best,
+        xflip=true,
+        linewidth=1
     )
 
-    for i in 1:N
-        average_riverbed_level = df_vararg[i][start_index:finish_index, :Zbave]
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    
+    for (i, df) in enumerate(df_main.tuple)
+        average_riverbed_level = df[start_index:finish_index, :Zbave]
 
-        legend_label = string("Case ", i)
+        legend_label = vec_label[i]
 
         plot!(
             p,
             distance_from_upstream.*10^-3,
             reverse(average_riverbed_level), 
-            label=legend_label 
+            label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1,
         )
     end
     
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    return p
+    
+end
 
+function comparison_final_average_riverbed(
+    hours_calculate_end::Int,
+    riverbed_level_data,
+    time_schedule,
+    when_year::Int,
+    string_title::String,
+    string_label::String,
+    df_main::Main_df,
+    target_df::Int;
+    japanese::Bool=false
+    )
+
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            string_title,
+            df_main.tuple[target_df],
+            hours_calculate_end,
+            time_schedule
+        )
+
+    
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+
+    label_vec = String[string("Measured in ", when_year) "Simulated"]
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Elevation (T.P. m)"
+
+    if japanese==true
+        label_vec = String[string(when_year, " 実測河床位") "再現河床位"]
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    end
+
+    p = plot(
+        distance_from_upstream.*10^-3,
+        reverse(riverbed_level), 
+        label=label_vec,  
+        ylabel=y_label, xlims=(0,77.8), ylims=(-10,90),
+	    title=want_title,
+        xlabel=x_label,
+	    xticks=[0, 20, 40, 60, 77.8],
+	    linecolor=:midnightblue,
+        legend=:best,
+        xflip=true,
+        linewidth=1
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    
+    average_riverbed_level = df_main.tuple[target_df][start_index:finish_index, :Zbave]
+
+    legend_label = string_label
+
+    plot!(
+        p,
+        distance_from_upstream.*10^-3,
+        reverse(average_riverbed_level), 
+        label=legend_label,
+        linecolor=palette(:Set1_9)[1],
+        linewidth=1,
+    )
     
     return p
     
@@ -221,31 +299,35 @@ function difference_final_average_riverbed(
 end
 
 function difference_final_average_riverbed(
-    hours_calculate_end,
+    hours_calculate_end::Int,
     riverbed_level_data,
     time_schedule,
     when_year::Int,
-    df_vararg::Vararg{DataFrame, N};
+    df_main::Main_df;
     japanese::Bool=false
-    ) where {N}
+    )
     
     want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", df_vararg[1],
-    hours_calculate_end, time_schedule)
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[1],
+            hours_calculate_end,
+            time_schedule
+        )
 
     riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     label_s   = "Error in Riverbed Elevation"
     x_label   = "Distance from the estuary (km)"
-    y_label   = "Errors (T.P. m)"
+    y_label   = "Errors (m)"
 
     if japanese==true
         label_s   = "実測河床位との誤差"
         x_label   = "河口からの距離 (km)"
-        y_label   = "誤差 (T.P. m)"
+        y_label   = "誤差 (m)"
     end
     
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
     plot!(
         p,
@@ -254,14 +336,15 @@ function difference_final_average_riverbed(
         title=want_title,
 	    xlabel=x_label,
 	    xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
 	    legend=:bottomleft,
-        ylims=(-4,4)
+        ylims=(-3.2,3.2),
     )
 
     
-    for i in 1:N
+    for (i, df) in enumerate(df_main.tuple)
 
-        average_riverbed_level = df_vararg[i][start_index:finish_index, :Zbave]
+        average_riverbed_level = df[start_index:finish_index, :Zbave]
         difference_riverbed = average_riverbed_level .- riverbed_level
         
         legend_label = string("Case ", i)
@@ -270,12 +353,78 @@ function difference_final_average_riverbed(
             distance_from_upstream.*10^-3,
             reverse(difference_riverbed), 
             label=legend_label,  
-            linewidth=2
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
         )
         
     end
 
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=2)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
+
+    return p
+end
+
+
+function difference_final_average_riverbed(
+    hours_calculate_end::Int,
+    riverbed_level_data,
+    time_schedule,
+    when_year::Int,
+    string_title::String,
+    string_label::String,
+    df_main::Main_df,
+    target_df::Int;
+    japanese::Bool=false
+    )
+    
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            string_title,
+            df_main.tuple[target_df],
+            hours_calculate_end,
+            time_schedule
+        )
+
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+
+    label_s   = "Error in Riverbed Elevation"
+    x_label   = "Distance from the estuary (km)"
+    y_label   = "Error (m)"
+
+    if japanese==true
+        label_s   = "実測河床位との誤差"
+        x_label   = "河口からの距離 (km)"
+        y_label   = "誤差 (m)"
+    end
+    
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    plot!(
+        p,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        title=want_title,
+	    xlabel=x_label,
+	    xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
+	    legend=:bottomleft,
+        ylims=(-3.2,3.2),
+    )
+
+    average_riverbed_level = df_main.tuple[target_df][start_index:finish_index, :Zbave]
+    difference_riverbed = average_riverbed_level .- riverbed_level
+        
+    legend_label = string_label
+        
+    plot!(
+        distance_from_upstream.*10^-3,
+        reverse(difference_riverbed), 
+        label=legend_label,  
+        linecolor=palette(:Set1_9)[1],
+        linewidth=1
+    )
+
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
 
     return p
 end
@@ -407,31 +556,32 @@ end
 
 #累積の河床変動量のグラフを作る関数
 
-## varargを用いて複数条件の作図ができないか試してみる
 function _graph_cumulative_change_in_riverbed!(
     p::Plots.Plot,
     X,
     start_target_hour,
     final_target_hour,
-    ::Val{N},
-    df_vararg::NTuple{N, T}    
-    ) where {T, N}
+    vec_label::Vector{String},
+    df_main::Main_df    
+    )
 
-    for i in 1:N
+    for (i, df) in enumerate(df_main.tuple)
 
         cumulative_change_simulated=cumulative_change_in_simulated_riverbed_elevation(
-            df_vararg[i],
+            df,
             start_target_hour,
             final_target_hour
         )
 
-        legend_label = string("Case ", i)
+        legend_label = vec_label[i]
         
         plot!(
             p,
             X,
             reverse(cumulative_change_simulated),
-            label=legend_label
+            label=legend_label,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i]
         )
         
     end
@@ -446,9 +596,11 @@ function graph_cumulative_change_in_riverbed(
     final_year::Int,
     start_target_hour::Int,
     final_target_hour::Int,
-    df_tuple::NTuple{N, T};
+    string_title::String,
+    vec_label::Vector{String},
+    df_main::Main_df;
     japanese::Bool=false
-    ) where {T, N}
+    )
 
     flow_size=length(measured_riverbed[!, Symbol(final_year)])
 
@@ -459,9 +611,9 @@ function graph_cumulative_change_in_riverbed(
     )
     
     x_label = "Distance from the estuary (km)"
-    y_label = "Cumulative Change (m)"
+    y_label = "Variation (m)"
     legend_label_0 = "Measured"
-    title_s = string(start_year, "-", final_year)
+    title_s = string(string_title, " ", start_year, "-", final_year)
 
     if japanese == true
         x_label = "河口からの距離 (km)"
@@ -470,22 +622,27 @@ function graph_cumulative_change_in_riverbed(
     end
 
     p=plot(
-        legend=:outerright,
+        legend=:top,
+        legend_font_pointsize=10,
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
-        ylims=(-4, 4),
+        ylims=(-4.2, 4.2),
         ylabel=y_label,
-        title=title_s
+        title=title_s,
+        xflip=true
     )
     
     X = [0.2*(i-1) for i in 1:flow_size]
 
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    
     plot!(
         p,
         X,
         reverse(cumulative_change_measured),
         linecolor=:midnightblue,
+        linewidth=1,
         label=legend_label_0
     )
     
@@ -494,40 +651,13 @@ function graph_cumulative_change_in_riverbed(
         X,
         start_target_hour,
         final_target_hour,
-        Val(N),
-        df_tuple
+        vec_label,
+        df_main
     )
 
 
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=2)    
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)    
 
-
-
-    
-    return p
-end
-
-function graph_cumulative_change_in_riverbed(
-    measured_riverbed,
-    start_year::Int,
-    final_year::Int,
-    start_target_hour::Int,
-    final_target_hour::Int,
-    df_vararg::Vararg{T, N};
-    japanese::Bool=false
-    ) where {T, N}
-
-    p = graph_cumulative_change_in_riverbed(
-        measured_riverbed,
-        start_year,
-        final_year,
-        start_target_hour,
-        final_target_hour,
-        df_vararg,
-        japanese=japanese
-    )
-    
     return p
 end
 
@@ -843,6 +973,7 @@ function graph_condition_change_in_riverbed(
     final_year::Int,
     start_target_hour::Int,
     final_target_hour::Int,
+    string_title::String,
     df_base::DataFrame,
     df_with_mining::DataFrame,
     df_with_dam::DataFrame,
@@ -850,29 +981,41 @@ function graph_condition_change_in_riverbed(
     japanese::Bool=false
     )
 
-    x_label = "Distance from the estuary (km)"
-    y_label = "Variation (m)"
-    title_s = string("Riverbed Elevation ", start_year, "-", final_year)
-    label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
+    title_s = string(string_title, " ", start_year, "-", final_year)    
+    
 
     if japanese == true
         x_label = "河口からの距離 (km)"
         y_label = "変化量 (m)"
-        title_s = string("断面平均河床位 ", start_year, "-", final_year)
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+        label_s = [
+            "砂利採取と池田ダム (Case 1 - Case 4)",
+            "池田ダム (Case 2 - Case 4)",
+            "砂利採取 (Case 3 - Case 4)"            
+        ]
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Variation (m)"
+        label_s = [
+            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)",
+            "by the Ikeda Dam (Case 2 - Case 4)",
+            "by gravel mining (Case 3 - Case 4)"
+        ]
     end
 
     p=plot(
         legend=:best,
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
         xlabel=x_label,
-        ylims=(-2, 2),
+        ylims=(-1.2, 1.2),
         ylabel=y_label,
-        title=title_s
+        title=title_s,
+        legend_font_pointsize=10
     )
-    
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=3)
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)    
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
 
     base_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
         df_base,
@@ -910,26 +1053,30 @@ function graph_condition_change_in_riverbed(
     plot!(
         p,
         X,
-        reverse(change_by_mining),
-        label=label_s[1]
+        reverse(change_by_mining_and_dam),
+        label=label_s[1],
+        linewidth=1,
+        linecolor=palette(:Set1_3)[1]
     )
-
+    
     plot!(
         p,
         X,
         reverse(change_by_dam),
-        label=label_s[2]
+        label=label_s[2],
+        linewidth=1,
+        linecolor=palette(:Set1_3)[2]
     )
     
     plot!(
         p,
         X,
-        reverse(change_by_mining_and_dam),
-        label=label_s[3]
+        reverse(change_by_mining),
+        label=label_s[3],
+        linewidth=1,
+        linecolor=palette(:Set1_3)[3]        
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-    
     return p
 end
 
@@ -1416,12 +1563,12 @@ end
 function calc_std_cross_rb_elevation!(
     std_cross_rb_ele::Matrix{T},
     measured_cross_rb::Measured_cross_rb,
-    years::Vector{Int}
+    years::Vector{Int},
     ) where T <: AbstractFloat
    
-    for i in 1:size(measured_cross_rb.dict[years[1]], 2)
+    for i in 1:size(std_cross_rb_ele, 2)
     
-        for j in 1:size(measured_cross_rb.dict[years[1]], 1)
+        for j in 1:size(std_cross_rb_ele, 1)
     
             stock_rb_ele = zeros(length(years))
 
@@ -1455,87 +1602,6 @@ function calc_std_cross_rb_elevation(
     return std_cross_rb_ele 
     
 end
-
-function heatmap_std_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb;
-    japanese::Bool=false
-    )
-    
-    years = sort(collect(keys(measured_cross_rb.dict)))
-    
-    std_cross_rb_ele = zeros(size(measured_cross_rb.dict[years[1]]))
-    
-    calc_std_cross_rb_elevation!(
-        std_cross_rb_ele,
-        measured_cross_rb,
-        years
-    )
-    
-    X = 0:0.2:((size(measured_cross_rb.dict[years[1]], 2)-1) * 0.2)
-    
-    Y = 1:size(measured_cross_rb.dict[years[1]], 1)
-    
-    if japanese == true 
-        cl_t = "標準偏差 (m)"
-        xl   = "河口からの距離 (km)"
-        yl   = "断面方向のインデックス数"
-    else
-        cl_t = "Standard deviation (m)"
-        xl   = "Distance from the estuary (km)"
-        yl   = "Index in \ncross sectional direction"
-    end
-    
-    p = heatmap(
-      X,
-      Y, 
-      reverse!(std_cross_rb_ele, dims=2), 
-      color=:haline,
-      colorbar_title=cl_t,
-      colorbar_titlefontsize=14,
-      colorbar_tickfontsize=11,
-      xticks=[0, 20, 40, 60, 77.8],
-      xlabel=xl,
-      ylabel=yl,
-      clims=(0, 4.2) 
-    )
-    
-    vline!(
-      p,
-      [40.2,24.4,14.6],
-      line=:black,
-      label="",
-      linestyle=:dot,
-      linewidth=1
-    )
-    
-    return p
-    
-end
-
-function heatmap_std_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb,
-    vline_area_index::Int;
-    japanese::Bool=false
-    )
-    
-    p = heatmap_std_measured_cross_rb_elevation(
-        measured_cross_rb,
-        japanese = japanese
-    )
-
-    vline!(
-        p,
-        [0.2 * (390 - vline_area_index)],
-        linestyle=:dash,
-        linewidth=2,
-        linecolor=:black,
-        label=""
-    )
-    
-    return p
-    
-end
-
 
 function diff_measured_cross_rb_elevation!(
         diff_cross_rb_ele::Matrix{T},
@@ -1584,143 +1650,6 @@ function diff_measured_cross_rb_elevation(
         
     end
      
-end
-
-function heatmap_diff_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb,
-    start_year::Int,
-    final_year::Int;
-    japanese::Bool=false
-    )
-    
-    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
-        diff_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
-        
-        diff_measured_cross_rb_elevation!(
-            diff_cross_rb_ele,
-            measured_cross_rb,
-            start_year,
-            final_year
-        )
-        
-    
-        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
-    
-        Y = 1:size(measured_cross_rb.dict[start_year], 1)
-        
-        if japanese == true 
-            cl_t = "変化 (m)"
-            xl   = "河口からの距離 (km)"
-            yl   = "断面方向のインデックス数"
-        else
-            cl_t = "Variation (m)"
-            xl   = "Distance from the estuary (km)"
-            yl   = "Index in \ncross sectional direction"
-        end
-        
-        figure_title = string(start_year, " - ", final_year)
-
-        p = heatmap(
-            X,
-            Y, 
-            reverse!(diff_cross_rb_ele, dims=2), 
-            color=:seismic,
-            colorbar_title=cl_t,
-            colorbar_titlefontsize=13,
-            colorbar_tickfontsize=11,
-            clims=(-15, 15),
-            xticks=[0, 20, 40, 60, 77.8],
-            xlabel=xl,
-            ylabel=yl,
-            title=figure_title
-        )
-    
-        vline!(
-            p,
-            [40.2,24.4,14.6],
-            line=:black,
-            label="",
-            linestyle=:dot,
-            linewidth=1
-        )
-    
-        return p
-        
-    else
-        
-        error("There is no actual measured river bed elevation for that year.")
-        
-    end
-    
-end
-
-function heatmap_diff_per_year_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb,
-    start_year::Int,
-    final_year::Int;
-    japanese::Bool=false
-    )
-    
-    if haskey(measured_cross_rb.dict, start_year) && haskey(measured_cross_rb.dict, final_year)
-        diff_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
-        
-        diff_measured_cross_rb_elevation!(
-            diff_cross_rb_ele,
-            measured_cross_rb,
-            start_year,
-            final_year
-        )
-        
-        diff_cross_rb_ele ./= (final_year - start_year + 1)
-    
-        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
-    
-        Y = 1:size(measured_cross_rb.dict[start_year], 1)
-        
-        if japanese == true 
-            cl_t = "変化 (m/年)"
-            xl   = "河口からの距離 (km)"
-            yl   = "断面方向のインデックス数"
-        else
-            cl_t = "Variation (m/year)"
-            xl   = "Distance from the estuary (km)"
-            yl   = "Index in \ncross sectional direction"
-        end
-        
-        figure_title = string(start_year, " - ", final_year)
-
-        p = heatmap(
-            X,
-            Y, 
-            reverse!(diff_cross_rb_ele, dims=2), 
-            color=:seismic,
-            colorbar_title=cl_t,
-            colorbar_titlefontsize=13,
-            colorbar_tickfontsize=11,
-            clims=(-2, 2),
-            xticks=[0, 20, 40, 60, 77.8],
-            xlabel=xl,
-            ylabel=yl,
-            title=figure_title
-        )
-    
-        vline!(
-            p,
-            [40.2,24.4,14.6],
-            line=:black,
-            label="",
-            linestyle=:dot,
-            linewidth=1
-        )
-    
-        return p
-        
-    else
-        
-        error("There is no actual measured river bed elevation for that year.")
-        
-    end
-    
 end
 
 function graph_variation_per_year_mearsured_riverbed_level(
@@ -1955,66 +1884,6 @@ function slope_linear_model_measured_cross_rb_elevation(
     
 end
 
-function heatmap_slope_by_model_measured_cross_rb_elevation(
-    measured_cross_rb::Measured_cross_rb,
-    start_year::Int,
-    final_year::Int;
-    japanese::Bool=false
-    )
-
-        slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
-        
-        slope_linear_model_measured_cross_rb_elevation!(
-            slope_cross_rb_ele,
-            measured_cross_rb,
-            start_year,
-            final_year
-        )
-    
-        X = 0:0.2:((size(measured_cross_rb.dict[start_year], 2)-1) * 0.2)
-    
-        Y = 1:size(measured_cross_rb.dict[start_year], 1)
-        
-        if japanese == true 
-            cl_t = "線形回帰式の傾き (m/年)"
-            xl   = "河口からの距離 (km)"
-            yl   = "断面方向のインデックス数"
-        else
-            cl_t = "Slope of linear regression (m/year)"
-            xl   = "Distance from the estuary (km)"
-            yl   = "Index in \ncross sectional direction"
-        end
-        
-        figure_title = string(start_year, " - ", final_year)
-
-        p = heatmap(
-            X,
-            Y, 
-            reverse!(slope_cross_rb_ele, dims=2), 
-            color=:seismic,
-            colorbar_title=cl_t,
-            colorbar_titlefontsize=13,
-            colorbar_tickfontsize=11,
-            clims=(-1.6, 1.6),
-            xticks=[0, 20, 40, 60, 77.8],
-            xlabel=xl,
-            ylabel=yl,
-            title=figure_title
-        )
-    
-        vline!(
-            p,
-            [40.2,24.4,14.6],
-            line=:black,
-            label="",
-            linestyle=:dot,
-            linewidth=1
-        )
-    
-        return p
-    
-end
-
 function graph_variation_per_year_simulated_riverbed_level(
         cross_rb::DataFrame,
         each_year_timing,
@@ -2193,18 +2062,29 @@ function fit_linear_variation_per_year_simulated_riverbed_level(
 end
 
 function calc_std_simulated_cross_rb_elevation!(
-        std_cross_rb_ele,
-        cross_rb::DataFrame,
-        time_schedule::DataFrame,
-        each_year_timing
+    std_cross_rb_ele,
+    cross_rb::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int
     )
    
-    n = length(each_year_timing) + 1
-    
     n_x, n_y = size(std_cross_rb_ele)
-        
-    years = sort(collect(keys(each_year_timing)))
-        
+
+    years = Vector{Int}(undef, 0)
+
+    for year in sort(collect(keys(each_year_timing)))
+        if start_year <= year && year <= final_year
+            push!(years, year)
+        end
+    end
+
+    if length(years) == 0
+        error()
+    end
+    
+    n = length(years) + 1
+    
     vec_i_first = zeros(Int, n)
         
     vec_i_first[1] = GeneralGraphModule.decide_index_number(
@@ -2244,11 +2124,12 @@ function calc_std_simulated_cross_rb_elevation!(
 end
 
 function calc_std_simulated_cross_rb_elevation(
-        cross_rb::DataFrame,
-        time_schedule::DataFrame,
-        each_year_timing,
-        n_x::Int,
-        n_y::Int
+    cross_rb::DataFrame,
+    each_year_timing,
+    n_x::Int,
+    n_y::Int,
+    start_year::Int,
+    final_year::Int
     )
         
     std_cross_rb_ele = zeros(Float64, n_x, n_y)
@@ -2257,59 +2138,12 @@ function calc_std_simulated_cross_rb_elevation(
     calc_std_simulated_cross_rb_elevation!(
         std_cross_rb_ele,
         cross_rb,
-        time_schedule,
-        each_year_timing
+        each_year_timing,
+        start_year,
+        final_year
     )
         
     return std_cross_rb_ele 
-    
-end
-
-function heatmap_std_simulated_cross_rb_elevation(
-        cross_rb::DataFrame,
-        time_schedule::DataFrame,
-        each_year_timing,
-        n_x::Int,
-        n_y::Int;
-        japanese::Bool=false
-    )
-    
-    if japanese == true 
-        cl_t = "標準偏差 (m)"
-        xl   = "河口からの距離 (km)"
-        yl   = "断面方向のインデックス数"
-    else
-        cl_t = "Standard deviation (m)"
-        xl   = "Distance from the estuary (km)"
-        yl   = "Index in \ncross sectional direction"
-    end
-    
-    std_cross_rb_ele = zeros(Float64, n_x, n_y)
-
-    calc_std_simulated_cross_rb_elevation!(
-        std_cross_rb_ele,
-        cross_rb,
-        time_schedule,
-        each_year_timing
-    )
-    
-    X = 0:0.2:((n_x-1) * 0.2)
-    Y = 1:n_y
-    
-    p = Plots.heatmap(
-        X,
-        Y,
-        reverse!(std_cross_rb_ele', dims=2),
-        xlabel=xl,
-        ylabel=yl,
-        colorbar_title=cl_t,
-        colorbar_titlefontsize=14,
-        colorbar_tickfontsize=11,
-        clims=(0, 4.2),  
-        xticks=[0, 20, 40, 60, 77.8],
-        color=:haline
-    )
-    
     
 end
 

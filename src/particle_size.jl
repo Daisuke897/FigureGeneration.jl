@@ -206,7 +206,7 @@ function graph_average_simulated_particle_size_dist(
     )
 
     
-    distance_from_estuary = 0:0.2:77.8
+    distance_from_estuary = 0:1.0:77.8
 
     if japanese==true
         x_label="河口からの距離 (km)"
@@ -233,10 +233,13 @@ function graph_average_simulated_particle_size_dist(
             sediment_size,
             0
         )
+
+    unique!(average_simulated_particle_size_dist)
+    println(length(average_simulated_particle_size_dist))
     
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)    
 
-    plot!(
+    scatter!(
         p,
         distance_from_estuary,
         reverse(average_simulated_particle_size_dist),
@@ -389,8 +392,11 @@ function graph_average_simulated_particle_size_dist(
         reverse(simu_particle_size_dist),
         label=legend_label,
         linecolor=:midnightblue,
-        linewidth=1
+        linewidth=1,
+        legend=:best
     )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
     
     start_index, finish_index = decide_index_number(hours_now)
         
@@ -404,12 +410,12 @@ function graph_average_simulated_particle_size_dist(
             p, distance_from_estuary,
             reverse(simu_particle_size_dist),
             label=legend_label,
-            linewidth=1
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i]
         )
 
     end
     
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)    
 
     return p
 end
@@ -439,7 +445,8 @@ function _graph_average_simulated_particle_size_dist(
         xlims=(0,77.8),
         ylims=(-10, 200),
         legend=:topleft,
-        legend_font_pointsize=10
+        legend_font_pointsize=10,
+        xflip=true
     )
 
     return p
@@ -770,10 +777,10 @@ function graph_change_rate_in_mean_diameter(
     
     if japanese==true
         x_label="河口からの距離 (km)"
-        y_label="平均粒径の変化率 (%)"
+        y_label="変化率 (%)"
     else
         x_label="Distance from the estuary (km)"
-        y_label="Change in mean diameter (%)"
+        y_label="Rate of variation (%)"
     end
 
     p = plot(
@@ -784,10 +791,14 @@ function graph_change_rate_in_mean_diameter(
         xlims=(0,77.8),
         yticks=[-80, -60, -40, -20, 0, 20, 40, 60, 80],
         ylims=(-85, 85),
-        legend=:topleft,
+        legend=:best,
         legend_font_pointsize=11,
-        titlefontsize=16
+        titlefontsize=16,
+        xflip=true
     )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
     
     distance_from_estuary = 0:0.2:77.8
 
@@ -817,7 +828,8 @@ function graph_change_rate_in_mean_diameter(
         distance_from_estuary,
         reverse(change_rate_mining_dam),
         label="by gravel mining and the Ikeda Dam (Case 1 - Case 4)",
-        linecolor=cgrad(:Set1_3)[1]
+        linecolor=palette(:Set1_3)[1],
+        linewidth=1
     )
 
     plot!(
@@ -825,7 +837,8 @@ function graph_change_rate_in_mean_diameter(
         distance_from_estuary,
         reverse(change_rate_dam),
         label="by the Ikeda Dam (Case 2 - Case 4)",
-        linecolor=cgrad(:Set1_3)[2]
+        linecolor=palette(:Set1_3)[2],
+        linewidth=1
     )
 
     plot!(
@@ -833,11 +846,9 @@ function graph_change_rate_in_mean_diameter(
         distance_from_estuary,
         reverse(change_rate_mining),
         label="by gravel mining (Case 3 - Case 4)",
-        linecolor=cgrad(:Set1_3)[3]
+        linecolor=palette(:Set1_3)[3],
+        linewidth=1
     )
-
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
-    hline!(p, [0], line=:black, label="", linestyle=:dash, linewidth=1)
 
     return p
 

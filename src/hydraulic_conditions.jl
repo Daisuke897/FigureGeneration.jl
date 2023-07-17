@@ -28,7 +28,10 @@ export make_upstream_discharge_graph,
     make_up_discharge_down_water_lev_graph
 
 #条件としての上流の流量の作図
-function _base_upstream_discharge_graph(japanese, max_num_time)
+function _base_upstream_discharge_graph(
+    japanese::Bool,
+    max_num_time
+    )
     x_label = _get_x_label_time_sec(japanese)
     y_label = _get_y_label_upstream_discharge_graph(japanese)
     
@@ -60,33 +63,34 @@ function _base_downstream_water_level_graph(japanese, max_num_time)
     return p
 end
 
-function _get_x_label_time_sec(japanese)
-    x_label="Time (sec)"
-    y_label="Discharge (m³/s)"
+function _get_x_label_time_sec(japanese::Bool)
 
     if japanese==true
-        x_label="秒数 (sec)"
-        y_label="流量 (m³/s)"
+        x_label="秒数 (s)"
+    else
+        x_label="Seconds"
     end
     
     return x_label
 end
 
 function _get_y_label_upstream_discharge_graph(japanese)
-    y_label="Discharge (m³/s)"
 
     if japanese==true
         y_label="流量 (m³/s)"
+    else
+        y_label="Discharge (m³/s)"
     end
     
     return y_label
 end
 
 function _get_y_label_downstream_water_level(japanese)
-    y_label="Water Level (m)"
 
     if japanese==true
         y_label="水位 (m)"
+    else
+        y_label="Water Level (m)"
     end
     
     return y_label
@@ -121,7 +125,7 @@ end
 function make_upstream_discharge_graph(
     data_file,
     time_schedule,
-    target_hours;
+    target_hours::Int;
     japanese::Bool=false
     )
 
@@ -181,7 +185,7 @@ end
 function make_downstream_water_level_graph(
     data_file,
     time_schedule,
-    target_hours;
+    target_hours::Int;
     japanese::Bool=false    
     )
 
@@ -208,7 +212,7 @@ function make_downstream_water_level_graph(
     data_file,
     time_schedule,
     each_year_timing,
-    target_hours;
+    target_hours::Int;
     japanese::Bool=false    
     )
 

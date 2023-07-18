@@ -1577,17 +1577,15 @@ function graph_longutitude_measured_particle_distribution(
     end
     
     long_measured_particle_dist = zeros(Float64, size(fmini[!, 2:(1+num_class_size)]))
-    
+
+    cumsum!(                                    
+        long_measured_particle_dist,
+        Matrix(fmini[:, 2:(1+num_class_size)]),
+        dims=2                                     
+    )                                          
 
     reverse!(
-        reverse!(
-            cumsum!(
-                long_measured_particle_dist,
-                reverse!(Matrix(fmini[:, 2:(1+num_class_size)]), dims=2),
-                dims=2
-            ),
-            dims=2
-        ),
+        long_measured_particle_dist,
         dims=1
     )
     
@@ -1600,7 +1598,7 @@ function graph_longutitude_measured_particle_distribution(
         xlabel=x_label,
         xflip=true,
         label_title=t_legend,
-        palette=palette(:vik, num_class_size+2),
+        palette=palette(:vik, num_class_size+2, rev=true),
         legend_title_font_pointsize=10,
         legend_font_pointsize=10
     )
@@ -1609,7 +1607,7 @@ function graph_longutitude_measured_particle_distribution(
     
     digits_n = [3,2,2,2,2,2,2,1,1,1,1,0,0]
     
-    for i in 1:num_class_size
+    for i in reverse(1:num_class_size)
         
         if i == 1
             s_label = Printf.@sprintf("%5.3f", sediment_size[i, 3])

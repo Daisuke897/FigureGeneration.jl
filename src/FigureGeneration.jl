@@ -134,10 +134,6 @@ export
 include("sediment_load.jl")
 using .SedimentLoad
 export
-    make_graph_sediment_load_each_year_diff_scale_ja,
-    make_graph_sediment_load_each_year_diff_scale_en,
-    make_graph_sediment_load_each_year_same_scale_ja,
-    make_graph_sediment_load_each_year_same_scale_en,
     make_graph_suspended_volume_flow_dist,
     make_graph_bedload_volume_flow_dist,
     make_graph_sediment_volume_flow_dist,

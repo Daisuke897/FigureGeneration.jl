@@ -51,9 +51,15 @@ function make_graph_particle_suspended_volume_each_year(
     japanese::Bool=false
     )
 
-    suspended_sediment = particle_suspended_volume_each_year(
-        area_index, data_file.tuple[index_df],
-        each_year_timing, sediment_size
+    suspended_sediment =
+        particle_suspended_sediment_volume_each_year(
+            area_index,
+            390,
+            data_file.tuple[index_df],
+            each_year_timing,
+            1965,
+            1999,
+            sediment_size
         )
 
     area_km = abs(river_length_km - 0.2 * (area_index - 1))
@@ -131,9 +137,12 @@ function make_graph_particle_suspended_volume_each_year_with_average_line(
     )
 
     vec_suspended = suspended_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     )
 
     plot!(
@@ -173,15 +182,21 @@ function make_graph_condition_change_suspended_volume_each_year(
     japanese::Bool=false
     )
 
-    variation_suspended = particle_suspended_volume_each_year(
-        area_index, 
+    variation_suspended = particle_suspended_sediment_volume_each_year(
+        area_index,
+        390,
         data_file.tuple[index_df],
-        each_year_timing, 
+        each_year_timing,
+        1965,
+        1999,
         sediment_size
-    ) - particle_suspended_volume_each_year(
-        area_index, 
+    ) - particle_suspended_sediment_volume_each_year(
+        area_index,
+        390
         data_file.tuple[index_df_base],
-        each_year_timing, 
+        each_year_timing,
+        1965,
+        1999,
         sediment_size
     )
 
@@ -305,13 +320,19 @@ function make_graph_condition_change_suspended_volume_each_year_with_average_lin
 
 
     vec_suspended = suspended_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     ) - suspended_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df_base], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     ) 
 
     plot!(
@@ -391,10 +412,15 @@ function make_graph_particle_bedload_volume_each_year(
     japanese::Bool=false
     )
 
-    bedload_sediment = particle_bedload_volume_each_year(
-        area_index, data_file.tuple[index_df],
-        each_year_timing, sediment_size
-        )
+    bedload_sediment = particle_bedload_sediment_volume_each_year(
+        area_index,
+        390,
+        data_file.tuple[index_df],
+        each_year_timing,
+        1965,
+        1999,
+        sediment_size
+    )
 
     area_km = abs(river_length_km - 0.2 * (area_index - 1))
 
@@ -471,9 +497,12 @@ function make_graph_particle_bedload_volume_each_year_with_average_line(
     )
 
     vec_bedload = bedload_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     )
 
     plot!(
@@ -513,15 +542,19 @@ function make_graph_condition_change_bedload_volume_each_year(
     japanese::Bool=false
     )
 
-    variation_bedload = particle_bedload_volume_each_year(
+    variation_bedload = particle_bedload_sediment_volume_each_year(
         area_index, 
         data_file.tuple[index_df],
-        each_year_timing, 
+        each_year_timing,
+        1965,
+        1999,
         sediment_size
-    ) - particle_bedload_volume_each_year(
+    ) - particle_bedload_sediment_volume_each_year(
         area_index, 
         data_file.tuple[index_df_base],
-        each_year_timing, 
+        each_year_timing,
+        1965,
+        1999,
         sediment_size
     )
 
@@ -645,13 +678,19 @@ function make_graph_condition_change_bedload_volume_each_year_with_average_line(
 
 
     vec_bedload = bedload_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     ) - bedload_sediment_volume_each_year(
-        area_index, 
+        area_index,
+        390,
         data_file.tuple[index_df_base], 
-        each_year_timing
+        each_year_timing,
+        1965,
+        1999
     ) 
 
     plot!(

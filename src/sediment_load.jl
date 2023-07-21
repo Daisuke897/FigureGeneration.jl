@@ -34,10 +34,6 @@ using
 include("./sub_sediment_load/sediment_load_each_year.jl")
 
 export
-    make_graph_sediment_load_each_year_diff_scale_ja,
-    make_graph_sediment_load_each_year_diff_scale_en,
-    make_graph_sediment_load_each_year_same_scale_ja,
-    make_graph_sediment_load_each_year_same_scale_en,
     make_graph_suspended_volume_flow_dist,
     make_graph_bedload_volume_flow_dist,
     make_graph_sediment_volume_flow_dist,
@@ -86,102 +82,154 @@ export
     
 #特定位置の各年の年間掃流砂量の配列を出力する関数
 function bedload_sediment_volume_each_year!(
-    bedload_sediment, area_index::Int, data_file::DataFrame, each_year_timing
+    sediment::AbstractArray{<:AbstractFloat, 1},
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int
     )
 
-    area_meter = 200 * (area_index - 1)
-
-    for i in 1:(1999-1965+1)
-        target_year=1965+i-1
-        bedload_sediment[i]=sum(
-	    data_file[data_file.I .== area_meter, :Qball][each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1]
-	    )
-    end
+    sediment_volume_each_year!(
+        sediment,
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        :Qball,
+        start_year,
+        final_year
+    )
     
-    return bedload_sediment
+    return sediment
     
 end
 
 
 function bedload_sediment_volume_each_year(
-    area_index::Int, data_file::DataFrame, each_year_timing
+    area_index::Int,
+    num_data_flow::Int,    
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int
     )
 
-    bedload_sediment = zeros(Float64,1999-1965+1)
-    
-    bedload_sediment_volume_each_year!(
-        bedload_sediment, area_index, data_file, each_year_timing
-	)
+    sediment = sediment_volume_each_year(
+        area_index,
+        num_data_flow,    
+        data_file,
+        each_year_timing,
+        :Qball,
+        start_year,
+        final_year
+    )
 
-    return bedload_sediment
+    return sediment    
 
 end
 
 
 #特定位置の各年の年間浮遊砂量の配列を出力する関数
 function suspended_sediment_volume_each_year!(
-    suspended_sediment, area_index::Int, data_file::DataFrame, each_year_timing
+    sediment::AbstractArray{<:AbstractFloat, 1},
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int
     )
 
-    area_meter = 200 * (area_index - 1)
-
-    for i in 1:(1999-1965+1)
-        target_year=1965+i-1
-        suspended_sediment[i]=sum(
-	    data_file[data_file.I .== area_meter, :Qsall][each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1]
-	    )
-    end
+    sediment_volume_each_year!(
+        sediment,
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        :Qsall,
+        start_year,
+        final_year
+    )
     
-    return suspended_sediment
+    return sediment
     
 end
 
 
 function suspended_sediment_volume_each_year(
-    area_index::Int, data_file::DataFrame, each_year_timing
+    area_index::Int,
+    num_data_flow::Int,    
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int
     )
 
-    suspended_sediment = zeros(Float64,1999-1965+1)
-    
-    suspended_sediment_volume_each_year!(
-        suspended_sediment, area_index, data_file, each_year_timing
-	)
+    sediment = sediment_volume_each_year(
+        area_index,
+        num_data_flow,    
+        data_file,
+        each_year_timing,
+        :Qsall,
+        start_year,
+        final_year
+    )
 
-    return suspended_sediment
+    return sediment    
 
 end
 
-#特定位置の各年の年間の任意粒径階の流砂量の配列を出力する関数
-
+"""
+特定位置の各年の年間の任意の粒径階、任意の土砂の種類の流砂量の配列を出力する
+"""
 function sediment_volume_each_year!(
-    sediment, area_index::Int,
-    data_file::DataFrame, each_year_timing,
-    target_symbol::Symbol
+    sediment::AbstractArray{<:AbstractFloat, 1},
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    target_symbol::Symbol,
+    start_year::Int,
+    final_year::Int
     )
 
-    area_meter = 200 * (area_index - 1)
+    for (i, year) in enumerate(start_year:final_year)
+        for hour in each_year_timing[year][1]:each_year_timing[year][2]
 
-    for i in 1:(1999-1965+1)
-        target_year=1965+i-1
-        sediment[i]=sum(
-	    data_file[data_file.I .== area_meter, target_symbol][
-                each_year_timing[target_year][1]+1:each_year_timing[target_year][2]+1
-                ]
-	    )
+            (start_i, final_i) = GeneralGraphModule.decide_index_number(hour, num_data_flow)
+
+            sediment[i] += data_file[start_i:final_i, target_symbol][area_index]
+
+        end
     end
+
+    return sediment
     
 end
 
 function sediment_volume_each_year(
-    area_index::Int, data_file::DataFrame,
-    each_year_timing, target_symbol::Symbol
+    area_index::Int,
+    num_data_flow::Int,    
+    data_file::DataFrame,
+    each_year_timing,
+    target_symbol::Symbol,
+    start_year::Int,
+    final_year::Int
     )
 
-    sediment = zeros(Float64,1999-1965+1)
+    sediment = zeros(Float64,final_year-start_year+1)
     
     sediment_volume_each_year!(
-        sediment, area_index, data_file,
-        each_year_timing, target_symbol
+        sediment,
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        target_symbol,
+        start_year,
+        final_year
 	)
 
     return sediment
@@ -189,23 +237,85 @@ function sediment_volume_each_year(
 end
 
 #全粒径階の流砂量を取り出す
-
-function particle_suspended_volume_each_year(
-    area_index::Int, data_file::DataFrame,
-    each_year_timing, sediment_size
+"""
+ある位置の全ての粒度階別の各年の浮遊砂量の配列を作成する
+"""
+function particle_suspended_sediment_volume_each_year(
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int,
+    sediment_size::DataFrame
     )
 
-    sediment_size_num = size(sediment_size)[1]
+    sediment = particle_sediment_volume_each_year(
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        start_year,
+        final_year,
+        sediment_size,
+        :Qsall
+    )
 
-    sediment = zeros(Float64, 1999-1965+1, sediment_size_num)
 
-    @views for particle_class_num in 1:sediment_size_num
+    return sediment
+    
+end
+
+"""
+ある位置の全ての粒度階別の各年の掃流砂量の配列を作成する
+"""
+function particle_bedload_sediment_volume_each_year(
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int,
+    sediment_size::DataFrame
+    )
+
+    sediment = particle_sediment_volume_each_year(
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        start_year,
+        final_year,
+        sediment_size,
+        :Qball
+    )
+    
+    return sediment
+    
+end
+
+function particle_sediment_volume_each_year!(
+    sediment::AbstractArray{<:AbstractFloat, 2},
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int,
+    target_symbol::Symbol
+    )
+
+    @views for particle_class_num in 1:size(sediment, 2)
         sediment_sub = sediment[:, particle_class_num]
         sediment_volume_each_year!(
             sediment_sub,
-            area_index, data_file,
+            area_index,
+            num_data_flow,
+            data_file,
             each_year_timing,
-            Symbol(string("Qsall", Printf.@sprintf("%02i", particle_class_num)))
+            Symbol(string(target_symbol, Printf.@sprintf("%02i", particle_class_num))),
+            start_year,
+            final_year
             )
     end
 
@@ -213,27 +323,155 @@ function particle_suspended_volume_each_year(
     
 end
 
-function particle_bedload_volume_each_year(
-    area_index::Int, data_file::DataFrame,
-    each_year_timing, sediment_size
+function particle_sediment_volume_each_year(
+    area_index::Int,
+    num_data_flow::Int,
+    data_file::DataFrame,
+    each_year_timing,
+    start_year::Int,
+    final_year::Int,
+    sediment_size::DataFrame,
+    target_symbol::Symbol
     )
 
-    sediment_size_num = size(sediment_size)[1]
+    sediment_size_num = size(sediment_size, 1)
 
-    sediment = zeros(Float64, 1999-1965+1, sediment_size_num)
+    sediment = zeros(Float64, final_year-start_year+1, sediment_size_num)
 
-    @views for particle_class_num in 1:sediment_size_num
-        sediment_sub = sediment[:, particle_class_num]
-        sediment_volume_each_year!(
-            sediment_sub,
-            area_index, data_file,
-            each_year_timing,
-            Symbol(string("Qball", Printf.@sprintf("%02i", particle_class_num)))
-            )
-    end
-
+    particle_sediment_volume_each_year!(
+        sediment,
+        area_index,
+        num_data_flow,
+        data_file,
+        each_year_timing,
+        start_year,
+        final_year,
+        target_symbol
+    )
+    
     return sediment
     
+end
+
+#年平均関連
+
+function core_yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean,
+        flow_size::Int,
+        df::DataFrame,
+        start_year::Int,
+        final_year::Int,
+        each_year_timing,
+        tag::Symbol
+    )
+    
+    for target_year in start_year:final_year
+        
+        sediment_load_each_year   = zeros(Float64, flow_size)
+        sediment_load_whole_area_each_year!(sediment_load_each_year,df,target_year,each_year_timing,tag)
+        
+        sediment_load_yearly_mean .= sediment_load_yearly_mean .+ sediment_load_each_year
+
+    end  
+    
+    sediment_load_yearly_mean .= sediment_load_yearly_mean ./(final_year-start_year+1)
+    
+    return sediment_load_yearly_mean
+    
+end
+
+#年平均土砂量を表示できるようにプログラムを変更する。
+#過去のJupyter-labのコードを参考にする。
+function sediment_load_whole_area(df, target_hour::Int, tag::Symbol)
+
+  start_index, final_index = decide_index_number(target_hour)
+
+  return df[start_index:final_index, tag]
+
+end
+
+function sediment_load_whole_area_each_year!(
+        sediment_load_each_year,
+        df::DataFrame,
+        target_year::Int,
+        each_year_timing,
+        tag::Symbol
+    )
+    
+    for target_hour in each_year_timing[target_year][1]:each_year_timing[target_year][2]
+        
+        start_index,final_index=decide_index_number(target_hour)
+        
+        sediment_load_each_year .= sediment_load_each_year .+ df[start_index:final_index, tag]
+        
+    end
+    
+    return sediment_load_each_year
+end
+
+
+function sediment_load_whole_area_each_year(
+    df, target_year::Int, each_year_timing, tag::Symbol
+    )
+
+    flow_size = length(df[df.T .== 0, :I])
+    sediment_load_each_year = zeros(Float64, flow_size)
+    sediment_load_whole_area_each_year!(
+        sediment_load_each_year, df, target_year,
+	each_year_timing,tag
+	)
+
+    return sediment_load_each_year
+end
+
+function yearly_mean_sediment_load_whole_area!(
+    sediment_load_yearly_mean, flow_size::Int,
+    df, start_year::Int, final_year::Int,
+    each_year_timing, tag::Symbol)
+
+    for target_year in start_year:final_year
+        sediment_load_each_year = zeros(Float64, flow_size)
+	  
+        sediment_load_whole_area_each_year!(
+	        sediment_load_each_year,
+            df,
+            target_year,
+	        each_year_timing,
+            tag
+        )
+
+        sediment_load_yearly_mean .= sediment_load_yearly_mean .+ sediment_load_each_year
+
+    end
+
+    sediment_load_yearly_mean .= sediment_load_yearly_mean ./ (final_year - start_year + 1)
+
+    return sediment_load_yearly_mean
+end
+
+function yearly_mean_sediment_load_whole_area(
+    df,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing,
+    tag::Symbol
+    )
+
+    flow_size = length(df[df.T .== 0, :I])
+
+    sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean,
+        flow_size,
+	    df,
+        start_year,
+        final_year,
+        each_year_timing,
+	    tag
+    )
+
+    return sediment_load_yearly_mean
 end
 
 #積み上げの図をつくる
@@ -273,221 +511,6 @@ function make_graph_particle_sediment_volume_each_year(
 
     plot(p1, p2, layout=Plots.@layout[a; b])
 
-end
-
-
-#各年の年間流砂量のグラフを出力する関数 日本語バージョン（縦軸のスケールは異なる）
-function make_graph_sediment_load_each_year_diff_scale_ja(
-    data_file::DataFrame, each_year_timing
-    )
-    
-    bedload_sedi_up = zeros(Float64,1999-1965+1)
-    suspended_sedi_up = zeros(Float64,1999-1965+1)
-    
-    bedload_sediment_volume_each_year!(bedload_sedi_up, 1, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_up, 1, data_file, each_year_timing)    
-    
-    bedload_sedi_down = zeros(Float64,1999-1965+1)
-    suspended_sedi_down = zeros(Float64,1999-1965+1)
-        
-    bedload_sediment_volume_each_year!(bedload_sedi_down, 390, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_down, 390, data_file, each_year_timing)
-    
-    year_list=[i for i in 1965:1999]
-    
-    l = @layout[a b;c d]
-    
-    p1 = plot(year_list, suspended_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        bar_position=:stack, guidefontsize=18,
-        titlefontsize=15, ylabel="年間浮遊砂量 (m³/year)",
-        tickfontsize=18, label="上流端 浮遊砂", seriestype=:bar,
-        color=:firebrick, legend_font_pointsize=13)
-    
-    p2 = plot(year_list, bedload_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e5),
-        titlelocation=:left,titlefontsize=15, ylabel="年間掃流砂量 (m³/year)",
-        bar_position=:stack, xlabel="年", guidefontsize=18,
-        tickfontsize=18, label="上流端 掃流砂", seriestype=:bar,
-        color=:royalblue, legend_font_pointsize=13)   
-    
-    p3 = plot(year_list, suspended_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        guidefontsize=18, seriestype=:bar, legend_font_pointsize=13,
-        titlefontsize=15, ylabel="年間浮遊砂量 (m³/year)",
-        tickfontsize=18, label="河口 浮遊砂", color=:darkorange)
-    
-    p4 = plot(year_list, bedload_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e5),
-        titlelocation=:left,titlefontsize=15, ylabel="年間掃流砂量 (m³/year)",
-        xlabel="年", guidefontsize=18, seriestype=:bar,
-        legend_font_pointsize=13,
-        tickfontsize=18, label="河口 掃流砂", color=:midnightblue)
-        
-    plot!(p1, p3, p2, p4, layout=l, legend=:best, dpi=300, size=(1200,600),
-        topmargin=10Plots.mm, rightmargin=30Plots.mm)
-    
-end
-
-#各年の年間流砂量のグラフを出力する関数 英語バージョン（縦軸のスケールは異なる）
-function make_graph_sediment_load_each_year_diff_scale_en(
-    data_file::DataFrame, each_year_timing
-    )
-    
-    bedload_sedi_up = zeros(Float64,1999-1965+1)
-    suspended_sedi_up = zeros(Float64,1999-1965+1)
-    
-    bedload_sediment_volume_each_year!(bedload_sedi_up, 1, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_up, 1, data_file, each_year_timing)    
-    
-    bedload_sedi_down = zeros(Float64,1999-1965+1)
-    suspended_sedi_down = zeros(Float64,1999-1965+1)
-        
-    bedload_sediment_volume_each_year!(bedload_sedi_down, 390, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_down, 390, data_file, each_year_timing)
-    
-    year_list=[i for i in 1965:1999]
-    
-    l = @layout[a b;c d]
-    
-    p1 = plot(year_list, suspended_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        bar_position=:stack, guidefontsize=18,
-        titlefontsize=15, ylabel="Yearly suspended load (m³/year)",
-        tickfontsize=18, label="Upstream end", seriestype=:bar,
-        color=:firebrick, legend_font_pointsize=13)
-    
-    p2 = plot(year_list, bedload_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e5),
-        titlelocation=:left,titlefontsize=15, ylabel="Yearly bedload (m³/year)",
-        bar_position=:stack, xlabel="年", guidefontsize=18,
-        tickfontsize=18, label="Upstream end", seriestype=:bar,
-        color=:royalblue, legend_font_pointsize=13)   
-    
-    p3 = plot(year_list, suspended_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        guidefontsize=18, seriestype=:bar, legend_font_pointsize=13,
-        titlefontsize=15, ylabel="Yearly suspended load (m³/year)",
-        tickfontsize=18, label="Estuary", color=:darkorange)
-    
-    p4 = plot(year_list, bedload_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e5),
-        titlelocation=:left,titlefontsize=15, ylabel="Yearly bedload (m³/year)",
-        xlabel="年", guidefontsize=18, seriestype=:bar,
-        legend_font_pointsize=13,
-        tickfontsize=18, label="Estuary", color=:midnightblue)
-    
-    plot!(p1, p3, p2, p4, layout=l, legend=:best, dpi=300, size=(1200,600),
-        topmargin=10Plots.mm, rightmargin=30Plots.mm)
-    
-end
-
-#各年の年間流砂量のグラフを出力する関数 日本語バージョン（縦軸のスケールは同じ）
-function make_graph_sediment_load_each_year_same_scale_ja(
-    data_file::DataFrame, each_year_timing
-    )
-    
-    bedload_sedi_up = zeros(Float64,1999-1965+1)
-    suspended_sedi_up = zeros(Float64,1999-1965+1)
-    
-    bedload_sediment_volume_each_year!(bedload_sedi_up, 1, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_up, 1, data_file, each_year_timing)    
-    
-    bedload_sedi_down = zeros(Float64,1999-1965+1)
-    suspended_sedi_down = zeros(Float64,1999-1965+1)
-        
-    bedload_sediment_volume_each_year!(bedload_sedi_down, 390, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_down, 390, data_file, each_year_timing)
-    
-    year_list=[i for i in 1965:1999]
-    
-    l = @layout[a b;c d]
-    
-    p1 = plot(year_list, suspended_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        bar_position=:stack, guidefontsize=18,
-        titlefontsize=15, ylabel="年間浮遊砂量 (m³/year)",
-        tickfontsize=18, label="上流端 浮遊砂", seriestype=:bar,
-        color=:firebrick, legend_font_pointsize=13)
-    
-    p2 = plot(year_list, bedload_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        titlelocation=:left,titlefontsize=15, ylabel="年間掃流砂量 (m³/year)",
-        bar_position=:stack, xlabel="年", guidefontsize=18,
-        tickfontsize=18, label="上流端 掃流砂", seriestype=:bar,
-        color=:royalblue, legend_font_pointsize=13)   
-    
-    p3 = plot(year_list, suspended_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        guidefontsize=18, seriestype=:bar, legend_font_pointsize=13,
-        titlefontsize=15, ylabel="年間浮遊砂量 (m³/year)",
-        tickfontsize=18, label="河口 浮遊砂", color=:darkorange)
-    
-    p4 = plot(year_list, bedload_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        titlelocation=:left,titlefontsize=15, ylabel="年間掃流砂量 (m³/year)",
-        xlabel="年", guidefontsize=18, seriestype=:bar,
-        legend_font_pointsize=13,
-        tickfontsize=18, label="河口 掃流砂", color=:midnightblue)
-    
-    
-    plot!(p1, p3, p2, p4, layout=l, legend=:best, dpi=300, size=(1200,600),
-        topmargin=10Plots.mm, rightmargin=30Plots.mm)
-    
-end
-
-#各年の年間流砂量のグラフを出力する関数 英語バージョン（縦軸のスケールは同じ）
-function make_graph_sediment_load_each_year_same_scale_en(
-    data_file::DataFrame, each_year_timing
-    )
-    
-    bedload_sedi_up = zeros(Float64,1999-1965+1)
-    suspended_sedi_up = zeros(Float64,1999-1965+1)
-    
-    bedload_sediment_volume_each_year!(bedload_sedi_up, 1, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_up, 1, data_file, each_year_timing)    
-    
-    bedload_sedi_down = zeros(Float64,1999-1965+1)
-    suspended_sedi_down = zeros(Float64,1999-1965+1)
-        
-    bedload_sediment_volume_each_year!(bedload_sedi_down, 390, data_file, each_year_timing)
-    suspended_sediment_volume_each_year!(suspended_sedi_down, 390, data_file, each_year_timing)
-    
-    year_list=[i for i in 1965:1999]
-    
-    l = @layout[a b;c d]
-    
-    p1 = plot(year_list, suspended_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        bar_position=:stack, guidefontsize=18,
-        titlefontsize=15, ylabel="Yearly suspended load (m³/year)",
-        tickfontsize=18, label="Upstream end", seriestype=:bar,
-        color=:firebrick, legend_font_pointsize=13)
-    
-    p2 = plot(year_list, bedload_sedi_up,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        titlelocation=:left,titlefontsize=15, ylabel="Yearly bedload (m³/year)",
-        bar_position=:stack, xlabel="年", guidefontsize=18,
-        tickfontsize=18, label="Upstream end", seriestype=:bar,
-        color=:royalblue, legend_font_pointsize=13)   
-    
-    p3 = plot(year_list, suspended_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        guidefontsize=18, seriestype=:bar, legend_font_pointsize=13,
-        titlefontsize=15, ylabel="Yearly suspended load (m³/year)",
-        tickfontsize=18, label="Estuary", color=:darkorange)
-    
-    p4 = plot(year_list, bedload_sedi_down,
-        framestyle=:box, grid=false, xlims=(1964,2001), ylims=(0,2e7),
-        titlelocation=:left,titlefontsize=15, ylabel="Yearly bedload (m³/year)",
-        xlabel="年", guidefontsize=18, seriestype=:bar,
-        legend_font_pointsize=13,
-        tickfontsize=18, label="Estuary", color=:midnightblue)
-    
-    
-    plot!(p1, p3, p2, p4, layout=l, legend=:best, dpi=300, size=(1200,600),
-        topmargin=10Plots.mm, rightmargin=30Plots.mm)
-    
 end
 
 function make_graph_suspended_volume_flow_dist(
@@ -755,83 +778,10 @@ function make_graph_suspended_bedload_target_hour_ja(
     plot(p1, p2, layout=l)
 end
 
-#年平均土砂量を表示できるようにプログラムを変更する。
-#過去のJupyter-labのコードを参考にする。
-function sediment_load_whole_area(df, target_hour::Int, tag::Symbol)
 
-  start_index, final_index = decide_index_number(target_hour)
-
-  return df[start_index:final_index, tag]
-
-end
-
-function sediment_load_whole_area_each_year!(
-    sediment_load_each_year, df,
-    target_year::Int, each_year_timing, tag::Symbol
-    )
-
-    for target_hour in each_year_timing[target_year][1]:each_year_timing[target_year][2]
-        start_index, final_index = decide_index_number(target_hour)
-        sediment_load_each_year .= sediment_load_each_year .+ df[start_index:final_index, tag]
-    end
-
-    return sediment_load_each_year
-end
-
-function sediment_load_whole_area_each_year(
-    df, target_year::Int, each_year_timing, tag::Symbol
-    )
-
-    flow_size = length(df[df.T .== 0, :I])
-    sediment_load_each_year = zeros(Float64, flow_size)
-    sediment_load_whole_area_each_year!(
-        sediment_load_each_year, df, target_year,
-	each_year_timing,tag
-	)
-
-    return sediment_load_each_year
-end
-
-function yearly_mean_sediment_load_whole_area!(
-    sediment_load_yearly_mean, flow_size::Int,
-    df, start_year::Int, final_year::Int,
-    each_year_timing, tag::Symbol)
-
-    for target_year in start_year:final_year
-        sediment_load_each_year = zeros(Float64, flow_size)
-	sediment_load_whole_area_each_year!(
-	    sediment_load_each_year, df, target_year,
-	    each_year_timing, tag)
-
-        sediment_load_yearly_mean .= sediment_load_yearly_mean .+ sediment_load_each_year
-
-    end
-
-    sediment_load_yearly_mean .= sediment_load_yearly_mean ./ (final_year - start_year + 1)
-
-    return sediment_load_yearly_mean
-end
-
-function yearly_mean_sediment_load_whole_area(
-    df,
-    start_year::Int,
-    final_year::Int,
-    each_year_timing,
-    tag::Symbol
-    )
-
-    flow_size = length(df[df.T .== 0, :I])
-
-    sediment_load_yearly_mean = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean, flow_size,
-	df, start_year, final_year, each_year_timing,
-	tag)
-
-    return sediment_load_yearly_mean
-end
-
+"""
+様々な解析の年平均の浮遊砂量の縦断分布を示すグラフを作る。
+"""
 function make_graph_yearly_mean_suspended_load(
     start_year::Int,
     final_year::Int,
@@ -844,13 +794,13 @@ function make_graph_yearly_mean_suspended_load(
     flow_size = length(df_vararg[1][df_vararg[1].T .== 0, :I])
 
     title_s = string(start_year, "-", final_year)
-    x_label = "Distance from the Estuary (km)"
-    y_label = "SSL (m³/year)"
 
     if japanese==true 
-        title_s = string(start_year, "-", final_year)
         x_label="河口からの距離 (km)"
         y_label="浮遊砂量 (m³/年)"
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "SSL (m³/year)"
     end
     
     p = plot(
@@ -898,6 +848,80 @@ function make_graph_yearly_mean_suspended_load(
 
     return p
     
+end
+
+"""
+ある解析の複数の期間における年平均の浮遊砂量の縦断分布のグラフを作る。
+"""
+function make_graph_yearly_mean_suspended_load_per_case(
+    df_main::Main_df,
+    target_index::Int,
+    each_year_timing,
+    final_year::Int,
+    start_year::Vararg{Int, N};
+    japanese::Bool=false
+    ) where {N}
+
+    flow_size = length(df_main.tuple[target_index][df_main.tuple[target_index].T .== 0, :I])
+
+    if japanese==true 
+        x_label="河口からの距離 (km)"
+        y_label="浮遊砂量 (10⁶ m³/年)"
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "SSL (10⁶ m³/year)"
+    end
+
+    p = plot(
+	    xlabel=x_label,
+     	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(0, 6),
+    	legend=:best,
+        palette=:default,
+        xflip=true,
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    for i in 1:N
+    
+        sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+        if i == N 
+            last_year = final_year
+        else 
+            last_year = start_year[i+1] - 1
+        end
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	        df_main.tuple[target_index],
+            start_year[i],
+            last_year,
+            each_year_timing,
+	        :Qsall
+        )
+        
+        legend_label = string(start_year[i], "-", last_year)
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean ./ 1e6),
+	        label=legend_label,
+            linecolor=palette(:default)[i],
+            linewidth=2
+        )
+
+    end
+
+    return p
+
 end
 
 function make_graph_yearly_mean_bedload(
@@ -965,50 +989,6 @@ function make_graph_yearly_mean_bedload(
     end
 
     return p
-    
-end
-
-function sediment_load_whole_area_each_year!(
-        sediment_load_each_year,
-        df::DataFrame,
-        target_year::Int,
-        each_year_timing,
-        tag::Symbol
-    )
-    
-    for target_hour in each_year_timing[target_year][1]:each_year_timing[target_year][2]
-        
-        start_index,final_index=decide_index_number(target_hour)
-        
-        sediment_load_each_year .= sediment_load_each_year .+ df[start_index:final_index, tag]
-        
-    end
-    
-    return sediment_load_each_year
-end
-
-function core_yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean,
-        flow_size::Int,
-        df::DataFrame,
-        start_year::Int,
-        final_year::Int,
-        each_year_timing,
-        tag::Symbol
-    )
-    
-    for target_year in start_year:final_year
-        
-        sediment_load_each_year   = zeros(Float64, flow_size)
-        sediment_load_whole_area_each_year!(sediment_load_each_year,df,target_year,each_year_timing,tag)
-        
-        sediment_load_yearly_mean .= sediment_load_yearly_mean .+ sediment_load_each_year
-
-    end  
-    
-    sediment_load_yearly_mean .= sediment_load_yearly_mean ./(final_year-start_year+1)
-    
-    return sediment_load_yearly_mean
     
 end
 
@@ -2988,9 +2968,12 @@ function make_sediment_df!(
     sediment_volume_each_year!(
         sediment,
         area_index,
+        390,
         data_file,
         each_year_timing,
-        qsall_or_qball_symbol
+        qsall_or_qball_symbol,
+        1965,
+        1999
 	)    
 
     df_sediment[!, :total] = sediment
@@ -3005,13 +2988,16 @@ function make_sediment_df!(
         sediment_volume_each_year!(
             sediment,
             area_index,
+            390,
             data_file,
             each_year_timing,
             Symbol(
                 string(
                     qsall_or_qball_symbol, Printf.@sprintf("%02i", particle_class_num)
                 )
-            )
+            ),
+            1965,
+            1999
         )
         df_sediment[!, string_sediment_size[particle_class_num]] = sediment
     end

@@ -263,16 +263,17 @@ function calc_settling_velocity_by_rubey(
     
 end
 
+"""
+エネルギー勾配の縦断分布のグラフを作成する。
+"""
 function make_graph_energy_slope(
-    df,
+    df_main::Main_df,
     time_schedule,
     param::Param,
-    target_hour::Int;
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-)
-
-    i_e = calc_energy_slope(df, param, target_hour)
-    X   = average_neighbors_target_hour(df, :I, target_hour) ./ 1000
+) where {N}
 
     want_title = GeneralGraphModule.making_time_series_title(
         "",
@@ -280,29 +281,64 @@ function make_graph_energy_slope(
         target_hour * 3600,
         time_schedule
     )
-
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Energy Slope (-)"
 
     if japanese==true
         xlabel_title="河口からの距離 (km)"
         ylabel_title="エネルギー勾配 (-)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Energy slope (-)"
     end
+
+    p = Plots.plot(
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        ylims=(0, 0.5),
+        ylabel=ylabel_title,
+        legend=:best,
+        title=want_title,
+        xflip=true,
+        palette=:default,
+        xtick=[0, 20, 40, 60, 77.8]
+    )
     
-    Plots.vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    Plots.plot!(X, reverse(i_e), xlims=(0, 77.8), xlabel=xlabel_title,
-                ylabel=ylabel_title, ylims=(0,0.5),
-                legend=:none, title=want_title)
+    Plots.vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+        iₑ = calc_energy_slope(df_main.tuple[i], param, target_hour)
+        X   = average_neighbors_target_hour(df_main.tuple[i], :I, target_hour) ./ 1000
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(iₑ),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+    end
+
+    return p
 
 end
 
+"""
+摩擦速度の縦断分布のグラフを作成する。
+"""
 function make_graph_friction_velocity(
-    df_main::Main_df{N, T},
+    df_main::Main_df,
     time_schedule,
     param::Param,
-    target_hour::Int;
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-) where {N, T<:DataFrames.AbstractDataFrame}
+) where {N}
 
     want_title = GeneralGraphModule.making_time_series_title(
         "",
@@ -311,25 +347,36 @@ function make_graph_friction_velocity(
         time_schedule
     )
 
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Friction Velocity (m/s)"
-
     if japanese==true
         xlabel_title="河口からの距離 (km)"
         ylabel_title="摩擦速度 (m/s)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Friction Velocity (m/s)"
     end
+
+    p = Plots.plot(
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        ylims=(0, 4.0),
+        ylabel=ylabel_title,
+        legend=:best,
+        title=want_title,
+        xflip=true,
+        palette=:default,
+        xticks=[0, 20, 40, 60, 77.8]
+    )
     
-    p = Plots.vline(
+    Plots.vline!(
+        p,
         [40.2,24.4,14.6],
         line=:black,
         label="",
-        linestyle=:dot,
-        linewidth=2,
-        legend=:topleft
+        linestyle=:dash,
+        linewidth=1
     )
 
-    for i in 1:N
-
+    for (j, (i, label_string)) in enumerate(target_df)
         u_star = calc_friction_velocity(df_main.tuple[i], param, target_hour)
         X      = average_neighbors_target_hour(df_main.tuple[i], :I, target_hour) ./ 1000
 
@@ -339,64 +386,101 @@ function make_graph_friction_velocity(
             X,
             reverse(u_star),
             xlims=(0, 77.8),
-            xlabel=xlabel_title,
-            xticks=[0, 20, 40, 60, 77.8],
-            ylims=(0, 4.0),
-            ylabel=ylabel_title,
-            label=string("Case ", i),
-            title=want_title
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+    end
+
+    return p
+    
+end
+
+"""
+無次元掃流力の縦断分布のグラフを作る。
+"""
+function make_graph_non_dimensional_shear_stress(
+    df_main::Main_df,
+    param::Param,
+    time_schedule,
+    sediment_size,    
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+) where {N}
+
+
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        target_hour * 3600,
+        time_schedule
+    )
+
+
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="無次元掃流力 (-)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Non Dimensional\nShear Stress (-)"
+    end
+
+    p = Plots.plot(
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
+        ylims=(0, 0.5),
+        ylabel=ylabel_title,
+        legend=:topright,
+        palette=:default,
+        title=want_title
+    )
+    
+    Plots.vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+
+        τₛ = calc_non_dimensional_shear_stress(
+            df_main.tuple[i],
+            sediment_size,
+            param,
+            target_hour
+        )
+        
+        X  = average_neighbors_target_hour(df_main.tuple[i], :I, target_hour) ./ 1000
+    
+        Plots.plot!(
+            p,
+            X,
+            reverse(τₛ),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
         )
 
     end
 
     return p
-    
-end
-
-function make_graph_non_dimensional_shear_stress(
-    df::DataFrames.DataFrame,
-    sediment_size,
-    time_schedule,
-    param::Param,
-    target_hour::Int;
-    japanese::Bool=false
-)
-
-    τₛ = calc_non_dimensional_shear_stress(df, sediment_size, param, target_hour)
-    X  = average_neighbors_target_hour(df, :I, target_hour) ./ 1000
-
-    want_title = GeneralGraphModule.making_time_series_title(
-        "",
-        target_hour,
-        target_hour * 3600,
-        time_schedule
-    )
-
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Non Dimensional\nShear Stress (-)"
-
-    if japanese==true
-        xlabel_title="河口からの距離 (km)"
-        ylabel_title="無次元掃流力 (-)"
-    end
-    
-    Plots.vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    Plots.plot!(X, reverse(τₛ),
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, 1),
-                ylabel=ylabel_title,
-                legend=:none, title=want_title)
 
 end
 
+"""
+河道の流水の面積の縦断分布のグラフを作成する。
+"""
 function make_graph_area(
+    df_main::Main_df,
     time_schedule,
     target_hour::Int,
-    df::DataFrames.DataFrame;
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-) 
+) where {N}
 
     start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
 
@@ -411,46 +495,61 @@ function make_graph_area(
         time_schedule
     )
 
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Area (m²)"
-    
-
     if japanese==true
         xlabel_title="河口からの距離 (km)"
         ylabel_title="面積 (m²)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Area (m²)"
     end
     
     p = Plots.plot(
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, 7000),
-                ylabel=ylabel_title,
-                legend=:none, title=want_title)
-
-    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-
-
-    area = df[start_index:finish_index, :Aw]
-
-    Plots.plot!(
-        p,
-        X,
-        reverse(area),
-        linecolor=:tomato
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        ylims=(0, 7000),
+        ylabel=ylabel_title,
+        legend=:topleft,
+        xflip=true,
+        palette=:default,
+        title=want_title
     )
-        
+
+    Plots.vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+        area = @view df_main.tuple[i][start_index:finish_index, :Aw]
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(area),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+    end
 
     return p
 
 end
 
+"""
+河道の流水の川幅の縦断分布のグラフを作成する。
+"""
 function make_graph_width(
+    df_main::Main_df,
     time_schedule,
     target_hour::Int,
-    df::DataFrames.DataFrame;
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-) 
+) where {N}
 
     start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
 
@@ -465,36 +564,117 @@ function make_graph_width(
         time_schedule
     )
 
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Width (m)"
-    
-
     if japanese==true
         xlabel_title="河口からの距離 (km)"
         ylabel_title="川幅 (m)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Width (m)"
+    end
+
+    p = Plots.plot(
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        ylims=(0, 3000),
+        ylabel=ylabel_title,
+        legend=:topleft,
+        xflip=true,
+        palette=:default,
+        title=want_title
+    )
+
+    Plots.vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+        width = @view df_main.tuple[i][start_index:finish_index, :Bw]
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(width),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
     end
     
-    p = Plots.plot(
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(0, 2500),
-                ylabel=ylabel_title,
-                legend=:none, title=want_title)
+    return p
 
-    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
+end
 
+"""
+河道の径深の縦断分布のグラフを作成する。
+"""
+function make_graph_hydraulic_depth(
+    df_main::Main_df,
+    time_schedule,
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+) where {N}
 
-    width = df[start_index:finish_index, :Bw]
+    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
 
-    Plots.plot!(
-        p,
-        X,
-        reverse(width),
-        linecolor=:lightcoral
+    len_num = finish_index - start_index + 1
+    
+    X = [0.2*(i-1) for i in 1:len_num]
+    
+    want_title = GeneralGraphModule.making_time_series_title(
+        "",
+        target_hour,
+        target_hour * 3600,
+        time_schedule
     )
-        
 
+    if japanese==true
+        xlabel_title="河口からの距離 (km)"
+        ylabel_title="径深 (m)"
+    else
+        xlabel_title="Distance from the estuary (km)"
+        ylabel_title="Hydraulic depth (m)"
+    end
+
+    p = Plots.plot(
+        xlims=(0, 77.8),
+        xlabel=xlabel_title,
+        xticks=[0, 20, 40, 60, 77.8],
+        ylims=(0, 12),
+        ylabel=ylabel_title,
+        legend=:topright,
+        xflip=true,
+        palette=:default,
+        title=want_title
+    )
+
+    Plots.vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+        depth = df_main.tuple[i][start_index:finish_index, :Aw] ./
+            df_main.tuple[i][start_index:finish_index, :Bw]
+
+        Plots.plot!(
+            p,
+            X,
+            reverse(depth),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+    end
+    
     return p
 
 end

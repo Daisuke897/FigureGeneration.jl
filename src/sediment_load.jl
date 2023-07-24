@@ -65,6 +65,10 @@ export
     make_graph_condition_change_yearly_mean_bedload,
     make_graph_condition_rate_yearly_mean_bedload,    
     make_graph_particle_sediment_volume_each_year,
+    make_graph_yearly_mean_suspended_load_per_case,
+    make_graph_yearly_mean_bed_load_per_case,
+    make_figure_yearly_mean_particle_suspended_sediment_load_stacked,
+    make_figure_yearly_mean_particle_bedload_sediment_load_stacked,
     make_suspended_sediment_per_year_csv,
     make_bedload_sediment_per_year_csv,
     make_suspended_sediment_mean_year_csv,
@@ -990,6 +994,80 @@ function make_graph_yearly_mean_bedload(
 
     return p
     
+end
+
+"""
+ある解析の複数の期間における年平均の掃流砂量の縦断分布のグラフを作る。
+"""
+function make_graph_yearly_mean_bed_load_per_case(
+        df_main::Main_df,
+        target_index::Int,
+        each_year_timing,
+        final_year::Int,
+        start_year::Vararg{Int, N};
+        japanese::Bool=false
+    ) where {N}
+
+    flow_size = length(df_main.tuple[target_index][df_main.tuple[target_index].T .== 0, :I])
+
+    if japanese==true 
+        x_label="河口からの距離 (km)"
+        y_label="掃流砂量 (10³ m³/年)"
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Bedload (10³ m³/year)"
+    end
+
+    p = plot(
+	    xlabel=x_label,
+     	xlims=(0,77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+    	ylims=(0, 50),
+    	legend=:topright,
+        palette=:default,
+        xflip=true
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    for i in 1:N
+    
+        sediment_load_yearly_mean = zeros(Float64, flow_size)
+
+        if i == N 
+            last_year = final_year
+        else 
+            last_year = start_year[i+1] - 1
+        end
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	        df_main.tuple[target_index],
+            start_year[i],
+            last_year,
+            each_year_timing,
+	        :Qball
+        )
+        
+        legend_label = string(start_year[i], "-", last_year)
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean) ./ 1e3,
+	        label=legend_label,
+            linecolor=palette(:default)[i],
+            linewidth=2
+        )
+
+    end
+
+    return p
+
 end
 
 function stack_yearly_mean_sediment_load_each_size_whole_area!(
@@ -2949,6 +3027,182 @@ function make_graph_condition_rate_yearly_mean_bedload(
 
     return p
     
+end
+
+"""
+浮遊砂量の年平均値を粒径階別に積み上げたグラフを作る
+"""
+function make_figure_yearly_mean_particle_suspended_sediment_load_stacked(
+        df_main::Main_df,
+        target_df::Int,
+        num_data_flow::Int,
+        each_year_timing,
+        start_year::Int,
+        final_year::Int,
+        sediment_size::DataFrame,
+        area_index::Vararg{Tuple{Int, <:AbstractString}, N};
+        japanese::Bool=false
+    ) where {N}
+
+    num_class_size = size(sediment_size, 1)
+
+    if japanese == true
+        ylabel="年平均浮遊砂量 (10^6 m³/year)"
+        legend_title="粒径 (mm)"
+    else
+        ylabel="Annual average \nSSL (10⁶ m³/year)"
+        legend_title="Size (mm)"
+    end
+    
+    p = plot(
+        ylabel=ylabel,
+        palette=palette(:vik, num_class_size, rev=true),
+        legend_title=legend_title,
+        legend=:outerright,
+        ylims=(0, 4)
+    )
+    
+    vec_labels = Vector{String}(undef, num_class_size)
+
+    for i in 1:length(vec_labels)
+
+        if i == 1
+            vec_labels[i] = Printf.@sprintf("%5.3f", sediment_size[i, 3])
+        elseif 1 < i <= 8
+            vec_labels[i] = Printf.@sprintf("%5.2f", sediment_size[i, 3])
+        elseif 8 < i <= 11
+            vec_labels[i] = Printf.@sprintf("%5.1f", sediment_size[i, 3])
+        else
+            vec_labels[i] = Printf.@sprintf("%5.0f", sediment_size[i, 3])
+        end
+
+    end
+
+    reverse!(vec_labels)
+
+    mean_sediment = zeros(Float64, num_class_size, N)
+
+    for i in 1:N
+        
+        sediment = particle_sediment_volume_each_year(
+            area_index[i][1],
+            390,
+            df_main.tuple[target_df],
+            each_year_timing,
+            start_year,
+            final_year,
+            sediment_size,
+            :Qsall
+        )
+
+        sub_mean_sediment = @view mean_sediment[:, i]
+        
+        sub_mean_sediment .= vec(Statistics.mean(sediment, dims=1))
+
+        reverse!(sub_mean_sediment)
+
+
+
+    end
+
+    StatsPlots.groupedbar!(
+        p,
+        [area_index[i][2] for i in 1:length(area_index)],
+        mean_sediment' ./ 1e6, 
+        bar_position=:stack, 
+        label=permutedims(vec_labels),
+        linecolor=:gray
+    )
+
+    return p
+
+end
+
+"""
+掃流砂量の年平均値を粒径階別に積み上げたグラフを作る
+"""
+function make_figure_yearly_mean_particle_bedload_sediment_load_stacked(
+        df_main::Main_df,
+        target_df::Int,
+        num_data_flow::Int,
+        each_year_timing,
+        start_year::Int,
+        final_year::Int,
+        sediment_size::DataFrame,
+        area_index::Vararg{Tuple{Int, <:AbstractString}, N};
+        japanese::Bool=false
+    ) where {N}
+
+    num_class_size = size(sediment_size, 1)
+
+    if japanese == true
+        ylabel="年平均掃流砂量 (10^3 m³/year)"
+        legend_title="粒径 (mm)"
+    else
+        ylabel="Annual average \nbedload (10³ m³/year)"
+        legend_title="Size (mm)"
+    end
+    
+    p = plot(
+        ylabel=ylabel,
+        palette=palette(:vik, num_class_size, rev=true),
+        legend_title=legend_title,
+        legend=:outerright,
+        ylims=(0, 25)
+    )
+    
+    vec_labels = Vector{String}(undef, num_class_size)
+
+    for i in 1:length(vec_labels)
+
+        if i == 1
+            vec_labels[i] = Printf.@sprintf("%5.3f", sediment_size[i, 3])
+        elseif 1 < i <= 8
+            vec_labels[i] = Printf.@sprintf("%5.2f", sediment_size[i, 3])
+        elseif 8 < i <= 11
+            vec_labels[i] = Printf.@sprintf("%5.1f", sediment_size[i, 3])
+        else
+            vec_labels[i] = Printf.@sprintf("%5.0f", sediment_size[i, 3])
+        end
+
+    end
+
+    reverse!(vec_labels)
+
+    mean_sediment = zeros(Float64, num_class_size, N)
+
+    for i in 1:N
+        
+        sediment = particle_sediment_volume_each_year(
+            area_index[i][1],
+            390,
+            df_main.tuple[target_df],
+            each_year_timing,
+            start_year,
+            final_year,
+            sediment_size,
+            :Qball
+        )
+
+        sub_mean_sediment = @view mean_sediment[:, i]
+        
+        sub_mean_sediment .= vec(Statistics.mean(sediment, dims=1))
+
+        reverse!(sub_mean_sediment)
+
+    end
+
+    StatsPlots.groupedbar!(
+        p,
+        [area_index[i][2] for i in 1:length(area_index)],
+        mean_sediment' ./ 1e3, 
+        bar_position=:stack, 
+        label=permutedims(vec_labels),
+        linecolor=:gray
+    )
+
+    return p
+
 end
 
 function make_sediment_df!(

@@ -200,12 +200,19 @@ function sediment_volume_each_year!(
     )
 
     for (i, year) in enumerate(start_year:final_year)
-        for hour in each_year_timing[year][1]:each_year_timing[year][2]
+        if haskey(each_year_timing, year) == true
+            for hour in each_year_timing[year][1]:each_year_timing[year][2]
 
-            (start_i, final_i) = GeneralGraphModule.decide_index_number(hour, num_data_flow)
+                (start_i, final_i) =
+                    GeneralGraphModule.decide_index_number(
+                        hour,
+                        num_data_flow
+                    )
 
-            sediment[i] += data_file[start_i:final_i, target_symbol][area_index]
+                sediment[i] +=
+                    data_file[start_i:final_i, target_symbol][area_index]
 
+            end
         end
     end
 

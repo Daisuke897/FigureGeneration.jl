@@ -143,7 +143,9 @@ function get_exist_riverbed_level_timing!(
     )
     
     for i in exist_riverbed_level_years
-        push!(exist_riverbed_level_timing, each_year_timing[i][1])
+        if haskey(each_year_timing, i) == true
+            push!(exist_riverbed_level_timing, each_year_timing[i][1])
+        end
     end
         
     return exist_riverbed_level_timing

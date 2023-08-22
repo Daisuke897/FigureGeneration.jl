@@ -839,21 +839,22 @@ function graph_simulated_riverbed_fluctuation(
 end
 
 function graph_variation_per_year_simulated_riverbed_level(
+    df_main::Main_df,
     measured_riverbed,
     exist_riverbed_level::Exist_riverbed_level,
     each_year_timing,
     first_area_index::Int,
     final_area_index::Int,
-    df_vararg::Vararg{DataFrame, N};
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese=false
     ) where {N}
 
     keys_year = sort(collect(keys(each_year_timing)))
 
-    y_label = "Riverbed Elevation (T.P. m)"
-
     if japanese==true
-        y_label="河床位 (T.P. m)" 
+        y_label="河床位 (T.P. m)"
+    else
+        y_label = "Riverbed Elevation (T.P. m)"        
     end
 
     p = plot(
@@ -891,7 +892,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
     base_ylims = 0.0    
 
-    for i in 1:N
+    for (i, label_string) in df_vararg
         
         fluc_average_value = zeros(length(keys_year)+1)
 
@@ -900,7 +901,7 @@ function graph_variation_per_year_simulated_riverbed_level(
             first_i, final_i = decide_index_number(each_year_timing[year][1])            
             
             fluc_average_value[index] = Statistics.mean(
-                df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
+                df_main.tuple[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
             )
 
             if index == 1
@@ -912,7 +913,7 @@ function graph_variation_per_year_simulated_riverbed_level(
         first_i, final_i = decide_index_number(each_year_timing[keys_year[end]][2])
 
         fluc_average_value[end] = Statistics.mean(
-            df_vararg[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
+            df_main.tuple[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
         )
 
         i_max = final_i - first_i + 1
@@ -929,14 +930,12 @@ function graph_variation_per_year_simulated_riverbed_level(
             )
         end
                 
-        legend_label = string("Case ", i)
-                    
         plot!(
             p,
             [keys_year; keys_year[end]+1],
             fluc_average_value,
             markershape=:auto,
-            label=legend_label,
+            label=label_string,
             title=title_s
         )
         

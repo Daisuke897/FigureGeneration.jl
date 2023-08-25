@@ -85,10 +85,14 @@ function get_average_simulated_particle_size_dist(
     num_particle_size        = size(sediment_size[:, :Np], 1)
     string_num_particle_size = @sprintf("%02i", num_particle_size)
 
-    simulated_particle_dist = Matrix(
-                                       data_file[start_index:finish_index,
-                                       Between("fmc01", string("fmc", string_num_particle_size))]
-                                   )
+    simulated_particle_dist =
+        Matrix(
+            data_file[start_index:finish_index,
+                      Between(
+                          "fmc01",
+                          string("fmc", string_num_particle_size)
+                      )]
+        )
 
     average_simulated_particle_size_dist =
         get_average_simulated_particle_size_dist(

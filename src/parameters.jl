@@ -174,10 +174,10 @@ function calc_non_dimensional_shear_stress(
     uₛ::T,
     specific_gravity::T,
     gravity_accel::T,
-    mean_diameter::T    
+    diameter::T    
     ) where {T<:AbstractFloat}
 
-    τₛ = (uₛ^2) / specific_gravity / gravity_accel / mean_diameter
+    τₛ = (uₛ^2) / specific_gravity / gravity_accel / diameter
 
     return τₛ
 end
@@ -189,7 +189,7 @@ function calc_non_dimensional_shear_stress(
     manning_n::T,
     specific_gravity::T,
     gravity_accel::T,
-    mean_diameter::T    
+    diameter::T
     ) where {T<:AbstractFloat}
 
     uₛ = calc_friction_velocity(
@@ -205,7 +205,7 @@ function calc_non_dimensional_shear_stress(
         uₛ,
         specific_gravity,
         gravity_accel,
-        mean_diameter    
+        diameter    
     )
 
     return τₛ
@@ -223,12 +223,14 @@ function calc_non_dimensional_shear_stress(
 
     discharge = average_neighbors_target_hour(df, :Qw, target_hour)
 
-    mean_diameter_dist = ParticleSize.get_average_simulated_particle_size_dist(
-        df,
-        sediment_size,
-        target_hour
-    )
-    mean_diameter = average_neighbors_target_hour(mean_diameter_dist)
+    mean_diameter =
+        average_neighbors_target_hour(
+            ParticleSize.get_average_simulated_particle_size_dist(
+                df,
+                sediment_size,
+                target_hour
+            )
+        )
 
     τₛ = calc_non_dimensional_shear_stress.(
         area,
@@ -242,6 +244,33 @@ function calc_non_dimensional_shear_stress(
     
     return τₛ
 end
+
+function calc_non_dimensional_shear_stress(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    target_hour::Int,
+    diameter::AbstractFloat
+    )
+
+    area      = average_neighbors_target_hour(df, :Aw, target_hour)
+    width     = average_neighbors_target_hour(df, :Bw, target_hour)
+
+    discharge = average_neighbors_target_hour(df, :Qw, target_hour)
+
+    τₛ = calc_non_dimensional_shear_stress.(
+        area,
+        width,
+        discharge,
+        param.manning_n,
+        param.specific_gravity,
+        param.g,
+        diameter    
+    )
+    
+    return τₛ
+end
+
 
 """
 
@@ -328,6 +357,7 @@ function make_graph_energy_slope(
 
 end
 
+
 """
 摩擦速度の縦断分布のグラフを作成する。
 """
@@ -395,19 +425,11 @@ function make_graph_friction_velocity(
     
 end
 
-"""
-無次元掃流力の縦断分布のグラフを作る。
-"""
-function make_graph_non_dimensional_shear_stress(
-    df_main::Main_df,
-    param::Param,
+function _core_make_graph_non_dimensional_shear_stress(
     time_schedule,
-    sediment_size,    
-    target_hour::Int,
-    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    target_hour::Int;
     japanese::Bool=false
-) where {N}
-
+)
 
     want_title = GeneralGraphModule.making_time_series_title(
         "",
@@ -415,7 +437,6 @@ function make_graph_non_dimensional_shear_stress(
         target_hour * 3600,
         time_schedule
     )
-
 
     if japanese==true
         xlabel_title="河口からの距離 (km)"
@@ -446,6 +467,29 @@ function make_graph_non_dimensional_shear_stress(
         linewidth=1
     )
 
+    return p
+    
+end
+
+"""
+無次元掃流力の縦断分布のグラフを作る。（平均粒径）
+"""
+function make_graph_non_dimensional_shear_stress(
+    df_main::Main_df,
+    param::Param,
+    time_schedule,
+    sediment_size,    
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+) where {N}
+
+    p = _core_make_graph_non_dimensional_shear_stress(
+        time_schedule,
+        target_hour;
+        japanese=japanese
+    )
+    
     for (j, (i, label_string)) in enumerate(target_df)
 
         τₛ = calc_non_dimensional_shear_stress(
@@ -455,7 +499,58 @@ function make_graph_non_dimensional_shear_stress(
             target_hour
         )
         
-        X  = average_neighbors_target_hour(df_main.tuple[i], :I, target_hour) ./ 1000
+        X  = average_neighbors_target_hour(
+            df_main.tuple[i], :I, target_hour
+        ) ./ 1000
+    
+        Plots.plot!(
+            p,
+            X,
+            reverse(τₛ),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+
+    end
+
+    return p
+
+end
+
+
+"""
+無次元掃流力の縦断分布のグラフを作る。（任意の粒径）
+"""
+function make_graph_non_dimensional_shear_stress(
+    df_main::Main_df,
+    param::Param,
+    time_schedule,
+    sediment_size,    
+    target_hour::Int,
+    diameter::AbstractFloat,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+) where {N}
+
+    p = _core_make_graph_non_dimensional_shear_stress(
+        time_schedule,
+        target_hour;
+        japanese=japanese
+    )
+    
+    for (j, (i, label_string)) in enumerate(target_df)
+
+        τₛ = calc_non_dimensional_shear_stress(
+            df_main.tuple[i],
+            sediment_size,
+            param,
+            target_hour,
+            diameter
+        )
+        
+        X  = average_neighbors_target_hour(
+            df_main.tuple[i], :I, target_hour
+        ) ./ 1000
     
         Plots.plot!(
             p,

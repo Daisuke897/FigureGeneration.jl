@@ -1,3 +1,5 @@
+# diameter unit: m (not mm)
+
 function calc_non_dimensional_shear_stress(
     uₛ::T,
     specific_gravity::T,
@@ -58,7 +60,7 @@ function calc_non_dimensional_shear_stress(
                 sediment_size,
                 target_hour
             )
-        )
+        ) ./ 1000
 
     τₛ = calc_non_dimensional_shear_stress.(
         area,
@@ -120,7 +122,7 @@ function calc_effective_non_dimensional_shear_stress(
         gravity_accel
     )
 
-    τₑᵢ = FigureGeneration.Parameters.calc_non_dimensional_shear_stress(
+    τₑᵢ = calc_non_dimensional_shear_stress(
         uₑₘ,
         specific_gravity,
         gravity_accel,
@@ -133,24 +135,24 @@ end
 function calc_effective_non_dimensional_shear_stress(
     df::DataFrames.DataFrame,
     sediment_size::DataFrames.DataFrame,
-    param::FigureGeneration.Parameters.Param,
+    param::Param,
     target_hour::Int,
     spec_diameter::AbstractFloat
     )
 
-    area      = FigureGeneration.Parameters.average_neighbors_target_hour(df, :Aw, target_hour)
-    width     = FigureGeneration.Parameters.average_neighbors_target_hour(df, :Bw, target_hour)
+    area      = average_neighbors_target_hour(df, :Aw, target_hour)
+    width     = average_neighbors_target_hour(df, :Bw, target_hour)
 
-    discharge = FigureGeneration.Parameters.average_neighbors_target_hour(df, :Qw, target_hour)
+    discharge = average_neighbors_target_hour(df, :Qw, target_hour)
 
     mean_diameter =
-        FigureGeneration.Parameters.average_neighbors_target_hour(
-            FigureGeneration.ParticleSize.get_average_simulated_particle_size_dist(
+        average_neighbors_target_hour(
+            ParticleSize.get_average_simulated_particle_size_dist(
                 df,
                 sediment_size,
                 target_hour
             )
-        )
+        ) ./ 1000
 
     τₑᵢ = calc_effective_non_dimensional_shear_stress.(
         area,

@@ -46,7 +46,7 @@ function simulated_particle_size_dist(
 
     start_index, finish_index = decide_index_number(hours_now)
 
-    num_particle_size        = size(sediment_size[:, :Np], 1)
+    num_particle_size        = size(sediment_size, 1)
     string_num_particle_size = @sprintf("%02i", num_particle_size)
 
     simulated_particle_size_dist = Matrix(
@@ -82,7 +82,7 @@ function get_average_simulated_particle_size_dist(
 
     start_index, finish_index = decide_index_number(hours_now)
 
-    num_particle_size        = size(sediment_size[:, :Np], 1)
+    num_particle_size        = size(sediment_size, 1)
     string_num_particle_size = @sprintf("%02i", num_particle_size)
 
     simulated_particle_dist =
@@ -146,7 +146,7 @@ function graph_ratio_simulated_particle_size_dist(
 
     start_index, finish_index = decide_index_number(hours_now)
 
-    num_particle_size        = size(sediment_size[:, :Np], 1)
+    num_particle_size        = size(sediment_size, 1)
     string_num_particle_size = @sprintf("%02i", num_particle_size)
 
     simulated_particle_size_dist = Matrix(

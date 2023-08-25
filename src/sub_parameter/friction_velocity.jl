@@ -118,7 +118,7 @@ function calc_effective_friction_velocity(
                 sediment_size,
                 target_hour
             )
-        )
+        ) ./ 1000
 
     uₑₘ = calc_effective_friction_velocity.(
         discharge,

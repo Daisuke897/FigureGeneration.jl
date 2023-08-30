@@ -50,7 +50,7 @@ struct Param{T<:AbstractFloat}
     kinematic_viscosity::T
 end
 
-params = Param{Float64}(0.30, 9.81, 1.65, 1.004e-6)
+params = Param{Float64}(0.03, 9.81, 1.65, 1.004e-6)
 
 function average_neighbors_target_hour!(
     return_array::AbstractVector{T},

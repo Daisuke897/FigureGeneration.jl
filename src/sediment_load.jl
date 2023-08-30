@@ -37,9 +37,9 @@ export
     make_graph_suspended_volume_flow_dist,
     make_graph_bedload_volume_flow_dist,
     make_graph_sediment_volume_flow_dist,
-    make_graph_suspended_load_target_hour_ja,
-    make_graph_bedload_target_hour_ja,
-    make_graph_suspended_bedload_target_hour_ja,
+    make_graph_suspended_load_target_hour,
+    make_graph_bedload_target_hour,
+    make_graph_suspended_bedload_target_hour,
     make_graph_yearly_mean_suspended_load,
     make_graph_yearly_mean_bedload,
     make_graph_particle_yearly_mean_suspended,
@@ -601,91 +601,239 @@ function make_graph_sediment_volume_flow_dist(
 
 end
 
-#特定の時間の流砂量を表示できるようにする。
-#浮遊砂量の図
-function make_graph_suspended_load_target_hour_ja(
-    target_hour,data_file,time_schedule)
+function _core_make_graph_suspended_load_target_hour(
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame;
+    japanese::Bool=false
+    )
 
     target_second = 3600 * target_hour
     
     start_index, finish_index = decide_index_number(target_hour)
-    
-    want_title = making_time_series_title(
-                     "浮遊砂量", target_hour,
-                     target_second, time_schedule
-		     )
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(data_file[data_file.T .== 0, :I].*10^-3,
-        reverse(data_file[start_index:finish_index,:Qs]),
-        label="", fillrange=0,
-        ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
-	title=want_title, xlabel="河口からの距離 (km)",
-	xticks=[0, 20, 40, 60, 77.8],
-	linewidth=2, legend=:topleft,
-	color=:firebrick)
+    if japanese == true
+        
+        want_title = making_time_series_title(
+            "浮遊砂量",
+            target_hour,
+            target_second,
+            time_schedule
+		)
+
+        yl = "浮遊砂量 (m³/s)"
+
+        xl = "河口からの距離 (km)"
+
+    else
+
+        want_title = making_time_series_title(
+            "Suspended",
+            target_hour,
+            target_second,
+            time_schedule
+		)
+
+        yl = "Suspended load (m³/s)"
+
+        xl = "Distance from the estuary (km)"
+        
+    end
+
+    return target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl
+
 end
-#掃流砂量の図
-function make_graph_bedload_target_hour_ja(
-    target_hour,data_file,time_schedule)
+
+function _core_make_graph_bedload_target_hour(
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame;
+    japanese::Bool=false
+    )
 
     target_second = 3600 * target_hour
     
     start_index, finish_index = decide_index_number(target_hour)
-    
-    want_title = making_time_series_title(
-                     "掃流砂量", target_hour,
-                     target_second, time_schedule
-		     )
 
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(data_file[data_file.T .== 0, :I].*10^-3,
-        reverse(data_file[start_index:finish_index,:Qb]),
-        label="", fillrange=0,
-        ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
-	title=want_title, xlabel="河口からの距離 (km)",
-	xticks=[0, 20, 40, 60, 77.8],
-	linewidth=2, legend=:topleft,
-	color=:royalblue)
+    if japanese == true
+        
+        want_title = making_time_series_title(
+            "掃流砂量",
+            target_hour,
+            target_second,
+            time_schedule
+		)
+
+        yl = "掃流砂量 (m³/s)"
+
+        xl = "河口からの距離 (km)"
+        
+    else
+
+        want_title = making_time_series_title(
+            "Bedload",
+            target_hour,
+            target_second,
+            time_schedule
+		)
+
+        yl = "Bedload (m³/s)"
+
+        xl = "Distance from the estuary (km)"
+
+    end
+
+    return target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl
+
 end
 
-#浮遊砂量と掃流砂量の2つの図
-function make_graph_suspended_bedload_target_hour_ja(
-    target_hour,data_file,time_schedule)
+
+"""
+特定の時間における合計の浮遊砂量の縦断分布のグラフを作る。
+"""
+function make_graph_suspended_load_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
+
+    target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl = _core_make_graph_suspended_load_target_hour(
+        target_hour,
+        time_schedule;
+        japanese=japanese
+    )
+
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    plot!(main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
+        reverse(main_df.tuple[target_df][start_index:finish_index,:Qs]),
+        label="", fillrange=0,
+        ylabel=yl, xlims=(0,77.8),ylims=(0,100),
+	      title=want_title, xlabel=xl,
+	      xticks=[0, 20, 40, 60, 77.8],
+	      linewidth=2, legend=:topleft,
+	      color=:firebrick)
+    
+end
+
+"""
+特定の時間における合計の掃流砂量の縦断分布のグラフを作る。
+"""
+function make_graph_bedload_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
+
+    target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl = _core_make_graph_bedload_target_hour(
+        target_hour,
+        time_schedule;
+        japanese=japanese
+    )
+    
+    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    plot!(main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
+          reverse(main_df.tuple[target_df][start_index:finish_index,:Qb]),
+          label="", fillrange=0,
+          ylabel=yl, xlims=(0,77.8),ylims=(0,2),
+	      title=want_title, xlabel=xl,
+	      xticks=[0, 20, 40, 60, 77.8],
+	      linewidth=2, legend=:topleft,
+	      color=:royalblue)
+    
+end
+
+"""
+特定の時間における合計の浮遊砂量（上図）と掃流砂量（下図）の縦断分布のグラフを作る。
+"""
+function make_graph_suspended_bedload_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
 
     l = @layout[a; b]
 
-    p1 = make_graph_suspended_load_target_hour_ja(
-             target_hour,data_file,time_schedule
-	     )
+    p1 = make_graph_suspended_load_target_hour(
+        data_file,
+        target_hour,
+        time_schedule,
+        target_df=target_df,
+        japanese=japanese
+	)
+    
     plot!(p1, xlabel="")
 
-    p2 = make_graph_bedload_target_hour_ja(
-             target_hour,data_file,time_schedule
-	     )
+    p2 = make_graph_bedload_target_hour(
+        data_file,
+        target_hour,
+        time_schedule,
+        target_df=target_df,
+        japanese=japanese
+	)
 
     plot(p1, p2, layout=l)
 end
 
-#粒径別にも表示できるようにしたい！！
-#浮遊砂の粒径別のグラフを作る！
-function make_graph_suspended_load_target_hour_ja(
-    target_hour,data_file,time_schedule,
-    sediment_size)
+"""
+特定の時間における粒径階別の浮遊砂量の縦断分布のグラフを作る。
+"""
+function make_graph_suspended_load_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
 
-    target_second = 3600 * target_hour
+    target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl = _core_make_graph_suspended_load_target_hour(
+        target_hour,
+        time_schedule;
+        japanese=japanese
+    )
 
-    start_index, finish_index = decide_index_number(target_hour)
+    if japanese == true
+        lt = "粒径(mm)"
+    else
+        lt = "Size(mm)"
+    end
 
-    want_title = making_time_series_title(
-                     "浮遊砂量", target_hour,
-                     target_second, time_schedule
-                     )
-
-    sediment_size_num = size(sediment_size)[1]
+    sediment_size_num = size(sediment_size, 1)
 
     target_matrix = Matrix(
-        data_file[start_index:finish_index,DataFrames.Between(:Qs01, Symbol(string(:Qs, Printf.@sprintf("%02i", sediment_size_num))))]
+        main_df.tuple[target_df][
+            start_index:finish_index,
+            DataFrames.Between(:Qs01, Symbol(string(:Qs, Printf.@sprintf("%02i", sediment_size_num))))
+        ]
 	)
 
     reverse!(target_matrix, dims=2)
@@ -696,45 +844,63 @@ function make_graph_suspended_load_target_hour_ja(
     strings_sediment_size =
         string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
-    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(p, ylabel="浮遊砂量 (m³/s)", xlims=(0,77.8),ylims=(0,100),
-        title=want_title, xlabel="河口からの距離 (km)",
-        xticks=[0, 20, 40, 60, 77.8],
-        linewidth=2, legend=:outerright,
-	palette=:tab20,
-	legend_font_pointsize=9,
-        label_title="粒径(mm)",
-        legend_title_font_pointsize=10)
+    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    plot!(p, ylabel=yl, xlims=(0,77.8),ylims=(0,100),
+          title=want_title, xlabel=xl,
+          xticks=[0, 20, 40, 60, 77.8],
+          linewidth=2, legend=:outerright,
+	      palette=:tab20,
+	      legend_font_pointsize=9,
+          label_title=lt,
+          legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
-        plot!(p, data_file[data_file.T .== 0, :I].*10^-3,
-	    target_matrix[:,i],
-	    fillrange=0,
-	    label=strings_sediment_size[i])
+        plot!(p, main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
+	          target_matrix[:,i],
+	          fillrange=0,
+	          label=strings_sediment_size[i])
     end
 
     return p
     
 end
 
-#掃流砂のグラフ
-function make_graph_bedload_target_hour_ja(
-    target_hour,data_file,time_schedule,
-    sediment_size)
+"""
+特定の時間における粒径階別の掃流砂量の縦断分布のグラフを作る。
+"""
+function make_graph_bedload_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
+    
+    target_second,
+    start_index,
+    finish_index,
+    want_title,
+    yl,
+    xl = _core_make_graph_bedload_target_hour(
+        target_hour,
+        time_schedule;
+        japanese=japanese
+    )
 
-    target_second = 3600 * target_hour
+    if japanese == true
+        lt = "粒径(mm)"
+    else
+        lt = "Size(mm)"
+    end
 
-    start_index, finish_index = decide_index_number(target_hour)
-
-    want_title = making_time_series_title(
-                     "掃流砂量", target_hour,
-                     target_second, time_schedule
-                     )
-
-    sediment_size_num = size(sediment_size)[1]
+    sediment_size_num = size(sediment_size, 1)
 
     target_matrix = Matrix(
-        data_file[start_index:finish_index,DataFrames.Between(:Qb01, Symbol(string(:Qb, Printf.@sprintf("%02i", sediment_size_num))))]
+        main_df.tuple[target_df][
+            start_index:finish_index,
+            DataFrames.Between(:Qb01, Symbol(string(:Qb, Printf.@sprintf("%02i", sediment_size_num))))
+        ]
         )
 
     reverse!(target_matrix, dims=2)
@@ -745,18 +911,18 @@ function make_graph_bedload_target_hour_ja(
     strings_sediment_size =
         string.(round.(sediment_size[:,:diameter_mm], digits=3))
 
-    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(p, ylabel="掃流砂量 (m³/s)", xlims=(0,77.8),ylims=(0,2),
-        title=want_title, xlabel="河口からの距離 (km)",
+    p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    plot!(p, ylabel=yl, xlims=(0,77.8),ylims=(0,2),
+        title=want_title, xlabel=xl,
         xticks=[0, 20, 40, 60, 77.8],
         linewidth=2, legend=:outerright,
         palette=:tab20,
         legend_font_pointsize=9,
-        label_title="粒径(mm)",
+        label_title=lt,
         legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
-        plot!(p, data_file[data_file.T .== 0, :I].*10^-3,
+        plot!(p, main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
             target_matrix[:,i],
             fillrange=0,
             label=strings_sediment_size[i])
@@ -766,27 +932,45 @@ function make_graph_bedload_target_hour_ja(
 
 end
 
-#浮遊砂量と掃流砂量の2つの図
-
-function make_graph_suspended_bedload_target_hour_ja(
-    target_hour,data_file,time_schedule,sediment_size)
-
+"""
+特定の時間における粒径階別の浮遊砂量（上図）と掃流砂量（下図）の縦断分布のグラフを作る。
+"""
+function make_graph_suspended_bedload_target_hour(
+    main_df::Main_df,
+    target_hour::Int,
+    time_schedule::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame;
+    target_df::Int=1,
+    japanese::Bool=false
+    )
+    
     l = @layout[a; b]
 
-    p1 = make_graph_suspended_load_target_hour_ja(
-             target_hour,data_file,time_schedule,
-             sediment_size)
-	     
+    p1 = make_graph_suspended_load_target_hour(
+        main_df,
+        target_hour,
+        time_schedule,
+        sediment_size;
+        target_df=target_df,
+        japanese=japanese
+    )
+	
     plot!(p1, xlabel="",
           legend_font_pointsize=4)
 
-    p2 = make_graph_bedload_target_hour_ja(
-             target_hour,data_file,time_schedule,
-             sediment_size)
+    p2 = make_graph_bedload_target_hour(
+        main_df,
+        target_hour,
+        time_schedule,
+        sediment_size;
+        target_df=target_df,
+        japanese=japanese        
+    )
 
     plot!(p2, legend_font_pointsize=4)
 
     plot(p1, p2, layout=l)
+    
 end
 
 

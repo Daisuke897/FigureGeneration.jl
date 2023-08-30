@@ -179,7 +179,7 @@ function make_graph_energy_slope(
     p = Plots.plot(
         xlims=(0, 77.8),
         xlabel=xlabel_title,
-        ylims=(0, 0.5),
+        ylims=(0, 0.01),
         ylabel=ylabel_title,
         legend=:best,
         title=want_title,
@@ -246,7 +246,7 @@ function make_graph_friction_velocity(
     p = Plots.plot(
         xlims=(0, 77.8),
         xlabel=xlabel_title,
-        ylims=(0, 4.0),
+        ylims=(0, 1.0),
         ylabel=ylabel_title,
         legend=:best,
         title=want_title,
@@ -309,7 +309,6 @@ function _core_make_graph_non_dimensional_shear_stress(
         xlabel=xlabel_title,
         xticks=[0, 20, 40, 60, 77.8],
         xflip=true,
-        ylims=(0, 0.5),
         ylabel=ylabel_title,
         legend=:topright,
         palette=:default,
@@ -422,6 +421,101 @@ function make_graph_non_dimensional_shear_stress(
     return p
 
 end
+
+"""
+無次元有効掃流力の縦断分布のグラフを作る（平均粒径）
+"""
+function make_graph_effective_non_dimensional_shear_stress(
+    df_main::Main_df,
+    param::Param,
+    time_schedule,
+    sediment_size,    
+    target_hour::Int,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+) where {N}
+
+    p = _core_make_graph_non_dimensional_shear_stress(
+        time_schedule,
+        target_hour;
+        japanese=japanese
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+
+        τₑₘ = calc_effective_non_dimensional_shear_stress(
+            df_main.tuple[i],
+            sediment_size,
+            param,
+            target_hour
+        )
+        
+        X  = average_neighbors_target_hour(
+            df_main.tuple[i], :I, target_hour
+        ) ./ 1000
+    
+        Plots.plot!(
+            p,
+            X,
+            reverse(τₑₘ),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+
+    end
+
+    return p
+
+end
+
+"""
+無次元有効掃流力の縦断分布のグラフを作る（任意の粒径）
+"""
+function make_graph_effective_non_dimensional_shear_stress(
+    df_main::Main_df,
+    param::Param,
+    time_schedule,
+    sediment_size,
+    target_hour::Int,
+    spec_diameter_m::AbstractFloat,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    p = _core_make_graph_non_dimensional_shear_stress(
+        time_schedule,
+        target_hour;
+        japanese=japanese
+    )
+
+    for (j, (i, label_string)) in enumerate(target_df)
+
+        τₑᵢ = calc_effective_non_dimensional_shear_stress(
+            df_main.tuple[i],
+            sediment_size,
+            param,
+            target_hour,
+            spec_diameter_m
+        )
+        
+        X  = average_neighbors_target_hour(
+            df_main.tuple[i], :I, target_hour
+        ) ./ 1000
+        
+        Plots.plot!(
+            p,
+            X,
+            reverse(τₑᵢ),
+            label=label_string,
+            linecolor=Plots.palette(:default)[j]
+        )
+
+    end
+
+    return p
+
+end
+
 
 """
 河道の流水の面積の縦断分布のグラフを作成する。

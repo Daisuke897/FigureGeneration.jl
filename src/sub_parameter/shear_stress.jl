@@ -167,3 +167,38 @@ function calc_effective_non_dimensional_shear_stress(
     
     return τₑᵢ
 end
+
+function calc_effective_non_dimensional_shear_stress(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    target_hour::Int
+    )
+
+    area      = average_neighbors_target_hour(df, :Aw, target_hour)
+    width     = average_neighbors_target_hour(df, :Bw, target_hour)
+
+    discharge = average_neighbors_target_hour(df, :Qw, target_hour)
+
+    mean_diameter =
+        average_neighbors_target_hour(
+            ParticleSize.get_average_simulated_particle_size_dist(
+                df,
+                sediment_size,
+                target_hour
+            )
+        ) ./ 1000
+
+    τₑᵢ = calc_effective_non_dimensional_shear_stress.(
+        area,
+        width,
+        discharge,
+        param.manning_n,
+        param.specific_gravity,
+        param.g,
+        mean_diameter,
+        mean_diameter
+    )
+    
+    return τₑᵢ
+end

@@ -33,6 +33,8 @@ function get_max_num_time(df_path::String)
     for i = 1:5
         max_time = parse(Int, readline(condition_file))
     end
+
+    close(condition_file)
     return max_time
 end
 

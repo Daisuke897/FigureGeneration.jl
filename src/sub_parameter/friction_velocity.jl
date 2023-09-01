@@ -133,3 +133,42 @@ function calc_effective_friction_velocity(
     
     return uₑₘ
 end
+
+function calc_critical_friction_velocity_square(
+    diameter_m::T
+    ) where {T<:AbstractFloat}
+
+    diameter_cm = diameter_m * 100
+
+    if diameter_cm >= 0.303 
+        u_cm_2=80.9*diameter_cm
+    elseif diameter_cm >= 0.118 
+        u_cm_2=134.6*diameter_cm^(31/22)
+    elseif diameter_cm >= 0.0565
+        u_cm_2=55.0*diameter_cm
+    elseif diameter_cm >= 0.0065
+        u_cm_2=8.41*diameter_cm^(11/32)
+    else
+        u_cm_2=2226.0*diameter_cm
+    end
+
+    u_cm_2 = u_cm_2 / 100^2
+
+    return u_cm_2    
+
+end
+
+
+function calc_critical_friction_velocity(
+    diameter_m::T
+    ) where {T<:AbstractFloat}
+
+    u_cm = sqrt(
+        calc_critical_friction_velocity_square(
+            diameter_m
+        )
+    )
+
+    return u_cm    
+
+end

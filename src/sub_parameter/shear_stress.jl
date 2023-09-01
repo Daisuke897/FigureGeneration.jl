@@ -202,3 +202,81 @@ function calc_effective_non_dimensional_shear_stress(
     
     return τₑᵢ
 end
+
+function calc_critical_non_dimensional_shear_stress(
+    diameter_m::T,
+    specific_gravity::T,
+    gravity_accel::T
+    ) where {T<:AbstractFloat}
+
+
+    u_cm = calc_critical_friction_velocity(diameter_m)
+
+    τ_cm = calc_non_dimensional_shear_stress(
+        u_cm,
+        specific_gravity,
+        gravity_accel,
+        diameter_m
+    )
+
+    return τ_cm
+
+end
+
+function calc_critical_non_dimensional_shear_stress(
+    spec_diameter_m::T,
+    mean_diameter_m::T,
+    specific_gravity::T,
+    gravity_accel::T
+    ) where {T<:AbstractFloat}
+
+    τ_cm = calc_critical_non_dimensional_shear_stress(
+        mean_diameter_m,
+        specific_gravity,
+        gravity_accel
+    )
+    
+    τ_ci = if spec_diameter_m / mean_diameter_m >= 0.4
+        
+        τ_cm * (
+            log10(19) /
+                log10(19 * spec_diameter_m / mean_diameter_m)
+        )
+
+    else
+        
+        0.85 *τ_cm * (mean_diameter_m / spec_diameter_m)
+
+    end
+
+    return τ_ci
+
+end
+
+function calc_critical_non_dimensional_shear_stress(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    spec_diameter_m::AbstractFloat,
+    param::Param,
+    target_hour::Int
+    )
+
+    mean_diameter_m =
+        average_neighbors_target_hour(
+            ParticleSize.get_average_simulated_particle_size_dist(
+                df,
+                sediment_size,
+                target_hour
+            )
+        ) ./ 1000
+
+    τ_ci = calc_critical_non_dimensional_shear_stress.(
+        spec_diameter_m,
+        mean_diameter_m,
+        params.specific_gravity,
+        params.g
+    )
+
+    return τ_ci
+
+end

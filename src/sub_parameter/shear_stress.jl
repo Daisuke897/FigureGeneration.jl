@@ -258,7 +258,7 @@ function calc_critical_non_dimensional_shear_stress(
     sediment_size::DataFrames.DataFrame,
     spec_diameter_m::AbstractFloat,
     param::Param,
-    target_hour::Int
+    target_hour::Int,
     )
 
     mean_diameter_m =
@@ -278,5 +278,31 @@ function calc_critical_non_dimensional_shear_stress(
     )
 
     return τ_ci
+
+end
+
+function calc_critical_non_dimensional_shear_stress(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    target_hour::Int
+    )
+
+    mean_diameter_m =
+        average_neighbors_target_hour(
+            ParticleSize.get_average_simulated_particle_size_dist(
+                df,
+                sediment_size,
+                target_hour
+            )
+        ) ./ 1000
+
+    τ_cm = calc_critical_non_dimensional_shear_stress.(
+        mean_diameter_m,
+        params.specific_gravity,
+        params.g
+    )
+
+    return τ_cm
 
 end

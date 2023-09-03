@@ -9,15 +9,24 @@ Plots.RecipesBase.@recipe function f(
     ::Plot_core_non_dimensional_shear_stress,
     time_schedule::DataFrames.DataFrame,
     target_hour::Int,
-    japanese::Bool=false
+    japanese::Bool
     )
 
+    seriestype := :distance_line
+    primary := true
+    
     title --> GeneralGraphModule.making_time_series_title(
         "",
         target_hour,
         target_hour * 3600,
         time_schedule
     )
+    
+    ylabel --> if japanese == true
+        "無次元掃流力 (-)"
+    else
+        "Non Dimensional\nShear Stress (-)"
+    end
 
     xlabel --> if japanese == true
         "河口からの距離 (km)"
@@ -25,33 +34,8 @@ Plots.RecipesBase.@recipe function f(
         "Distance from the estuary (km)"
     end
 
-    ylabel --> if japanese == true
-        "無次元掃流力 (-)"
-    else
-        "Non Dimensional\nShear Stress (-)"
-    end
-
-    primary := false
-    xlims  --> (0, 77.8)
-    xticks --> [0, 20, 40, 60, 77.8]
-    xflip  :=  true
-    legend --> :topright
-    palette--> :default
-
-    Plots.RecipesBase.@series begin
-
-        seriestype := :vline
-        primary := false
-        line := :black
-        linestyle --> :dash
-        linewidth := 1
-
-        [40.2, 24,4, 14.6]
-
-    end
-
-    ()
-
+    primary := true
+    
 end
 
 
@@ -59,13 +43,19 @@ function _core_make_graph_non_dimensional_shear_stress(
     time_schedule,
     target_hour::Int;
     japanese::Bool=false
-)
+    )
 
+    # distance_line(
+    #     ;
+    #     japanese=japanese,
+    #     x_vline=[40.2, 24,4, 14.6]
+    # )
+    
     Plots.plot(
         Plot_core_non_dimensional_shear_stress(),
         time_schedule,
         target_hour,
-        japanese = japanese
+        japanese
     )
     
 end
@@ -79,8 +69,7 @@ Plots.RecipesBase.@recipe function f(
     time_schedule,
     sediment_size,    
     target_hour::Int,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
 
     for (j, (i, label_string)) in zip(1:N, target_df)
@@ -108,7 +97,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -140,8 +128,7 @@ function make_graph_non_dimensional_shear_stress(
         time_schedule,
         sediment_size,    
         target_hour,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end
@@ -154,8 +141,7 @@ Plots.RecipesBase.@recipe function f(
     sediment_size,    
     target_hour::Int,
     spec_diameter::AbstractFloat,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
 
     for (j, (i, label_string)) in zip(1:N, target_df)
@@ -183,7 +169,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -216,8 +201,7 @@ function make_graph_non_dimensional_shear_stress(
         sediment_size,    
         target_hour,
         spec_diameter,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end
@@ -231,8 +215,7 @@ Plots.RecipesBase.@recipe function f(
     time_schedule,
     sediment_size,    
     target_hour::Int,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
 
     for (j, (i, label_string)) in zip(1:N, target_df)
@@ -260,7 +243,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -292,8 +274,7 @@ function make_graph_effective_non_dimensional_shear_stress(
         time_schedule,
         sediment_size,    
         target_hour,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end
@@ -306,8 +287,7 @@ Plots.RecipesBase.@recipe function f(
     sediment_size,    
     target_hour::Int,
     spec_diameter_m::AbstractFloat,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
 
     for (j, (i, label_string)) in zip(1:N, target_df)
@@ -336,7 +316,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -369,8 +348,7 @@ function make_graph_effective_non_dimensional_shear_stress(
         sediment_size,    
         target_hour,
         spec_diameter_m,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end
@@ -384,9 +362,10 @@ Plots.RecipesBase.@recipe function f(
     time_schedule,
     sediment_size,    
     target_hour::Int,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
+
+    seriestype := distance_line
 
     for (j, (i, label_string)) in zip(1:N, target_df)
 
@@ -414,7 +393,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -445,8 +423,7 @@ function make_graph_critical_non_dimensional_shear_stress(
         time_schedule,
         sediment_size,    
         target_hour,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end
@@ -459,8 +436,7 @@ Plots.RecipesBase.@recipe function f(
     sediment_size,    
     target_hour::Int,
     spec_diameter_m::AbstractFloat,
-    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
-    japanese::Bool=false
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}}
     ) where {N}
 
     for (j, (i, label_string)) in zip(1:N, target_df)
@@ -489,7 +465,6 @@ Plots.RecipesBase.@recipe function f(
     end
 
     primary := false
-    ()
 
 end
 
@@ -522,8 +497,7 @@ function make_graph_critical_non_dimensional_shear_stress(
         sediment_size,    
         target_hour,
         spec_diameter_m,
-        target_df,
-        japanese=japanese
+        target_df
     )
 
 end

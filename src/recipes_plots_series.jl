@@ -4,7 +4,7 @@ Plots.RecipesBase.@recipe(
         x,                      # kilo meter
         y,
         z;
-        japanese=false,
+        x_max_km=77.8,
         x_vline=Vector{Real}(undef, 0)
         )
 
@@ -15,23 +15,16 @@ Plots.RecipesBase.@recipe(
 
         primary := false
         xflip := true
+        
+        x_axis_vec = collect(range(0.0, stop = x_max_km, step = 20))
+        push!(x_axis_vec, x_max_km)
 
-        max_x_km = round(maximum(x), digits=1)
-        x_axis_vec = collect(range(0, stop = max_x_km, step = 20))
-        push!(x_axis_vec, max_x_km)
-
-        xlims --> (0, max_x_km)
+        xlims --> (0.0, x_max_km)
         xticks --> x_axis_vec
 
-        ylims --> (0, Inf)
+        ylims --> (0.0, Inf)
 
         palette --> :default
-
-        xlabel --> if japanese == true
-            "河口からの距離 (km)"
-        else
-            "Distance from the estuary (km)"
-        end
 
         if length(x_vline) > 0
 
@@ -46,16 +39,12 @@ Plots.RecipesBase.@recipe(
 
                 y := x_vline
 
-                ()
-
             end
 
         end
-        
+
         x := x
         y := y
-
-        ()
         
     end
     

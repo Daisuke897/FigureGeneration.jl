@@ -23,7 +23,8 @@ import
     Statistics,
     ..GeneralGraphModule,
     ..ParticleSize,
-    ..FigureGeneration.Main_df
+    ..FigureGeneration.Main_df,
+    ..FigureGeneration.distance_line
 
 export
     make_graph_energy_slope,

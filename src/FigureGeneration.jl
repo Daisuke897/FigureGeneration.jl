@@ -51,6 +51,7 @@ export default_setting_plots,
     check_dir_exist_if_no_mkdir,
     Plots
 
+include("recipes_plots_series.jl")
 
 include("read_df_river.jl")
 using .Read_df_river

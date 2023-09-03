@@ -1,7 +1,7 @@
 Plots.RecipesBase.@recipe(
     function f(
         ::Type{Val{:distance_line}},
-        x,                      # meter
+        x,                      # kilo meter
         y,
         z;
         japanese=false,
@@ -16,9 +16,7 @@ Plots.RecipesBase.@recipe(
         primary := false
         xflip := true
 
-        x_vec = x ./ 1000       # kilo meter
-        
-        max_x_km = round(maximum(x_vec), digits=1)
+        max_x_km = round(maximum(x), digits=1)
         x_axis_vec = collect(range(0, stop = max_x_km, step = 20))
         push!(x_axis_vec, max_x_km)
 
@@ -54,7 +52,7 @@ Plots.RecipesBase.@recipe(
 
         end
         
-        x := x_vec
+        x := x
         y := y
 
         ()
@@ -62,4 +60,16 @@ Plots.RecipesBase.@recipe(
     end
     
 )
+
+"""
+    distance_line(x, y, z; <keyword arguments>)
+
+横軸を河口からの距離 (km) とした線状のグラフを作成する。
+
+# Arguments
+- `x`: 河口からの距離 単位はキロメートル
+- `japanese`: 初期値は`false` 日本語を出力するには`true`
+- `x_vline`: 縦の破線を入れる河口からの距離の位置（キロメートル）の配列
+
+"""
 Plots.RecipesBase.@shorthands distance_line

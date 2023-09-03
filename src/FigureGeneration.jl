@@ -41,8 +41,6 @@ function default_setting_plots(fontfamily::String)
     
 end
 
-default_setting_plots()
-
 function check_dir_exist_if_no_mkdir(path_string::String)
     if isdir(path_string) == false
         mkdir(path_string)
@@ -202,5 +200,13 @@ export
     make_graph_time_series_water_level,
     make_graph_time_series_water_level_with_measured,
     params
+
+function __init__()
+
+    default_setting_plots()
+
+    nothing
+
+end
 
 end

@@ -18,9 +18,7 @@ module FigureGeneration
 using Plots
 
 function default_setting_plots()
-    pythonplot()
-
-    default(
+    Plots.default(
         tickfontsize=18,
         legend_font_pointsize=13,
         titlefontsize=13,
@@ -34,20 +32,13 @@ function default_setting_plots()
 end
 
 function default_setting_plots(fontfamily::String)
-    pythonplot()
 
-    default(
-        tickfontsize=18,
-        legend_font_pointsize=13,
-        titlefontsize=13,
-        guidefontsize=18,
-        legend_title_font_pointsize=13,
-        dpi=300,
-        grid=false,
-        framestyle=:box,
-        linewidth=2,
+    default_setting_plots()
+    
+    Plots.default(
         fontfamily=fontfamily
     )
+    
 end
 
 function check_dir_exist_if_no_mkdir(path_string::String)

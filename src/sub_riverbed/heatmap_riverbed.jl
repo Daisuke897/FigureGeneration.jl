@@ -171,7 +171,7 @@ end
 
 function heatmap_slope_by_model_simulated_cross_rb_elevation(
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         n_x::Int64,
         n_y::Int64,
         start_year::Int64,
@@ -377,7 +377,7 @@ end
 
 function heatmap_diff_per_year_simulated_cross_rb_elevation(
     cross_rb::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     n_x::Int64,
     n_y::Int64,
     start_year::Int64,
@@ -389,12 +389,12 @@ function heatmap_diff_per_year_simulated_cross_rb_elevation(
     diff_cross_rb_ele = zeros(Float64, n_x, n_y)
 
     i_start_1 = GeneralGraphModule.decide_index_number(
-        each_year_timing[start_year][1],
+        each_year_timing.dict[start_year][1],
         n_x
     )[1]
 
     i_start_2 = GeneralGraphModule.decide_index_number(
-        each_year_timing[final_year][2],
+        each_year_timing.dict[final_year][2],
         n_x
     )[1]
 
@@ -530,7 +530,7 @@ end
 
 function heatmap_std_simulated_cross_rb_elevation(
     cross_rb::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     n_x::Int,
     n_y::Int,
     start_year::Int,

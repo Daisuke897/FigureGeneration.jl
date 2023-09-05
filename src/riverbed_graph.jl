@@ -20,12 +20,11 @@ module RiverbedGraph
 using Plots, DataFrames
 import Printf, Statistics, GLM
 
-import
-    ..Read_df_river: Main_df
-
 using ..GeneralGraphModule
 
 import
+    ..Main_df,
+    ..Each_year_timing,
     ..Exist_riverbed_level,
     ..Measured_cross_rb
 
@@ -759,7 +758,7 @@ function _graph_simulated_riverbed_fluctuation!(
     p::Plots.Plot,
     keys_year,
     measured_riverbed,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::NTuple{N, DataFrame}
     ) where {N}
     
@@ -767,13 +766,13 @@ function _graph_simulated_riverbed_fluctuation!(
         fluc_average_value = zeros(length(keys_year)+1)
         
         start_i, finish_i = decide_index_number(
-            each_year_timing[keys_year[1]][1]
+            each_year_timing.dict[keys_year[1]][1]
         )
         std_average_value = Statistics.mean(df_vararg[i][start_i:finish_i, :Zbave])        
 
         for (index, year) in enumerate(keys_year)
             start_i, finish_i = decide_index_number(
-                each_year_timing[year][1]
+                each_year_timing.dict[year][1]
             )
 
             fluc_average_value[index] =
@@ -781,7 +780,7 @@ function _graph_simulated_riverbed_fluctuation!(
         end
 
         start_i, finish_i = decide_index_number(
-            each_year_timing[keys_year[end]][2]
+            each_year_timing.dict[keys_year[end]][2]
         )
 
         fluc_average_value[length(keys_year)+1] =
@@ -805,12 +804,12 @@ end
 
 function graph_simulated_riverbed_fluctuation(
     measured_riverbed,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::Vararg{DataFrame, N};
     japanese=false
     ) where {N}
 
-    keys_year = sort(collect(keys(each_year_timing)))
+    keys_year = sort(collect(keys(each_year_timing.dict)))
 
     y_label = "Fluctuation (m)"
 
@@ -842,14 +841,14 @@ function graph_variation_per_year_simulated_riverbed_level(
     df_main::Main_df,
     measured_riverbed,
     exist_riverbed_level::Exist_riverbed_level,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     first_area_index::Int,
     final_area_index::Int,
     df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese=false
     ) where {N}
 
-    keys_year = sort(collect(keys(each_year_timing)))
+    keys_year = sort(collect(keys(each_year_timing.dict)))
 
     if japanese==true
         y_label="河床位 (T.P. m)"
@@ -898,7 +897,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
         for (index, year) in enumerate(keys_year)
 
-            first_i, final_i = decide_index_number(each_year_timing[year][1])            
+            first_i, final_i = decide_index_number(each_year_timing.dict[year][1])            
             
             fluc_average_value[index] = Statistics.mean(
                 df_main.tuple[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
@@ -910,7 +909,7 @@ function graph_variation_per_year_simulated_riverbed_level(
 
         end
 
-        first_i, final_i = decide_index_number(each_year_timing[keys_year[end]][2])
+        first_i, final_i = decide_index_number(each_year_timing.dict[keys_year[end]][2])
 
         fluc_average_value[end] = Statistics.mean(
             df_main.tuple[i][first_i:final_i, :Zbave][first_area_index:final_area_index]
@@ -1885,7 +1884,7 @@ end
 
 function graph_variation_per_year_simulated_riverbed_level(
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         area_index_flow::Int,
         area_index_cross::Int,
         n_x::Int;
@@ -1893,7 +1892,7 @@ function graph_variation_per_year_simulated_riverbed_level(
     )
     
     
-    years = sort(collect(keys(each_year_timing)))
+    years = sort(collect(keys(each_year_timing.dict)))
     push!(years, years[end]+1)
 
     vec_riverbed_level = zeros(Float64, length(years))
@@ -1969,7 +1968,7 @@ end
 function variation_per_year_simulated_riverbed_level!(
         vec_riverbed_level::Vector{Float64},
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         area_index_flow::Int,
         area_index_cross::Int,
         n_x::Int,
@@ -1982,14 +1981,14 @@ function variation_per_year_simulated_riverbed_level!(
     for (k, year) in enumerate(years[begin:end-1])
         
         vec_i_first[k] = decide_index_number(
-            each_year_timing[year][1],
+            each_year_timing.dict[year][1],
             n_x
         )[1]
         
     end
     
     vec_i_first[end] = decide_index_number(
-        each_year_timing[years[end-1]][2],
+        each_year_timing.dict[years[end-1]][2],
         n_x
     )[1]
     
@@ -2005,7 +2004,7 @@ end
 
 function variation_per_year_simulated_riverbed_level(
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         area_index_flow::Int,
         area_index_cross::Int,
         n_x::Int,
@@ -2030,7 +2029,7 @@ end
 
 function fit_linear_variation_per_year_simulated_riverbed_level(
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         area_index_flow::Int,
         area_index_cross::Int,
         n_x::Int,
@@ -2063,7 +2062,7 @@ end
 function calc_std_simulated_cross_rb_elevation!(
     std_cross_rb_ele,
     cross_rb::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int
     )
@@ -2072,7 +2071,7 @@ function calc_std_simulated_cross_rb_elevation!(
 
     years = Vector{Int}(undef, 0)
 
-    for year in sort(collect(keys(each_year_timing)))
+    for year in sort(collect(keys(each_year_timing.dict)))
         if start_year <= year && year <= final_year
             push!(years, year)
         end
@@ -2087,14 +2086,14 @@ function calc_std_simulated_cross_rb_elevation!(
     vec_i_first = zeros(Int, n)
         
     vec_i_first[1] = GeneralGraphModule.decide_index_number(
-        each_year_timing[years[1]][1],
+        each_year_timing.dict[years[1]][1],
         n_x
     )[1]
     
     for (k, year) in enumerate(years)
            
         vec_i_first[k+1] = GeneralGraphModule.decide_index_number(
-            each_year_timing[year][2],
+            each_year_timing.dict[year][2],
             n_x
         )[1]
             
@@ -2124,7 +2123,7 @@ end
 
 function calc_std_simulated_cross_rb_elevation(
     cross_rb::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     n_x::Int,
     n_y::Int,
     start_year::Int,
@@ -2148,7 +2147,7 @@ end
 
 function graph_variation_per_year_simulated_riverbed_level_with_linear_model(
         cross_rb::DataFrame,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         area_index_flow::Int,
         area_index_cross::Int,
         n_x::Int,

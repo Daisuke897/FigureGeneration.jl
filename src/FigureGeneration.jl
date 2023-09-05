@@ -59,11 +59,11 @@ export
     Main_df,
     get_cross_rb_df,
     get_time_schedule,
-    get_dict_each_year_timing,
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
-    get_river_width,    
+    get_river_width,
+    Each_year_timing,
     Section,
     Exist_riverbed_level,
     Measured_cross_rb

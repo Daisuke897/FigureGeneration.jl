@@ -8,11 +8,11 @@ export
     Main_df,
     get_cross_rb_df,
     get_time_schedule,
-    get_dict_each_year_timing,
     get_observed_riverbed_level,
     get_sediment_size,
     get_fmini,
     get_river_width,
+    Each_year_timing,
     Section,
     Exist_riverbed_level,
     Measured_cross_rb
@@ -53,8 +53,12 @@ function get_n_years(df_path::String)
     return n_years
 end
 
+struct Each_year_timing{T<:AbstractDict{Int, Tuple{Int, Int}}}
+    dict::T
+end
+
 function get_dict_each_year_timing!(
-    each_year_timing,
+    each_year_timing::AbstractDict{Int, Tuple{Int, Int}},
     time_schedule,
     df_path::String
     )
@@ -77,21 +81,9 @@ function get_dict_each_year_timing!(
     return each_year_timing
 end
 
-function get_dict_each_year_timing(
+function Each_year_timing(
     time_schedule,
-    )
-
-    each_year_timing = get_dict_each_year_timing(
-        time_schedule,
-        "./"
-    )
-    
-    return each_year_timing
-end
-
-function get_dict_each_year_timing(
-    time_schedule,
-    df_path::String
+    df_path::AbstractString="./"
     )
 
     each_year_timing = Dict{Int, Tuple{Int, Int}}()
@@ -101,7 +93,9 @@ function get_dict_each_year_timing(
         time_schedule,
         df_path
     )
-    return each_year_timing
+
+    return Each_year_timing(each_year_timing)
+
 end
 
 function get_section_index!(
@@ -140,16 +134,17 @@ function get_section_index(
 end
 
 function get_exist_riverbed_level_timing!(
-        exist_riverbed_level_timing, exist_riverbed_level_years,
-        each_year_timing
+    exist_riverbed_level_timing,
+    exist_riverbed_level_years,
+    each_year_timing::Each_year_timing
     )
     
     for i in exist_riverbed_level_years
-        if haskey(each_year_timing, i) == true
-            push!(exist_riverbed_level_timing, each_year_timing[i][1])
+        if haskey(each_year_timing.dict, i) == true
+            push!(exist_riverbed_level_timing, each_year_timing.dict[i][1])
         end
     end
-        
+    
     return exist_riverbed_level_timing
 end
 
@@ -177,13 +172,13 @@ function get_string_section(section_index)
     return section_string
 end
 
-struct Main_df{N, T<:DataFrames.AbstractDataFrame}
+struct Main_df{N, T<:DataFrames.AbstractDataFrame} 
 
-    tuple::NTuple
+    tuple::NTuple{N, T}
 
 end
 
-function Main_df(df_vararg::Vararg{T, N}) where T where N
+function Main_df(df_vararg::Vararg{T, N}) where {T, N}
 
     return Main_df{N, T}(df_vararg)
 
@@ -337,21 +332,24 @@ function Section(df_path::String)
     return Section(section_index, section_string)
 end
 
-struct Exist_riverbed_level
-    years::Vector{Int}
-    timing::Vector{Int}
+struct Exist_riverbed_level{T<:AbstractVector{Int}}
+    years::T
+    timing::T
+end
 
-    function Exist_riverbed_level(observed_riverbed_level, each_year_timing)
-        exist_riverbed_level_years=get_exist_riverbed_level_years(observed_riverbed_level)
+function Exist_riverbed_level(
+    observed_riverbed_level,
+    each_year_timing::Each_year_timing
+    )
+    exist_riverbed_level_years=get_exist_riverbed_level_years(observed_riverbed_level)
 
-        exist_riverbed_level_timing = Vector{Int}(undef, 0)
-        get_exist_riverbed_level_timing!(
-            exist_riverbed_level_timing, exist_riverbed_level_years,
-            each_year_timing
-        )
-        
-        return new(exist_riverbed_level_years, exist_riverbed_level_timing)
-     end
+    exist_riverbed_level_timing = Vector{Int}(undef, 0)
+    get_exist_riverbed_level_timing!(
+        exist_riverbed_level_timing, exist_riverbed_level_years,
+        each_year_timing
+    )
+    
+    return Exist_riverbed_level(exist_riverbed_level_years, exist_riverbed_level_timing)
 end
 
 struct Measured_cross_rb{T<:DataFrames.AbstractDataFrame}

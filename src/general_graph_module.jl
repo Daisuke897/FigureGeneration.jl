@@ -77,23 +77,23 @@ end
 
 function _get_target_year_sec!(
     target_year_sec,
-    each_year_timing
+    each_year_timing::Each_year_timing
     )
     
-    for i in 1:length(each_year_timing)
+    for i in 1:length(each_year_timing.dict)
         target_year = 1965 + i - 1
-        target_year_sec[i] = 3600 * each_year_timing[target_year][1]
+        target_year_sec[i] = 3600 * each_year_timing.dict[target_year][1]
     end
 
 end
 
 function _vline_per_year_timing!(
     p,
-    each_year_timing
+    each_year_timing::Each_year_timing
     )
 
     target_year_sec=zeros(
-        Int, length(each_year_timing)
+        Int, length(each_year_timing.dict)
     )
 
     _get_target_year_sec!(

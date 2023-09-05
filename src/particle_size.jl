@@ -21,7 +21,7 @@ using Printf, Plots, Statistics, DataFrames
 using LinearAlgebra
 using ..GeneralGraphModule
 
-import ..Read_df_river: Main_df
+import ..Main_df, ..Each_year_timing
 
 export
     graph_ratio_simulated_particle_size_dist,
@@ -460,7 +460,7 @@ function _graph_average_simulated_particle_size_fluc!(
     p::Plots.Plot,
     keys_year,
     sediment_size,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::NTuple{N, DataFrame}
     ) where {N}
 
@@ -474,7 +474,7 @@ function _graph_average_simulated_particle_size_fluc!(
                 get_average_simulated_particle_size_dist(
                     df_vararg[i],
                     sediment_size,
-                    each_year_timing[year][1]
+                    each_year_timing.dict[year][1]
                 )
 
             fluc_average_value[index] =
@@ -485,7 +485,7 @@ function _graph_average_simulated_particle_size_fluc!(
             get_average_simulated_particle_size_dist(
                 df_vararg[i],
                 sediment_size,
-                each_year_timing[keys_year[end]][2]
+                each_year_timing.dict[keys_year[end]][2]
             )
 
         fluc_average_value[end] =
@@ -572,7 +572,7 @@ function _graph_average_simulated_particle_size_fluc!(
     p::Plots.Plot,
     keys_year,
     sediment_size,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     i_begin::Int,
     i_end::Int,
     df_vararg::NTuple{N, DataFrame};
@@ -590,7 +590,7 @@ function _graph_average_simulated_particle_size_fluc!(
                 get_average_simulated_particle_size_dist(
                     df_vararg[i],
                     sediment_size,
-                    each_year_timing[year][1]
+                    each_year_timing.dict[year][1]
                 )
 
             fluc_average_value[index] =
@@ -605,7 +605,7 @@ function _graph_average_simulated_particle_size_fluc!(
             get_average_simulated_particle_size_dist(
                 df_vararg[i],
                 sediment_size,
-                each_year_timing[keys_year[end]][2]
+                each_year_timing.dict[keys_year[end]][2]
             )
 
         fluc_average_value[end] =
@@ -690,12 +690,12 @@ end
 
 function graph_average_simulated_particle_size_fluc(
     sediment_size,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
 
-    keys_year = sort(collect(keys(each_year_timing)))
+    keys_year = sort(collect(keys(each_year_timing.dict)))
     
     p = _graph_average_simulated_particle_size_fluc(
         keys_year,
@@ -715,14 +715,14 @@ end
 
 function graph_average_simulated_particle_size_fluc(
     sediment_size,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     i_begin::Int,
     i_end::Int,
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
 
-    keys_year = sort(collect(keys(each_year_timing)))
+    keys_year = sort(collect(keys(each_year_timing.dict)))
     
     p = _graph_average_simulated_particle_size_fluc(
         keys_year,

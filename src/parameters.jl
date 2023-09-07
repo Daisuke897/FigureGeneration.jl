@@ -23,8 +23,9 @@ import
     Statistics,
     ..GeneralGraphModule,
     ..ParticleSize,
-    ..FigureGeneration.Main_df,
-    ..FigureGeneration.distance_line
+    ..Main_df,
+    ..distance_line,
+    ..Each_year_timing
 
 export
     make_graph_energy_slope,

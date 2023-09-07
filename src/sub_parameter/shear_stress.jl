@@ -1,5 +1,7 @@
 # diameter unit: m (not mm)
 
+# 標準無次元掃流力
+
 function calc_non_dimensional_shear_stress(
     uₛ::T,
     specific_gravity::T,
@@ -75,11 +77,14 @@ function calc_non_dimensional_shear_stress(
     return τₛ
 end
 
+"""
+任意の粒径における（通常）無次元掃流力を求める
+"""
 function calc_non_dimensional_shear_stress(
     df::DataFrames.DataFrame,
     param::Param,
     target_hour::Int,
-    diameter::AbstractFloat
+    diameter_m::AbstractFloat
     )
 
     area      = average_neighbors_target_hour(df, :Aw, target_hour)
@@ -94,11 +99,85 @@ function calc_non_dimensional_shear_stress(
         param.manning_n,
         param.specific_gravity,
         param.g,
-        diameter    
+        diameter_m    
     )
     
     return τₛ
 end
+
+"""
+特定年の（通常）無次元掃流力の平均値を求める。
+"""
+function calc_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year::Int,
+    diameter_m::AbstractFloat
+    )
+
+    τₛ = calc_non_dimensional_shear_stress(
+        df,
+        param,
+        each_year_timing.dict[year][1],
+        diameter_m
+    )
+
+    
+    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
+
+        τₛ .= τₛ .+ calc_non_dimensional_shear_stress(
+            df,
+            param,
+            target_hour,
+            diameter_m
+        )
+
+    end
+
+    τₛ .= τₛ ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
+
+    return τₛ
+end
+
+"""
+複数年の（通常）無次元掃流力の年平均値を求める。
+"""
+function calc_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,    
+    diameter_m::AbstractFloat
+    )
+
+    τₛ = calc_non_dimensional_shear_stress_yearly_mean(
+        df,
+        param,
+        each_year_timing,
+        year_first,
+        diameter_m
+    )
+    
+    for year in (year_first + 1):year_last
+
+        τₛ .= τₛ .+ calc_non_dimensional_shear_stress_yearly_mean(
+            df,
+            param,
+            each_year_timing,
+            year,
+            diameter_m
+        )
+
+    end
+
+    τₛ .= τₛ ./ (year_last - year_first + 1)
+
+    return τₛ
+end
+
+# 有効無次元掃流力
 
 function calc_effective_non_dimensional_shear_stress(
     area::T,
@@ -203,6 +282,87 @@ function calc_effective_non_dimensional_shear_stress(
     return τₑᵢ
 end
 
+"""
+特定年の有効無次元掃流力の平均値を求める。
+"""
+function calc_effective_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year::Int,
+    diameter_m::AbstractFloat
+    )
+
+    τₑ = calc_effective_non_dimensional_shear_stress(
+        df,
+        sediment_size,
+        param,
+        each_year_timing.dict[year][1],
+        diameter_m
+    )
+
+    
+    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
+
+        τₑ .= τₑ .+ calc_effective_non_dimensional_shear_stress(
+            df,
+            sediment_size,
+            param,
+            target_hour,
+            diameter_m
+        )
+
+    end
+
+    τₑ .= τₑ ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
+
+    return τₑ
+end
+
+"""
+複数年の有効無次元掃流力の年平均値を求める。
+"""
+function calc_effective_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,    
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,    
+    diameter_m::AbstractFloat
+    )
+
+    τₑ = calc_effective_non_dimensional_shear_stress_yearly_mean(
+        df,
+        sediment_size,
+        param,
+        each_year_timing,
+        year_first,
+        diameter_m
+    )
+    
+    for year in (year_first + 1):year_last
+
+        τₑ .= τₑ .+ calc_effective_non_dimensional_shear_stress_yearly_mean(
+            df,
+            sediment_size,
+            param,
+            each_year_timing,
+            year,
+            diameter_m
+        )
+
+    end
+
+    τₑ .= τₑ ./ (year_last - year_first + 1)
+
+    return τₑ
+end
+
+
+# 限界無次元掃流力
+
 function calc_critical_non_dimensional_shear_stress(
     diameter_m::T,
     specific_gravity::T,
@@ -305,4 +465,82 @@ function calc_critical_non_dimensional_shear_stress(
 
     return τ_cm
 
+end
+
+"""
+特定年の限界無次元掃流力の平均値を求める。
+"""
+function calc_critical_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year::Int,
+    diameter_m::AbstractFloat
+    )
+
+    τ_c = calc_critical_non_dimensional_shear_stress(
+        df,
+        sediment_size,
+        diameter_m,
+        param,
+        each_year_timing.dict[year][1]
+    )
+
+    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
+
+        τ_c .= τ_c .+ calc_critical_non_dimensional_shear_stress(
+            df,
+            sediment_size,
+            diameter_m,
+            param,
+            target_hour
+        )
+
+    end
+
+    τ_c .= τ_c ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
+
+    return τ_c
+end
+
+"""
+複数年の限界無次元掃流力の年平均値を求める。
+"""
+function calc_critical_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,    
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,    
+    diameter_m::AbstractFloat
+    )
+
+    τ_c = calc_critical_non_dimensional_shear_stress_yearly_mean(
+        df,
+        sediment_size,
+        param,
+        each_year_timing,
+        year_first,
+        diameter_m
+    )
+
+    
+    for year in (year_first + 1):year_last
+
+        τ_c .= τ_c .+ calc_critical_non_dimensional_shear_stress_yearly_mean(
+            df,
+            sediment_size,
+            param,
+            each_year_timing,
+            year,
+            diameter_m
+        )
+
+    end
+
+    τ_c .= τ_c ./ (year_last - year_first + 1)
+
+    return τ_c
 end

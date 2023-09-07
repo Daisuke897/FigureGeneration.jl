@@ -19,6 +19,8 @@ module GeneralGraphModule
 
 using Plots
 
+import ..Each_year_timing
+
 export decide_index_number
 export making_time_series_title
 

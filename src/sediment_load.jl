@@ -27,8 +27,9 @@ using
     LinearAlgebra,
     ..GeneralGraphModule
 
-using
-    ..Read_df_river: Main_df
+import
+    ..Main_df,
+    ..Each_year_timing
 
 
 include("./sub_sediment_load/sediment_load_each_year.jl")
@@ -90,7 +91,7 @@ function bedload_sediment_volume_each_year!(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int
     )
@@ -115,7 +116,7 @@ function bedload_sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,    
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int
     )
@@ -141,7 +142,7 @@ function suspended_sediment_volume_each_year!(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int
     )
@@ -166,7 +167,7 @@ function suspended_sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,    
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int
     )
@@ -193,15 +194,15 @@ function sediment_volume_each_year!(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     target_symbol::Symbol,
     start_year::Int,
     final_year::Int
     )
 
     for (i, year) in enumerate(start_year:final_year)
-        if haskey(each_year_timing, year) == true
-            for hour in each_year_timing[year][1]:each_year_timing[year][2]
+        if haskey(each_year_timing.dict, year) == true
+            for hour in each_year_timing.dict[year][1]:each_year_timing.dict[year][2]
 
                 (start_i, final_i) =
                     GeneralGraphModule.decide_index_number(
@@ -224,7 +225,7 @@ function sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,    
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     target_symbol::Symbol,
     start_year::Int,
     final_year::Int
@@ -255,7 +256,7 @@ function particle_suspended_sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int,
     sediment_size::DataFrame
@@ -284,7 +285,7 @@ function particle_bedload_sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int,
     sediment_size::DataFrame
@@ -310,7 +311,7 @@ function particle_sediment_volume_each_year!(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int,
     target_symbol::Symbol
@@ -338,7 +339,7 @@ function particle_sediment_volume_each_year(
     area_index::Int,
     num_data_flow::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     start_year::Int,
     final_year::Int,
     sediment_size::DataFrame,
@@ -372,7 +373,7 @@ function core_yearly_mean_sediment_load_whole_area!(
         df::DataFrame,
         start_year::Int,
         final_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         tag::Symbol
     )
     
@@ -405,11 +406,11 @@ function sediment_load_whole_area_each_year!(
         sediment_load_each_year,
         df::DataFrame,
         target_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         tag::Symbol
     )
     
-    for target_hour in each_year_timing[target_year][1]:each_year_timing[target_year][2]
+    for target_hour in each_year_timing.dict[target_year][1]:each_year_timing.dict[target_year][2]
         
         start_index,final_index=decide_index_number(target_hour)
         
@@ -422,7 +423,7 @@ end
 
 
 function sediment_load_whole_area_each_year(
-    df, target_year::Int, each_year_timing, tag::Symbol
+    df, target_year::Int, each_year_timing::Each_year_timing, tag::Symbol
     )
 
     flow_size = length(df[df.T .== 0, :I])
@@ -438,7 +439,7 @@ end
 function yearly_mean_sediment_load_whole_area!(
     sediment_load_yearly_mean, flow_size::Int,
     df, start_year::Int, final_year::Int,
-    each_year_timing, tag::Symbol)
+    each_year_timing::Each_year_timing, tag::Symbol)
 
     for target_year in start_year:final_year
         sediment_load_each_year = zeros(Float64, flow_size)
@@ -464,7 +465,7 @@ function yearly_mean_sediment_load_whole_area(
     df,
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     tag::Symbol
     )
 
@@ -490,7 +491,7 @@ end
 function make_graph_particle_sediment_volume_each_year(
     area_index::Int,
     data_file::DataFrame,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size,
     river_length_km;
     japanese::Bool=false
@@ -527,7 +528,7 @@ end
 function make_graph_suspended_volume_flow_dist(
     df::DataFrame,
     target_year::Int,
-    each_year_timing)
+    each_year_timing::Each_year_timing)
 
     flow_size = length(df[df.T .== 0, :I])
 
@@ -551,7 +552,7 @@ end
 function make_graph_bedload_volume_flow_dist(
     df::DataFrame,
     target_year::Int,
-    each_year_timing)
+    each_year_timing::Each_year_timing)
 
     flow_size = length(df[df.T .== 0, :I])
     sediment_load_each_year = zeros(Float64, flow_size)
@@ -574,7 +575,7 @@ end
 function make_graph_sediment_volume_flow_dist(
     data_file::DataFrame,
     target_year::Int,
-    each_year_timing
+    each_year_timing::Each_year_timing
 )
 
     p1 = make_graph_suspended_volume_flow_dist(
@@ -980,7 +981,7 @@ end
 function make_graph_yearly_mean_suspended_load(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     vec_label::Vector{String},
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
@@ -1051,7 +1052,7 @@ end
 function make_graph_yearly_mean_suspended_load_per_case(
     df_main::Main_df,
     target_index::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     final_year::Int,
     start_year::Vararg{Int, N};
     japanese::Bool=false
@@ -1122,7 +1123,7 @@ end
 function make_graph_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     vec_label::Vector{String},
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
@@ -1193,7 +1194,7 @@ end
 function make_graph_yearly_mean_bed_load_per_case(
         df_main::Main_df,
         target_index::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         final_year::Int,
         start_year::Vararg{Int, N};
         japanese::Bool=false
@@ -1268,7 +1269,7 @@ function stack_yearly_mean_sediment_load_each_size_whole_area!(
         df::DataFrame,
         start_year::Int,
         final_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         tag::Symbol
     )
 
@@ -1301,7 +1302,7 @@ end
 function make_graph_particle_yearly_mean_suspended(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -1374,7 +1375,7 @@ end
 function make_graph_particle_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -1451,7 +1452,7 @@ function percentage_sediment_load_each_size!(
         df::DataFrame,
         start_year::Int,
         final_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         tag::Symbol
     )
 
@@ -1482,7 +1483,7 @@ end
 function make_graph_percentage_particle_yearly_mean_suspended(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -1565,7 +1566,7 @@ end
 function make_graph_percentage_particle_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -1648,7 +1649,7 @@ end
 function make_graph_amount_percentage_particle_yearly_mean_suspended(
         start_year::Int,
         final_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df::DataFrame,
         sediment_size::DataFrame;
         japanese::Bool=false
@@ -1697,7 +1698,7 @@ end
 function make_graph_amount_percentage_particle_yearly_mean_bedload(
         start_year::Int,
         final_year::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df::DataFrame,
         sediment_size::DataFrame;
         japanese::Bool=false
@@ -1751,7 +1752,7 @@ end
 function make_graph_time_series_suspended_load(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
@@ -1826,7 +1827,7 @@ end
 function make_graph_time_series_bedload(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_vararg::Vararg{DataFrame, N};
     japanese::Bool=false
     ) where {N}
@@ -1901,7 +1902,7 @@ end
 function make_graph_time_series_suspended_bedload(
         area_index::Int,
         river_length_km::Float64,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df_vector;
         japanese::Bool=false
     )
@@ -1950,7 +1951,7 @@ end
 function make_graph_time_series_variation_suspended_load(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_mining::DataFrame,
     df_dam::DataFrame,
@@ -2044,7 +2045,7 @@ end
 function make_graph_time_series_variation_bedload(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_mining::DataFrame,
     df_dam::DataFrame,
@@ -2138,7 +2139,7 @@ end
 function make_graph_time_series_particle_suspended_load(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -2227,7 +2228,7 @@ end
 function make_graph_time_series_particle_bedload(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -2316,7 +2317,7 @@ end
 function make_graph_time_series_particle_suspended_bedload(
         area_index::Int,
         river_length_km::Float64,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df::DataFrame,
         sediment_size;
         japanese::Bool=false
@@ -2373,7 +2374,7 @@ end
 function make_graph_time_series_percentage_particle_suspended_load(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -2475,7 +2476,7 @@ end
 function make_graph_time_series_percentage_particle_bedload(
     area_index::Int,
     river_length_km::Float64,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df::DataFrame,
     sediment_size::DataFrame;
     japanese::Bool=false
@@ -2577,7 +2578,7 @@ end
 function make_graph_time_series_amount_percentage_particle_suspended_load(
         area_index::Int,
         river_length_km::Float64,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df::DataFrame,
         sediment_size;
         japanese::Bool=false
@@ -2634,7 +2635,7 @@ end
 function make_graph_time_series_amount_percentage_particle_bedload(
         area_index::Int,
         river_length_km::Float64,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         df::DataFrame,
         sediment_size;
         japanese::Bool=false
@@ -2688,7 +2689,7 @@ end
 function make_graph_condition_change_yearly_mean_suspended_load(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_with_mining::DataFrame,
     df_with_dam::DataFrame,
@@ -2822,7 +2823,7 @@ end
 function make_graph_condition_rate_yearly_mean_suspended_load(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_with_mining::DataFrame,
     df_with_dam::DataFrame,
@@ -2955,7 +2956,7 @@ end
 function make_graph_condition_change_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_with_mining::DataFrame,
     df_with_dam::DataFrame,
@@ -3089,7 +3090,7 @@ end
 function make_graph_condition_rate_yearly_mean_bedload(
     start_year::Int,
     final_year::Int,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     df_base::DataFrame,
     df_with_mining::DataFrame,
     df_with_dam::DataFrame,
@@ -3227,7 +3228,7 @@ function make_figure_yearly_mean_particle_suspended_sediment_load_stacked(
         df_main::Main_df,
         target_df::Int,
         num_data_flow::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         start_year::Int,
         final_year::Int,
         sediment_size::DataFrame,
@@ -3316,7 +3317,7 @@ function make_figure_yearly_mean_particle_bedload_sediment_load_stacked(
         df_main::Main_df,
         target_df::Int,
         num_data_flow::Int,
-        each_year_timing,
+        each_year_timing::Each_year_timing,
         start_year::Int,
         final_year::Int,
         sediment_size::DataFrame,
@@ -3400,7 +3401,7 @@ function make_sediment_df!(
     df_sediment,
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size,
     qsall_or_qball_symbol::Symbol
     )
@@ -3454,7 +3455,7 @@ end
 function make_sediment_df(
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size,
     qsall_or_qball_symbol::Symbol
     )
@@ -3477,7 +3478,7 @@ end
 function make_suspended_sediment_per_year_csv(
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size
     )
 
@@ -3504,7 +3505,7 @@ end
 function make_bedload_sediment_per_year_csv(
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size
     )
 
@@ -3555,7 +3556,7 @@ end
 function make_suspended_sediment_mean_year_csv(
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size
     )
 
@@ -3601,7 +3602,7 @@ end
 function make_bedload_sediment_mean_year_csv(
     area_index,
     data_file,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     sediment_size
     )
 

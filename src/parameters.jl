@@ -127,10 +127,11 @@ function calc_energy_slope(
     return i_e
 end
 
-include("./sub_parameter/friction_velocity.jl")
+include("sub_parameter/friction_velocity.jl")
+include("sub_parameter/friction_velocity_plot.jl")
 
-include("./sub_parameter/shear_stress.jl")
-include("./sub_parameter/shear_stress_plot.jl")
+include("sub_parameter/shear_stress.jl")
+include("sub_parameter/shear_stress_plot.jl")
 
 
 

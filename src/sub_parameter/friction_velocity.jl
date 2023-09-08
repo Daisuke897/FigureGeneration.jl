@@ -42,6 +42,71 @@ function calc_friction_velocity(
     return uₛ
 end
 
+"""
+特定年の（通常）摩擦速度の平均値を求める。
+"""
+function calc_friction_velocity_yearly_mean(
+    df::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year::Int
+    )
+
+    uₛ = calc_friction_velocity(
+        df,
+        param,
+        each_year_timing.dict[year][1]
+    )
+
+    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
+
+        uₛ .= uₛ .+ calc_friction_velocity(
+            df,
+            param,
+            each_year_timing.dict[year][1]
+        )
+
+    end
+
+    uₛ .= uₛ ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
+
+    return uₛ
+
+end
+
+"""
+複数年の（通常）摩擦速度の平均値を求める。
+"""
+function calc_friction_velocity_yearly_mean(
+    df::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int    
+    )
+
+    uₛ = calc_friction_velocity(
+        df,
+        param,
+        year_first
+    )
+
+    for year in (year_first + 1):year_last
+
+        uₛ .= uₛ .+ calc_friction_velocity(
+            df,
+            param,
+            year
+        )
+
+    end
+
+    uₛ .= uₛ ./ (year_last - year_first + 1)
+
+    return uₛ
+
+end
+
 function calc_effective_friction_velocity(
     discharge::T,
     area::T,

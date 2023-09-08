@@ -247,7 +247,7 @@ Plots.RecipesBase.@recipe function f(
 end
 
 """
-複数年の（通常）無次元掃流力の年平均値のグラフを作成する。（任意の粒径）
+複数年の（通常）無次元掃流力の平均値のグラフを作成する。（任意の粒径）
 """
 function make_graph_non_dimensional_shear_stress_yearly_mean(
     df_main::Main_df,

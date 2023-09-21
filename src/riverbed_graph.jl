@@ -1412,8 +1412,10 @@ function graph_simulated_rb_crossing(
     want_title = making_time_series_title("",
         time_index, time_schedule)
 
+    first_i, last_i = decide_index_number(time_index)
+    
     target_cross_rb = Matrix(
-                          df_cross[df_cross.T .== 3600 * time_index, Between(:Zb001, :Zb101)]
+        df_cross[first_i:last_i, Between(:Zb001, :Zb101)]
 	)'
 
     river_width_x = river_width_crossing(
@@ -1442,7 +1444,7 @@ function graph_simulated_rb_crossing(
 
     vec_cross_rb = Matrix(
         df_cross[
-            df_cross.T .== 3600 * time_index,
+            first_i:last_i,
             Between(
                 :Zb001,
                 Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))
@@ -1473,9 +1475,9 @@ function graph_simulated_rb_crossing(
 
     want_title = making_time_series_title("",
         time_index, time_schedule)
-
+    first_i, last_i = decide_index_number(time_index)
     target_cross_rb = Matrix(
-                          df_cross[1][df_cross[1].T .== 3600 * time_index, Between(:Zb001, :Zb101)]
+        df_cross[1][first_i:last_i, Between(:Zb001, :Zb101)]
 	)'
 
     river_width_x = river_width_crossing(
@@ -1506,7 +1508,7 @@ function graph_simulated_rb_crossing(
         
         vec_cross_rb = Matrix(
             df_cross[i][
-                df_cross[i].T .== 3600 * time_index,
+                first_i:last_i,
                 Between(
                     :Zb001,
                     Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))

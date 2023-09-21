@@ -29,16 +29,15 @@ export
     make_RMSE_csv
 
 function error_actual_mean_riverbed(data_file, initial_and_final_riverbed_level, target_hour, which_type)
-    seconds_now = 3600 * target_hour
     differential_riverbed = initial_and_final_riverbed_level[!, Symbol(which_type)]
     .- mean(initial_and_final_riverbed_level[!, which_type])
     return differential_riverbed
 end
 
 function error_simulated_and_actual_riverbed(data_file, initial_and_final_riverbed_level, target_hour, which_type)
-    seconds_now = 3600 * target_hour
+    first_i, last_i = decide_index_number(target_hour)
     differential_riverbed =
-        initial_and_final_riverbed_level[!, which_type] .- data_file[data_file.T .== seconds_now, :Zbave]
+        initial_and_final_riverbed_level[!, which_type] .- data_file[first_i:last_i, :Zbave]
     return differential_riverbed
 end
 

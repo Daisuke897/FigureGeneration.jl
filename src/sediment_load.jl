@@ -1758,7 +1758,7 @@ function make_graph_time_series_suspended_load(
     ) where {N}
 
 
-    time_data = unique(df_vararg[1][:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -1832,8 +1832,7 @@ function make_graph_time_series_bedload(
     japanese::Bool=false
     ) where {N}
 
-
-    time_data = unique(df_vararg[1][:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -1960,7 +1959,7 @@ function make_graph_time_series_variation_suspended_load(
     )
 
 
-    time_data = unique(df_base[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -2053,8 +2052,7 @@ function make_graph_time_series_variation_bedload(
     japanese::Bool=false
     )
 
-
-    time_data = unique(df_base[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -2145,8 +2143,7 @@ function make_graph_time_series_particle_suspended_load(
     japanese::Bool=false
     )
 
-
-    time_data = unique(df[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -2234,8 +2231,7 @@ function make_graph_time_series_particle_bedload(
     japanese::Bool=false
     )
 
-
-    time_data = unique(df[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -2380,8 +2376,7 @@ function make_graph_time_series_percentage_particle_suspended_load(
     japanese::Bool=false
     )
 
-
-    time_data = unique(df[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 
@@ -2482,8 +2477,7 @@ function make_graph_time_series_percentage_particle_bedload(
     japanese::Bool=false
     )
 
-
-    time_data = unique(df[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     num_time = length(time_data)
 

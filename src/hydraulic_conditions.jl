@@ -18,10 +18,12 @@
 module Hydraulic_conditions
 
 using Printf,
-      Plots,
-      Statistics,
-      DataFrames,
-      ..GeneralGraphModule
+    Plots,
+    Statistics,
+    DataFrames,
+    ..GeneralGraphModule
+
+import ..Each_year_timing
 
 export make_upstream_discharge_graph,
     make_downstream_water_level_graph,
@@ -128,8 +130,7 @@ function make_upstream_discharge_graph(
     target_hours::Int;
     japanese::Bool=false
     )
-
-    time_data = unique(data_file[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
 
     discharge_data = time_schedule[:, :discharge_m3_s]
@@ -151,12 +152,11 @@ end
 function make_upstream_discharge_graph(
     data_file,
     time_schedule,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     target_hours;
     japanese::Bool=false    
     )
-
-    time_data = unique(data_file[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
 
     discharge_data = time_schedule[:, :discharge_m3_s]
@@ -188,8 +188,7 @@ function make_downstream_water_level_graph(
     target_hours::Int;
     japanese::Bool=false    
     )
-
-    time_data = unique(data_file[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     
     water_level_data = time_schedule[:, :water_level_m]
@@ -211,12 +210,11 @@ end
 function make_downstream_water_level_graph(
     data_file,
     time_schedule,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     target_hours::Int;
     japanese::Bool=false    
     )
-
-    time_data = unique(data_file[:, :T])
+    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
     max_num_time = maximum(time_data)
     
     water_level_data = time_schedule[:, :water_level_m]
@@ -277,7 +275,7 @@ end
 function make_up_discharge_down_water_lev_graph(
     data_file,
     time_schedule,
-    each_year_timing,
+    each_year_timing::Each_year_timing,
     target_hours;
     japanese::Bool=false
     )

@@ -133,7 +133,20 @@ include("sub_parameter/friction_velocity_plot.jl")
 include("sub_parameter/shear_stress.jl")
 include("sub_parameter/shear_stress_plot.jl")
 
+include("sub_parameter/water_level.jl")
+include("sub_parameter/water_level_plot.jl")
 
+include("sub_parameter/water_velocity.jl")
+include("sub_parameter/water_velocity_plot.jl")
+
+include("sub_parameter/water_area.jl")
+include("sub_parameter/water_area_plot.jl")
+
+include("sub_parameter/water_width.jl")
+include("sub_parameter/water_width_plot.jl")
+
+include("sub_parameter/water_hydraulic_depth.jl")
+include("sub_parameter/water_hydraulic_depth_plot.jl")
 
 """
 
@@ -655,113 +668,6 @@ function make_graph_discharge(
         linecolor=:red
     )
         
-
-    return p
-
-end
-
-function make_graph_water_level(
-    time_schedule,
-    target_hour::Int,
-    df::DataFrames.DataFrame;
-    japanese::Bool=false
-) 
-
-    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
-
-    len_num = finish_index - start_index + 1
-    
-    X = [0.2*(i-1) for i in 1:len_num]
-    
-    want_title = GeneralGraphModule.making_time_series_title(
-        "",
-        target_hour,
-        target_hour * 3600,
-        time_schedule
-    )
-
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Water Level (m)"
-    
-
-    if japanese==true
-        xlabel_title="河口からの距離 (km)"
-        ylabel_title="水位 (m)"
-    end
-    
-    p = Plots.plot(
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(-5, 80),
-                ylabel=ylabel_title,
-                legend=:none, title=want_title)
-
-    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-
-
-    water_level = df[start_index:finish_index, :Z]
-
-    Plots.plot!(
-        p,
-        X,
-        reverse(water_level),
-        linecolor=:dodgerblue
-    )
-        
-
-    return p
-
-end
-
-function make_graph_water_level(
-    time_schedule,
-    target_hour::Int,
-    df_vararg::Vararg{DataFrames.DataFrame, N};
-    japanese::Bool=false
-) where {N}
-
-    start_index, finish_index = GeneralGraphModule.decide_index_number(target_hour)
-
-    len_num = finish_index - start_index + 1
-    
-    X = [0.2*(i-1) for i in 1:len_num]
-    
-    want_title = GeneralGraphModule.making_time_series_title(
-        "",
-        target_hour,
-        time_schedule
-    ) * "Discharge " * string(df_vararg[1][start_index, :Qw]) * " m³/s"
-
-    xlabel_title="Distance from the Estuary (km)"
-    ylabel_title="Water Level (T.P. m)"
-    
-
-    if japanese==true
-        xlabel_title="河口からの距離 (km)"
-        ylabel_title="水位 (T.P. m)"
-    end
-    
-    p = Plots.plot(
-                xlims=(0, 77.8),
-                xlabel=xlabel_title,
-                xticks=[0, 20, 40, 60, 77.8],
-                ylims=(-5, 85),
-                ylabel=ylabel_title,
-                legend=:topleft, title=want_title)
-
-    Plots.vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
-
-    for i in 1:N
-
-        Plots.plot!(
-            p,
-            X,
-            reverse(df_vararg[i][start_index:finish_index, :Z]),
-            label=string("Case ", i)
-        )
-
-    end
 
     return p
 

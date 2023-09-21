@@ -169,6 +169,65 @@ function heatmap_slope_by_model_measured_cross_rb_elevation(
     
 end
 
+function slope_linear_model_simulated_cross_rb_elevation!(
+        slope_linear_cross_rb::Matrix{Float64},
+        cross_rb::DataFrame,
+        each_year_timing::Each_year_timing,
+        n_x::Int64,
+        n_y::Int64,
+        start_year::Int64,
+        final_year::Int64
+    )
+    
+    for area_index_cross in 1:n_y
+       
+        for area_index_flow in 1:n_x
+            
+            slope_linear_cross_rb[area_index_flow, area_index_cross] = GLM.coef(
+                RiverbedGraph.fit_linear_variation_per_year_simulated_riverbed_level(
+                    cross_rb,
+                    each_year_timing,
+                    area_index_flow,
+                    area_index_cross,
+                    n_x,
+                    start_year,
+                    final_year
+                )
+            )[2]
+            
+        end
+        
+    end
+    
+    return slope_linear_cross_rb
+    
+end
+
+function slope_linear_model_simulated_cross_rb_elevation(
+        cross_rb::DataFrame,
+        each_year_timing::Each_year_timing,
+        n_x::Int64,
+        n_y::Int64,
+        start_year::Int64,
+        final_year::Int64
+    )
+    
+    slope_linear_cross_rb = zeros(Float64, n_x, n_y)
+    
+    slope_linear_model_simulated_cross_rb_elevation!(
+        slope_linear_cross_rb,
+        cross_rb,
+        each_year_timing,
+        n_x,
+        n_y,
+        start_year,
+        final_year
+    )
+    
+    return slope_linear_cross_rb
+    
+end
+
 function heatmap_slope_by_model_simulated_cross_rb_elevation(
         cross_rb::DataFrame,
         each_year_timing::Each_year_timing,

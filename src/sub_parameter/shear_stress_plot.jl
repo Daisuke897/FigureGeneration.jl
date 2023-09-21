@@ -79,7 +79,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₛ))
         end
@@ -154,7 +154,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₛ))
         end
@@ -235,7 +235,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₛ))
         end
@@ -318,7 +318,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₑₘ))
         end
@@ -394,7 +394,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₑₘ))
         end
@@ -477,7 +477,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τₑ))
         end
@@ -564,7 +564,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τ_cm))
             
@@ -640,7 +640,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τ_ci))
         end
@@ -723,7 +723,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(τ_c))
         end

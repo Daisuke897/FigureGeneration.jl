@@ -73,7 +73,7 @@ Plots.RecipesBase.@recipe function f(
 
             primary := true
             label := label_string
-            linecolor := Plots.palette(:default)[j]
+            linecolor := Plots.palette(:Set1_9)[j]
 
             (X, reverse(uₛ))
         end

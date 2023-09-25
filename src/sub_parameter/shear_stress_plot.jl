@@ -848,7 +848,7 @@ Plots.RecipesBase.@recipe function f(
         label --> if japanese == true
             "標準"
         else
-            "Normal"
+            "Standard"
         end
         
         linecolor := Plots.palette(:tab10)[2]
@@ -1013,7 +1013,7 @@ Plots.RecipesBase.@recipe function f(
         label --> if japanese == true
             "標準"
         else
-            "Normal"
+            "Standard"
         end
         
         linecolor := Plots.palette(:tab10)[2]

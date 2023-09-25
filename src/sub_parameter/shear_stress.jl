@@ -544,3 +544,40 @@ function calc_critical_non_dimensional_shear_stress_yearly_mean(
 
     return τ_c
 end
+
+"""
+複数年の無次元掃流力と限界無次元掃流力の平均値の比率を求める。
+"""
+function calc_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.DataFrame,
+    sediment_size::DataFrames.DataFrame,    
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,    
+    diameter_m::AbstractFloat
+    )
+
+
+    τ_c = calc_critical_non_dimensional_shear_stress_yearly_mean(
+        df,
+        sediment_size,    
+        param,
+        each_year_timing,
+        year_first,
+        year_last,    
+        diameter_m
+    )
+
+    τₛ = calc_non_dimensional_shear_stress_yearly_mean(
+        df,
+        param,
+        each_year_timing,
+        year_first,
+        year_last,    
+        diameter_m
+    )
+
+    return τ_c ./ τₛ
+    
+end

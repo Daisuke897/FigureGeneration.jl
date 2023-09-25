@@ -1093,3 +1093,128 @@ function make_graph_three_types_non_dimensional_shear_stress_yearly_mean(
     return p
     
 end
+
+# 複数年の無次元掃流力と限界無次元掃流力の平均値の比率のグラフを作る
+
+struct Plot_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean end
+
+Plots.RecipesBase.@recipe function f(
+    ::Plot_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean,
+    df_main::Main_df,
+    sediment_size::DataFrames.DataFrame,
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    spec_diameter::AbstractFloat,
+    target_df::NTuple{N, Tuple{Int, <:AbstractString}},
+    ::Val{N},
+    japanese::Bool
+    ) where {N}
+
+    title --> if japanese == true
+        string(year_first, " - ", year_last)
+    else
+        string(year_first, " - ", year_last)
+    end
+
+    xlabel --> if japanese == true
+        "河口からの距離 (km)"
+    else
+        "Distance from the estuary (km)"
+    end
+
+    ylabel --> if japanese == true
+        "標準無次元掃流力に対する\n有効無次元掃流力の比率 (-)"
+    else
+        "Ratio of standard to critical\nnon dimensional\nshear stress (-)"
+    end
+
+    legend_title --> if spec_diameter * 1000 >= 100.0 && spec_diameter * 1000 % 1 == 0.0
+        string(Int(spec_diameter * 1000), " mm")
+    else
+        string(round(spec_diameter * 1000, sigdigits=3), " mm")
+    end
+
+    for (j, (i, label_string)) in zip(1:N, target_df)
+
+        ratio_τ = calc_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean(
+            df_main.tuple[i],
+            sediment_size,    
+            param,
+            each_year_timing,
+            year_first,
+            year_last,    
+            spec_diameter
+        )
+
+        X  = average_neighbors_target_hour(
+            df_main.tuple[i],
+            :I,
+            each_year_timing.dict[year_first][1]
+        ) ./ 1000
+
+        Plots.RecipesBase.@series begin
+
+            primary := true
+            label := label_string
+            linecolor := Plots.palette(:Set1_9)[j]
+
+            (X, reverse(ratio_τ))
+        end
+
+    end
+
+    Plots.RecipesBase.@series begin
+
+        seriestype := :hline
+        line := :black
+        linestyle --> :dash
+        linewidth := 1
+        primary := false
+
+        ([0.0], [1.0])
+    end
+
+    ylims --> (0.0, 2.0)
+
+    primary := false
+
+end
+
+function make_graph_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean(
+    df_main::Main_df,
+    sediment_size::DataFrames.DataFrame,    
+    param::Param,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    spec_diameter::AbstractFloat,
+    target_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false,
+    x_vline::AbstractVector{<:AbstractFloat}=[14.6, 24.4, 40.2]
+    ) where {N}
+
+    p = _core_make_graph_non_dimensional_shear_stress(
+        japanese=japanese,
+        x_vline=x_vline        
+    )
+
+    Plots.plot!(
+        p,
+        Plot_ratio_critical_standard_non_dimensional_shear_stress_yearly_mean(),
+        df_main,
+        sediment_size,
+        param,
+        each_year_timing,
+        year_first,
+        year_last,
+        spec_diameter,
+        target_df,
+        Val(N),
+        japanese,
+    )
+
+end
+
+

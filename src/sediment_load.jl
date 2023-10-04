@@ -979,15 +979,17 @@ end
 様々な解析の年平均の浮遊砂量の縦断分布を示すグラフを作る。
 """
 function make_graph_yearly_mean_suspended_load(
+    main_df::Main_df,
     start_year::Int,
     final_year::Int,
     each_year_timing::Each_year_timing,
-    vec_label::Vector{String},
-    df_vararg::Vararg{DataFrame, N};
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
     ) where {N}
 
-    flow_size = length(df_vararg[1][df_vararg[1].T .== 0, :I])
+    
+    X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
 
     title_s = string(start_year, "-", final_year)
 
@@ -1002,7 +1004,7 @@ function make_graph_yearly_mean_suspended_load(
     p = plot(
     	title=title_s,
 	    xlabel=x_label,
-     	xlims=(0,77.8),
+     	xlims=(X[begin], X[end]),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
     	ylims=(0, 4e6),
@@ -1013,7 +1015,6 @@ function make_graph_yearly_mean_suspended_load(
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
-    X = [0.2*(i-1) for i in 1:flow_size]    
     
     for i in 1:N
     
@@ -1022,20 +1023,18 @@ function make_graph_yearly_mean_suspended_load(
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	        df_vararg[i],
+	        main_df.tuple[df_vararg[i][1]],
             start_year,
             final_year,
             each_year_timing,
 	        :Qsall
         )
         
-        legend_label = vec_label[i]
-        
         plot!(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	        label=legend_label,
+	        label=df_vararg[i][2],
             linecolor=palette(:Set1_9)[i],
             linewidth=1
         )
@@ -1121,30 +1120,31 @@ function make_graph_yearly_mean_suspended_load_per_case(
 end
 
 function make_graph_yearly_mean_bedload(
+    main_df::Main_df,
     start_year::Int,
     final_year::Int,
     each_year_timing::Each_year_timing,
-    vec_label::Vector{String},
-    df_vararg::Vararg{DataFrame, N};
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
     ) where {N}
 
-    flow_size = length(df_vararg[1][df_vararg[1].T .== 0, :I])
-
+    X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+    
     title_s = string(start_year, "-", final_year)
-    x_label = "Distance from the Estuary (km)"
-    y_label = "Bedload (m³/year)"
 
     if japanese==true 
-        title_s = string(start_year, "-", final_year)
         x_label="河口からの距離 (km)"
         y_label="掃流砂量 (m³/年)"
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Bedload (m³/year)"
     end
     
     p = plot(
     	title=title_s,
 	    xlabel=x_label,
-	    xlims=(0,77.8),
+	    xlims=(X[begin], X[end]),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
 	    ylims=(0, 6e4),
@@ -1155,29 +1155,25 @@ function make_graph_yearly_mean_bedload(
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
 
-    X = [0.2*(i-1) for i in 1:flow_size]    
-    
     for i in 1:N
-    
+   
         sediment_load_yearly_mean = zeros(Float64, flow_size)
 
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	        df_vararg[i],
+	        main_df.tuple[df_vararg[i][1]],            
             start_year,
             final_year,
             each_year_timing,
 	        :Qball
         )
         
-        legend_label = vec_label[i]
-        
         plot!(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	        label=legend_label,
+	        label=df_vararg[i][2],            
             linecolor=palette(:Set1_9)[i],
             linewidth=1
         )

@@ -1,8 +1,9 @@
 module Read_df_river
 
 import CSV,
-       DataFrames,
-       Printf
+    DataFrames,
+    Printf,
+    JDF
 
 export
     Main_df,
@@ -15,7 +16,8 @@ export
     Each_year_timing,
     Section,
     Exist_riverbed_level,
-    Measured_cross_rb
+    Measured_cross_rb,
+    Type_read_main_df_jdf
 
 #Get the maximum value of time for discharge
 function get_max_num_time() 
@@ -185,13 +187,30 @@ function Main_df(df_vararg::Vararg{T, N}) where {T, N}
 end
 
 function Main_df(
-    file_paths::Vararg{String, N}
+    file_paths::Vararg{AbstractString, N}
     ) where N
 
     df_vec = Vector{DataFrames.DataFrame}(undef, N)
     
     for i in 1:N
         df_vec[i] = get_main_df(file_paths[i])
+    end
+
+    return Main_df(df_vec...)
+
+end
+
+struct Type_read_main_df_jdf end
+
+function Main_df(
+    ::Type_read_main_df_jdf,
+    file_paths::Vararg{AbstractString, N}
+    ) where N
+
+    df_vec = Vector{DataFrames.DataFrame}(undef, N)
+    
+    for i in 1:N
+        df_vec[i] = DataFrames.DataFrame(JDF.load(file_paths[i]))
     end
 
     return Main_df(df_vec...)
@@ -205,7 +224,7 @@ function get_main_df()
     return df
 end
 
-function get_main_df(df_path::String)
+function get_main_df(df_path::AbstractString)
     
     df = CSV.read(
         string(df_path, "2_1DallT1.csv"),

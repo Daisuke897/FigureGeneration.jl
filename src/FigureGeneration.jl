@@ -66,7 +66,8 @@ export
     Each_year_timing,
     Section,
     Exist_riverbed_level,
-    Measured_cross_rb
+    Measured_cross_rb,
+    Type_read_main_df_jdf    
 
 include("general_graph_module.jl")
 

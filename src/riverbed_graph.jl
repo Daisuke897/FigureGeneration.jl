@@ -557,28 +557,27 @@ end
 
 function _graph_cumulative_change_in_riverbed!(
     p::Plots.Plot,
+    df_main::Main_df,    
     X,
     start_target_hour,
     final_target_hour,
-    vec_label::Vector{String},
-    df_main::Main_df    
-    )
+    labels::NTuple{N, Tuple{Int, AbstractString}},
+    ::Val{N}
+    ) where N
 
-    for (i, df) in enumerate(df_main.tuple)
+    for (i, label_s) in labels
 
         cumulative_change_simulated=cumulative_change_in_simulated_riverbed_elevation(
-            df,
+            df_main.tuple[i],
             start_target_hour,
             final_target_hour
         )
-
-        legend_label = vec_label[i]
         
         plot!(
             p,
             X,
             reverse(cumulative_change_simulated),
-            label=legend_label,
+            label=label_s,
             linewidth=1,
             linecolor=palette(:Set1_9)[i]
         )
@@ -590,16 +589,16 @@ function _graph_cumulative_change_in_riverbed!(
 end
 
 function graph_cumulative_change_in_riverbed(
+    df_main::Main_df,    
     measured_riverbed,
     start_year::Int,
     final_year::Int,
     start_target_hour::Int,
     final_target_hour::Int,
     string_title::String,
-    vec_label::Vector{String},
-    df_main::Main_df;
+    labels::Vararg{Tuple{Int, AbstractString}, N};
     japanese::Bool=false
-    )
+    ) where N
 
     flow_size=length(measured_riverbed[!, Symbol(final_year)])
 
@@ -621,12 +620,12 @@ function graph_cumulative_change_in_riverbed(
     end
 
     p=plot(
-        legend=:top,
+        legend=:topright,
         legend_font_pointsize=10,
         xlims=(0, 77.8),
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
-        ylims=(-4.2, 4.2),
+        ylims=(-5.5, 5.5),
         ylabel=y_label,
         title=title_s,
         xflip=true
@@ -647,11 +646,12 @@ function graph_cumulative_change_in_riverbed(
     
     _graph_cumulative_change_in_riverbed!(
         p,
+        df_main,        
         X,
         start_target_hour,
         final_target_hour,
-        vec_label,
-        df_main
+        labels,
+        Val(N)
     )
 
 

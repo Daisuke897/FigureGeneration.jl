@@ -60,6 +60,7 @@ export
     get_cross_rb_df,
     get_time_schedule,
     get_observed_riverbed_level,
+    get_observed_riverbed_level_minimum,
     get_sediment_size,
     get_fmini,
     get_river_width,

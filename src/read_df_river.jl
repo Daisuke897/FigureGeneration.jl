@@ -10,6 +10,7 @@ export
     get_cross_rb_df,
     get_time_schedule,
     get_observed_riverbed_level,
+    get_observed_riverbed_level_minimum,
     get_sediment_size,
     get_fmini,
     get_river_width,
@@ -318,13 +319,28 @@ function get_observed_riverbed_level()
     return observed_riverbed_level
 end
 
-function get_observed_riverbed_level(df_path::String)
+function get_observed_riverbed_level(df_path::AbstractString)
     observed_riverbed_level = CSV.read(
         string(df_path, "observed_riverbed_level.csv"),
         DataFrames.DataFrame
     )
     
     return observed_riverbed_level
+end
+
+function get_observed_riverbed_level_minimum()
+    observed_riverbed_level_minimum = get_observed_riverbed_level("./")
+    
+    return observed_riverbed_level_minimum
+end
+
+function get_observed_riverbed_level_minimum(df_path::AbstractString)
+    observed_riverbed_level_minimum = CSV.read(
+        string(df_path, "observed_riverbed_level_min.csv"),
+        DataFrames.DataFrame
+    )
+    
+    return observed_riverbed_level_minimum
 end
 
 function get_exist_riverbed_level_years(observed_riverbed_level)

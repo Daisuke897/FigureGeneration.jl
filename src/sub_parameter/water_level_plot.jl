@@ -43,7 +43,7 @@ Plots.RecipesBase.@recipe function f(
 
         water_level = calc_water_level(
             df_main.tuple[i],
-            targer_hour
+            target_hour
         )
 
         start_index, finish_index =
@@ -90,17 +90,7 @@ function make_graph_water_level(
         df_main,
         target_hour,
         Val(N),
-        target_df,
-        title = string(
-            GeneralGraphModule.making_time_series_title(
-                "",
-                target_hour,
-                time_schedule
-            ),
-            "Discharge ",
-            df_vararg[1][start_index, :Qw],
-            " m³/s"
-        )
+        target_df
     )
 
     return p

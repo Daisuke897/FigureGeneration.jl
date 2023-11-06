@@ -31,7 +31,8 @@ import
 include("./sub_riverbed/heatmap_riverbed.jl")
 
 export
-    comparison_final_average_riverbed,
+    plot_riverbed_elevation_cross_averaged,
+    plot_riverbed_elevation_cross_minimum,
     difference_final_average_riverbed,
     graph_comparison_difference_average_riverbed,
     graph_cumulative_change_in_riverbed,
@@ -88,139 +89,198 @@ title_01, data_file, hours_calculate_end, time_schedule)
     return want_title, distance_from_upstream, start_index, finish_index
 end
 
-#実測と再現の河床位を比較するグラフを作る関数
-#実測河床位が存在する場合
-function comparison_final_average_riverbed(
-    hours_calculate_end::Int,
-    riverbed_level_data,
-    time_schedule,
+function _plot_riverbed_elevation_1(
     when_year::Int,
-    vec_label::Vector{String},
-    df_main::Main_df;
-    japanese::Bool=false
+    want_title::AbstractString,
+    japanese::Bool
     )
+
+    if japanese==true
+        label_s   = string(when_year, " 実測河床位")
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    else
+        label_s   = string("Measured in ", when_year)
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Elevation (T.P. m)"
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-25,90),
+	title=want_title,
+        xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        legend=:best,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    return p
+
+end
+
+function _plot_riverbed_elevation_2!(
+    p::Plots.Plot,
+    df_main::Main_df,
+    start_index::Int,
+    finish_index::Int,
+    symbol_elevation::Symbol,
+    distance_from_upstream,
+    df_vararg::NTuple{N, Tuple{Int, AbstractString}},
+    ::Val{N}
+    ) where {N}
+
+    for i in 1:N
+
+        idx          = df_vararg[i][1]
+        legend_label = df_vararg[i][2]        
+        
+        average_riverbed_level= df_main.tuple[idx][start_index:finish_index, symbol_elevation]
+
+        plot!(
+            p,
+            distance_from_upstream,
+            reverse(average_riverbed_level), 
+            label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
+        )
+        
+    end
+
+end
+
+
+"""
+実測と再現の断面平均河床位のグラフを作る関数
+実測河床位が存在する場合
+"""
+function plot_riverbed_elevation_cross_averaged(
+    df_main::Main_df,
+    riverbed_level_data,
+    time_schedule,    
+    hour_target::Int,
+    when_year::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
 
     want_title, distance_from_upstream, start_index, finish_index =
         core_comparison_final_average_riverbed_2(
             "",
-            df_main.tuple[1],
-            hours_calculate_end,
+            df_main.tuple[begin],
+            hour_target,
             time_schedule
         )
 
-    
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+    distance_from_upstream .= distance_from_upstream .* 10^-3
 
-    label_vec = String[string("Measured in ", when_year) "Simulated"]
-    x_label   = "Distance from the estuary (km)"
-    y_label   = "Elevation (T.P. m)"
-
-    if japanese==true
-        label_vec = String[string(when_year, " 実測河床位") "再現河床位"]
-        x_label   = "河口からの距離 (km)"
-        y_label   = "標高 (T.P. m)"
-    end
-
-    p = plot(
-        distance_from_upstream.*10^-3,
-        reverse(riverbed_level), 
-        label=label_vec,  
-        ylabel=y_label, xlims=(0,77.8), ylims=(-10,90),
-	    title=want_title,
-        xlabel=x_label,
-	    xticks=[0, 20, 40, 60, 77.8],
-	    linecolor=:midnightblue,
-        legend=:best,
-        xflip=true,
-        linewidth=1
+    p = _plot_riverbed_elevation_1(
+        when_year,
+        want_title,
+        japanese
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
-    
-    for (i, df) in enumerate(df_main.tuple)
-        average_riverbed_level = df[start_index:finish_index, :Zbave]
-
-        legend_label = vec_label[i]
-
-        plot!(
-            p,
-            distance_from_upstream.*10^-3,
-            reverse(average_riverbed_level), 
-            label=legend_label,
-            linecolor=palette(:Set1_9)[i],
-            linewidth=1,
-        )
+    label_s = if japanese==true
+        string(when_year, " 実測河床位")
+    else
+        string("Measured in ", when_year)
     end
     
+    plot!(
+        p,
+        distance_from_upstream,
+        reverse(riverbed_level_data[:, Symbol(when_year)]), 
+	linecolor=:midnightblue,
+        linewidth=1,
+        label=label_s
+    )
+
+    _plot_riverbed_elevation_2!(
+        p,
+        df_main,
+        start_index,
+        finish_index,
+        :Zbave,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )    
+        
     return p
     
 end
 
-function comparison_final_average_riverbed(
-    hours_calculate_end::Int,
-    riverbed_level_data,
-    time_schedule,
-    when_year::Int,
-    string_title::String,
-    string_label::String,
+"""
+実測と再現の最低河床位のグラフを作る関数
+実測河床位が存在する場合
+"""
+function plot_riverbed_elevation_cross_minimum(
     df_main::Main_df,
-    target_df::Int;
+    riverbed_level_data,
+    time_schedule,    
+    hour_target::Int,
+    when_year::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
     japanese::Bool=false
-    )
+    ) where {N}
 
     want_title, distance_from_upstream, start_index, finish_index =
         core_comparison_final_average_riverbed_2(
-            string_title,
-            df_main.tuple[target_df],
-            hours_calculate_end,
+            "",
+            df_main.tuple[begin],
+            hour_target,
             time_schedule
         )
 
-    
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+    distance_from_upstream .= distance_from_upstream .* 10^-3
 
-    label_vec = String[string("Measured in ", when_year) "Simulated"]
-    x_label   = "Distance from the estuary (km)"
-    y_label   = "Elevation (T.P. m)"
-
-    if japanese==true
-        label_vec = String[string(when_year, " 実測河床位") "再現河床位"]
-        x_label   = "河口からの距離 (km)"
-        y_label   = "標高 (T.P. m)"
-    end
-
-    p = plot(
-        distance_from_upstream.*10^-3,
-        reverse(riverbed_level), 
-        label=label_vec,  
-        ylabel=y_label, xlims=(0,77.8), ylims=(-10,90),
-	    title=want_title,
-        xlabel=x_label,
-	    xticks=[0, 20, 40, 60, 77.8],
-	    linecolor=:midnightblue,
-        legend=:best,
-        xflip=true,
-        linewidth=1
+    p = _plot_riverbed_elevation_1(
+        when_year,
+        want_title,
+        japanese
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+    label_s = if japanese==true
+        string(when_year, " 実測河床位")
+    else
+        string("Measured in ", when_year)
+    end
     
-    average_riverbed_level = df_main.tuple[target_df][start_index:finish_index, :Zbave]
-
-    legend_label = string_label
-
     plot!(
         p,
-        distance_from_upstream.*10^-3,
-        reverse(average_riverbed_level), 
-        label=legend_label,
-        linecolor=palette(:Set1_9)[1],
+        distance_from_upstream,
+        reverse(riverbed_level_data[:, Symbol(when_year)]), 
+	linecolor=:midnightblue,
         linewidth=1,
+        label=label_s
     )
-    
+
+    _plot_riverbed_elevation_2!(
+        p,
+        df_main,
+        start_index,
+        finish_index,
+        :Zbmin,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )    
+        
     return p
     
 end
+
 
 #実測と再現の河床位を比較するグラフを作る関数
 #実測河床位が存在しない場合

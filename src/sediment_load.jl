@@ -49,11 +49,10 @@ export
     make_graph_percentage_particle_yearly_mean_bedload,
     make_graph_amount_percentage_particle_yearly_mean_suspended,
     make_graph_amount_percentage_particle_yearly_mean_bedload,
-    make_graph_time_series_suspended_load,
-    make_graph_time_series_bedload,
-    make_graph_time_series_suspended_bedload,
-    make_graph_time_series_variation_suspended_load,
-    make_graph_time_series_variation_bedload,
+    plot_time_series_suspended,
+    plot_time_series_bedload,
+    plot_time_series_variation_suspended,
+    plot_time_series_variation_bedload,
     make_graph_time_series_particle_suspended_load,
     make_graph_time_series_particle_bedload,
     make_graph_time_series_particle_suspended_bedload,
@@ -1742,389 +1741,125 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
     
 end
 
-# 20230320
-# 横軸に時間（秒）、縦軸に流砂量(m3/s)のグラフを作りたい！
-
-function make_graph_time_series_suspended_load(
-    area_index::Int,
+"""
+浮遊砂の時系列変化のグラフを作成する
+"""
+function plot_time_series_suspended(
+    df_main::Main_df,
+    index_area::Int,
+    flow_size::Int,
     river_length_km::Float64,
-    each_year_timing::Each_year_timing,
-    df_vararg::Vararg{DataFrame, N};
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
     ) where {N}
 
-
-    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
-    max_num_time = maximum(time_data)
-    num_time = length(time_data)
-
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
-
-    if japanese == true
-
-        x_label="時間 (s)"
-        y_label="浮遊砂量 (m³/s)"
-        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
-
-    elseif japanese == false
-
-        x_label="Time (s)"
-        y_label="Suspended sediment load (m³/s)"
-        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
-
-    end
-
-    p = plot(
-        xlims=(0, max_num_time),
-        xlabel=x_label,
-        ylims=(0, 140),
-        ylabel=y_label,
-        title=t_title,
-        legend=:topleft,
-        tickfontsize=11,
-        guidefontsize=11,
-        legend_font_pointsize=8
-    )
-
-    GeneralGraphModule._vline_per_year_timing!(
-        p,
-        each_year_timing
-    )
-
-
-    for i in 1:N
-
-        sediment_time_series = zeros(Float64, num_time)
-
-        for j in 1:num_time
-
-            i_first, i_final = decide_index_number(j-1)
-
-            sediment_time_series[j] = df_vararg[i][i_first:i_final, :Qs][area_index]
-
-        end
-
-        legend_label = string("Case ", i)
-
-        plot!(
-            p,
-            time_data,
-            sediment_time_series,
-            label=legend_label,
-            linewidth=1
-        )
-
-    end
-
-    return p
-
-end
-
-function make_graph_time_series_bedload(
-    area_index::Int,
-    river_length_km::Float64,
-    each_year_timing::Each_year_timing,
-    df_vararg::Vararg{DataFrame, N};
-    japanese::Bool=false
-    ) where {N}
-
-    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
-    max_num_time = maximum(time_data)
-    num_time = length(time_data)
-
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
-
-    if japanese == true
-
-        x_label="時間 (s)"
-        y_label="掃流砂量 (m³/s)"
-        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
-
-    elseif japanese == false
-
-        x_label="Time (s)"
-        y_label="Bedload (m³/s)"
-        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
-
-    end
-
-    p = plot(
-        xlims=(0, max_num_time),
-        xlabel=x_label,
-        ylims=(0, 2.5),
-        ylabel=y_label,
-        title=t_title,
-        legend=:topleft,
-        tickfontsize=11,
-        guidefontsize=11,
-        legend_font_pointsize=8
-    )
-
-    GeneralGraphModule._vline_per_year_timing!(
-        p,
-        each_year_timing
-    )
-
-
-    for i in 1:N
-
-        sediment_time_series = zeros(Float64, num_time)
-
-        for j in 1:num_time
-
-            i_first, i_final = decide_index_number(j-1)
-
-            sediment_time_series[j] = df_vararg[i][i_first:i_final, :Qb][area_index]
-
-        end
-
-        legend_label = string("Case ", i)
-
-        plot!(
-            p,
-            time_data,
-            sediment_time_series,
-            label=legend_label,
-            linewidth=1
-        )
-
-    end
-
-    return p
-
-end
-
-function make_graph_time_series_suspended_bedload(
-        area_index::Int,
+    p = GeneralGraphModule.plot_time_series_general(
+        df_main::Main_df,
+        index_area::Int,
+        flow_size::Int,
         river_length_km::Float64,
-        each_year_timing::Each_year_timing,
-        df_vector;
-        japanese::Bool=false
-    )
-    
-    l = @layout[a;b]
-    
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))
-    
+        :Qs,
+        japanese,
+        df_vararg...
+    )    
+
     if japanese == true
-        t_title = string("河口から ", round(area_km, digits=2), " km 上流")
-        y_label = "浮遊砂量 (m³/s)"
+        y_label="浮遊砂量 (m³/s)"
     elseif japanese == false
-        t_title = string(round(area_km, digits=2), " km upstream from the estuary")
-        y_label = "Suspended (m³/s)"
+        y_label="Suspended sediment\nload (m³/s)"
     end
-    
-    p1 = make_graph_time_series_suspended_load(
-        area_index,
-        river_length_km,
-        each_year_timing,
-        df_vector...,
-        japanese=japanese
-    )
-    
-    plot!(p1, xlabel="", xticks=[], legend=:none,
-        title=string(t_title),
+
+    p = plot!(
+        ylims=(-5, 145),
         ylabel=y_label
     )
-    
-    p2 = make_graph_time_series_bedload(
-        area_index,
-        river_length_km,
-        each_year_timing,
-        df_vector...,
-        japanese=japanese
-    )
-    
-    plot!(p2, title="")
 
-    p = plot(p1, p2, layout=l)
-    
     return p
-    
+
 end
 
-function make_graph_time_series_variation_suspended_load(
-    area_index::Int,
+"""
+掃流砂の時系列変化のグラフを作成する
+"""
+function plot_time_series_bedload(
+    df_main::Main_df,
+    index_area::Int,
+    flow_size::Int,
     river_length_km::Float64,
-    each_year_timing::Each_year_timing,
-    df_base::DataFrame,
-    df_mining::DataFrame,
-    df_dam::DataFrame,
-    df_mining_dam::DataFrame;
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-    )
+    ) where {N}
 
-
-    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
-    max_num_time = maximum(time_data)
-    num_time = length(time_data)
-
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+    p = GeneralGraphModule.plot_time_series_general(
+        df_main::Main_df,
+        index_area::Int,
+        flow_size::Int,
+        river_length_km::Float64,
+        :Qb,
+        japanese,
+        df_vararg...
+    ) 
 
     if japanese == true
-
-        x_label="時間 (s)"
-        y_label="変動量 (m³/s)"
-        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
-
+        y_label="掃流砂量 (m³/s)"
     elseif japanese == false
-
-        x_label="Time (s)"
-        y_label="Variation (m³/s)"
-        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
-        label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
-
+        y_label="Bedload (m³/s)"
     end
 
-    p = plot(
-        xlims=(0, max_num_time),
-        xlabel=x_label,
-        ylabel=y_label,
-        title=t_title,
-        legend=:bottomleft,
-        tickfontsize=11,
-        guidefontsize=11,
-        legend_font_pointsize=8
-    )
-
-    GeneralGraphModule._vline_per_year_timing!(
-        p,
-        each_year_timing
-    )
-
-    sediment_time_series_base       = zeros(Float64, num_time)
-    sediment_time_series_mining     = zeros(Float64, num_time)
-    sediment_time_series_dam        = zeros(Float64, num_time)
-    sediment_time_series_mining_dam = zeros(Float64, num_time)
-
-    for j in 1:num_time
-
-        i_first, i_final = decide_index_number(j-1)
-
-        sediment_time_series_base[j]       = df_base[i_first:i_final, :Qs][area_index]
-        sediment_time_series_mining[j]     = df_mining[i_first:i_final, :Qs][area_index]
-        sediment_time_series_dam[j]        = df_dam[i_first:i_final, :Qs][area_index]
-        sediment_time_series_mining_dam[j] = df_mining_dam[i_first:i_final, :Qs][area_index]
-
-    end
-
-    plot!(
-        p,
-        time_data,       
-        sediment_time_series_mining - sediment_time_series_base,
-        label=label_s[1],
-        linewidth=1
-    )
-    
-    plot!(
-        p,
-        time_data,        
-        sediment_time_series_dam - sediment_time_series_base,
-        label=label_s[2],
-        linewidth=1
-    )
-
-    plot!(
-        p,
-        time_data,        
-        sediment_time_series_mining_dam - sediment_time_series_base,
-        label=label_s[3],
-        linewidth=1
+    p = plot!(
+        ylims=(-0.1, 2.1),
+        ylabel=y_label
     )
 
     return p
 
 end
 
-function make_graph_time_series_variation_bedload(
-    area_index::Int,
+function plot_time_series_variation_suspended(
+    df_main::Main_df,
+    index_area::Int,
+    flow_size::Int,
     river_length_km::Float64,
-    each_year_timing::Each_year_timing,
-    df_base::DataFrame,
-    df_mining::DataFrame,
-    df_dam::DataFrame,
-    df_mining_dam::DataFrame;
+    index_df_base::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
     japanese::Bool=false
-    )
+    ) where {N}
 
-    time_data = [3600.0 * i for i in 0:each_year_timing.dict[sort(collect(keys(each_year_timing.dict)))[end]][2]]
-    max_num_time = maximum(time_data)
-    num_time = length(time_data)
+    p = GeneralGraphModule.plot_time_series_variation_general(
+        df_main::Main_df,
+        index_area::Int,
+        flow_size::Int,
+        river_length_km::Float64,
+        :Qs,
+        japanese,
+        index_df_base,
+        df_vararg...
+    )   
 
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
+    return p
 
-    if japanese == true
+end
 
-        x_label="時間 (s)"
-        y_label="変動量 (m³/s)"
-        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
-        label_s = ["砂利採取", "ダム", "砂利採取とダム"]
+function plot_time_series_variation_bedload(
+    df_main::Main_df,
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::Float64,
+    index_df_base::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
 
-    elseif japanese == false
-
-        x_label="Time (s)"
-        y_label="Variation (m³/s)"
-        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
-        label_s = ["by Extraction", "by Dam", "by Extraction and Dam"]
-
-    end
-
-    p = plot(
-        xlims=(0, max_num_time),
-        xlabel=x_label,
-        ylabel=y_label,
-        title=t_title,
-        legend=:topleft,
-        tickfontsize=11,
-        guidefontsize=11,
-        legend_font_pointsize=8
-    )
-
-    GeneralGraphModule._vline_per_year_timing!(
-        p,
-        each_year_timing
-    )
-
-    sediment_time_series_base       = zeros(Float64, num_time)
-    sediment_time_series_mining     = zeros(Float64, num_time)
-    sediment_time_series_dam        = zeros(Float64, num_time)
-    sediment_time_series_mining_dam = zeros(Float64, num_time)
-
-    for j in 1:num_time
-
-        i_first, i_final = decide_index_number(j-1)
-
-        sediment_time_series_base[j]       = df_base[i_first:i_final, :Qb][area_index]
-        sediment_time_series_mining[j]     = df_mining[i_first:i_final, :Qb][area_index]
-        sediment_time_series_dam[j]        = df_dam[i_first:i_final, :Qb][area_index]
-        sediment_time_series_mining_dam[j] = df_mining_dam[i_first:i_final, :Qb][area_index]
-
-    end
-
-    plot!(
-        p,
-        time_data,
-        sediment_time_series_mining - sediment_time_series_base,
-        label=label_s[1],
-        linewidth=1
-    )
-    
-    plot!(
-        p,
-        time_data,        
-        sediment_time_series_dam - sediment_time_series_base,
-        label=label_s[2],
-        linewidth=1
-    )
-
-    plot!(
-        p,
-        time_data,        
-        sediment_time_series_mining_dam - sediment_time_series_base,
-        label=label_s[3],
-        linewidth=1
-    )
+    p = GeneralGraphModule.plot_time_series_variation_general(
+        df_main::Main_df,
+        index_area::Int,
+        flow_size::Int,
+        river_length_km::Float64,
+        :Qb,
+        japanese,
+        index_df_base,
+        df_vararg...
+    )   
 
     return p
 

@@ -25,7 +25,8 @@ import ..Main_df, ..Each_year_timing
 
 export
     graph_ratio_simulated_particle_size_dist,
-    graph_average_simulated_particle_size_dist,
+    plot_average_simulated_particle_size_dist,
+    plot_average_simulated_particle_size_yearly_mean,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,
@@ -202,232 +203,111 @@ function graph_ratio_simulated_particle_size_dist(
     return p
 end
 
-function graph_average_simulated_particle_size_dist(
+"""
+特定時刻における平均粒径の縦断分布
+初期値なし
+"""
+function plot_average_simulated_particle_size_dist(
+    df_main::Main_df,    
     sediment_size::DataFrame,
     time_schedule::DataFrame,
-    df_main::Main_df;
+    target_hour::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
+    ) where {N}
+    
+    X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
+
+    p = _plot_average_simulated_particle_size_dist(
+        time_schedule,
+        target_hour,
+        japanese
     )
 
-    
-    distance_from_estuary = 0:1.0:77.8
-
-    if japanese==true
-        x_label="河口からの距離 (km)"
-        y_label="平均粒径 (mm)"
-    else
-        x_label="Distance from the estuary (km)"
-        y_label="Mean diameter (mm)"
-    end        
-
-    p = plot(
-        xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label,
-        ylabel=y_label,
-        xlims=(0,77.8),
-        ylims=(-10, 200),
-        legend=:none,
-        legend_font_pointsize=10,
-        xflip=true
-    )
-    
-    average_simulated_particle_size_dist =
-        get_average_simulated_particle_size_dist(
-            df_main.tuple[1],
-            sediment_size,
-            0
-        )
-
-    unique!(average_simulated_particle_size_dist)
-    println(length(average_simulated_particle_size_dist))
-    
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)    
-
-    scatter!(
+    vline!(
         p,
-        distance_from_estuary,
-        reverse(average_simulated_particle_size_dist),
-    )    
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    _plot_average_simulated_particle_size_dist!(
+        p,
+        df_main,
+        target_hour,
+        X,
+        df_vararg,
+        flow_size,
+        Val(N)
+    )
     
     return p
 end
 
-function graph_average_simulated_particle_size_dist(
+"""
+特定時刻における平均粒径の縦断分布
+初期値あり
+"""
+function plot_average_simulated_particle_size_dist(
+    df_main::Main_df,    
     sediment_size::DataFrame,
     time_schedule::DataFrame,
-    hours_now::Int,
-    df_vararg::Vararg{DataFrame, N};
+    target_hour::Int,
+    label_initial::AbstractString,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
     ) where {N}
-
-    p = _graph_average_simulated_particle_size_dist(
-            time_schedule,
-            hours_now,
-            japanese=japanese
-        ) 
     
-    distance_from_estuary = 0:0.2:77.8
+    X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
 
-    legend_label = "Initial Condition"
-    if japanese==true
-        legend_label="初期条件"
-    end
+    p = _plot_average_simulated_particle_size_dist(
+        time_schedule,
+        target_hour,
+        japanese
+    )
 
-    average_simulated_particle_size_dist =
-        get_average_simulated_particle_size_dist(
-            df_vararg[1],
-            sediment_size,
-            0
-        )
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
 
+    initial_simulated_particle_size_dist =
+        df_main.tuple[begin][1:flow_size, :Dmave] * 1000
+    
     plot!(
-        p, distance_from_estuary,
-        reverse(average_simulated_particle_size_dist),
-        label=legend_label,
-        linecolor=:midnightblue
+        p,
+        X,
+        reverse(initial_simulated_particle_size_dist),
+        label=label_initial,
+        linecolor=:midnightblue,
+        linewidth=1
     )    
     
-    for i in 1:N
-
-        average_simulated_particle_size_dist =
-            get_average_simulated_particle_size_dist(
-                df_vararg[i],
-                sediment_size,
-                hours_now
-            )
-
-        legend_label = string("Case ", i)
-            
-        plot!(
-            p, distance_from_estuary,
-            reverse(average_simulated_particle_size_dist),
-            label=legend_label
-        )
-
-    end
-
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
-    
-    return p
-end
-
-function graph_average_simulated_particle_size_dist(
-    time_schedule::DataFrame,
-    hours_now::Int,
-    df_vararg::Vararg{DataFrame, N};
-    japanese::Bool=false
-    ) where {N}
-
-    p = _graph_average_simulated_particle_size_dist(
-            time_schedule,
-            hours_now,
-            japanese=japanese
-        ) 
-
-    distance_from_estuary = 0:0.2:77.8
-
-    if japanese==true
-        legend_label="初期条件"
-    else
-        legend_label="Measured in 1996 and 1997 (Initial condition)"
-    end
-    
-    start_index, finish_index = decide_index_number(0)
-    
-    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
-    
-    plot!(
-        p, distance_from_estuary,
-        reverse(simu_particle_size_dist),
-        label=legend_label,
-        linecolor=:midnightblue
+    _plot_average_simulated_particle_size_dist!(
+        p,
+        df_main,
+        target_hour,
+        X,
+        df_vararg,
+        flow_size,
+        Val(N)
     )
     
-    start_index, finish_index = decide_index_number(hours_now)
-        
-    for i in 1:N
-
-        simu_particle_size_dist = df_vararg[i][start_index:finish_index, :Dmave] * 1000
-    
-        legend_label = string("Case ", i)
-            
-        plot!(
-            p, distance_from_estuary,
-            reverse(simu_particle_size_dist),
-            label=legend_label
-        )
-
-    end
-
-    
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)    
-
     return p
 end
 
-function graph_average_simulated_particle_size_dist(
+function _plot_average_simulated_particle_size_dist(
     time_schedule::DataFrame,
     hours_now::Int,
-    vec_label_string::Vector{String},
-    df_vararg::Vararg{DataFrame, N};
-    japanese::Bool=false
-    ) where {N}
-
-    p = _graph_average_simulated_particle_size_dist(
-            time_schedule,
-            hours_now,
-            japanese=japanese
-        ) 
-
-    distance_from_estuary = 0:0.2:77.8
-
-    if japanese==true
-        legend_label="初期条件"
-    else
-        legend_label="Measured in 1996 and 1997 (Initial condition)"
-    end
-    
-    start_index, finish_index = decide_index_number(0)
-    
-    simu_particle_size_dist = df_vararg[1][start_index:finish_index, :Dmave] * 1000
-    
-    plot!(
-        p, distance_from_estuary,
-        reverse(simu_particle_size_dist),
-        label=legend_label,
-        linecolor=:midnightblue,
-        linewidth=1,
-        legend=:best
-    )
-
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
-    
-    start_index, finish_index = decide_index_number(hours_now)
-        
-    for i in 1:N
-
-        simu_particle_size_dist = df_vararg[i][start_index:finish_index, :Dmave] * 1000
-    
-        legend_label = vec_label_string[i]
-            
-        plot!(
-            p, distance_from_estuary,
-            reverse(simu_particle_size_dist),
-            label=legend_label,
-            linewidth=1,
-            linecolor=palette(:Set1_9)[i]
-        )
-
-    end
-    
-
-    return p
-end
-
-function _graph_average_simulated_particle_size_dist(
-    time_schedule::DataFrame,
-    hours_now::Int;
-    japanese::Bool=false
+    japanese::Bool
     )
 
     want_title = making_time_series_title("",
@@ -456,55 +336,177 @@ function _graph_average_simulated_particle_size_dist(
     return p
 end
 
-function _graph_average_simulated_particle_size_fluc!(
+function _plot_average_simulated_particle_size_dist!(
     p::Plots.Plot,
-    keys_year,
-    sediment_size,
-    each_year_timing::Each_year_timing,
-    df_vararg::NTuple{N, DataFrame}
+    df_main::Main_df,
+    target_hour::Int,
+    X::AbstractArray{<:AbstractFloat},
+    df_vararg::NTuple{N, Tuple{Int, AbstractString}},
+    flow_size::Int,
+    ::Val{N}
     ) where {N}
 
-    
+    start_index, finish_index = decide_index_number(
+        target_hour,
+        flow_size
+    )    
+
     for i in 1:N
-        
-        fluc_average_value = zeros(length(keys_year)+1)
 
-        for (index, year) in enumerate(keys_year)
-            average_simulated_particle_size_dist =
-                get_average_simulated_particle_size_dist(
-                    df_vararg[i],
-                    sediment_size,
-                    each_year_timing.dict[year][1]
-                )
+        idx_df       = df_vararg[i][1]
+        legend_label = df_vararg[i][2]
 
-            fluc_average_value[index] =
-                mean(average_simulated_particle_size_dist)
-        end
+        simu_particle_size_dist =
+            df_main.tuple[idx_df][start_index:finish_index, :Dmave] * 1000
 
-        average_simulated_particle_size_dist =
-            get_average_simulated_particle_size_dist(
-                df_vararg[i],
-                sediment_size,
-                each_year_timing.dict[keys_year[end]][2]
-            )
-
-        fluc_average_value[end] =
-            mean(average_simulated_particle_size_dist)
-
-        legend_label = string("Case ", i)
-                    
         plot!(
             p,
-            [keys_year; keys_year[end]+1],
-            fluc_average_value,
-            markershape=:auto,
-            label=legend_label
+            X,
+            reverse(simu_particle_size_dist),
+            label=legend_label,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i]
         )
         
     end
 
     return p
 end
+
+"""
+特定年の平均粒径の平均値を求める
+"""
+function calc_average_simulated_particle_size_yearly_mean(
+    df::DataFrames.DataFrame,
+    each_year_timing::Each_year_timing,
+    year::Int,
+    flow_size::Int
+    )
+
+    average_simulated_particle_size_yearly_mean =
+        Statistics.mean(
+            idx -> df[idx[1]:idx[2], :Dmave],
+            decide_index_number.(
+                range(start = each_year_timing.dict[year][1],
+                      stop  = each_year_timing.dict[year][2]),
+                flow_size
+            )
+        )
+
+    return average_simulated_particle_size_yearly_mean
+
+end
+
+"""
+複数年の平均粒径の平均値を求める
+"""
+function calc_average_simulated_particle_size_yearly_mean(
+    df::DataFrames.DataFrame,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    flow_size::Int
+    )
+
+    average_simulated_particle_size_yearly_mean =
+        Statistics.mean(
+            target_year ->
+                calc_average_simulated_particle_size_yearly_mean(
+                    df,
+                    each_year_timing,
+                    target_year,
+                    flow_size
+                ),
+            range(start = year_first,
+                  stop = year_last)
+        )
+
+    return average_simulated_particle_size_yearly_mean
+
+end
+
+"""
+複数年の平均粒径の平均値のグラフを作成する。
+初期値なし
+"""
+function plot_average_simulated_particle_size_yearly_mean(
+    df_main::Main_df,    
+    sediment_size::DataFrame,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Mean diameter (mm)"
+    end        
+
+    legend_title_year = string(
+        year_first,
+        " - ",
+        year_last
+    )
+    
+    p = plot(
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-10, 200),
+        legend=:topleft,
+        legend_title=legend_title_year,
+        legend_font_pointsize=10,
+        legend_title_font_pointsize=11,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        label="",
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for i in 1:N
+
+        idx_df       = df_vararg[i][1]
+        legend_label = df_vararg[i][2]
+
+        simu_particle_size_dist =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_main.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            ) * 1000       
+
+        plot!(
+            p,
+            X,
+            reverse(simu_particle_size_dist),
+            label=legend_label,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i]
+        )
+        
+    end
+
+    return p
+
+end
+
 
 #平均粒径の時系列的な変化を示すグラフを作りたい
 function graph_temporal_variation_average_simulated_particle_size_fluc(

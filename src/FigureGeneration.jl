@@ -81,7 +81,8 @@ export
 include("riverbed_graph.jl")
 using .RiverbedGraph
 export
-    comparison_final_average_riverbed,
+    plot_riverbed_elevation_cross_averaged,
+    plot_riverbed_elevation_cross_minimum,    
     difference_final_average_riverbed,
     graph_comparison_difference_average_riverbed,    
     graph_cumulative_change_in_riverbed,
@@ -113,7 +114,8 @@ include("particle_size.jl")
 using .ParticleSize
 export
     graph_ratio_simulated_particle_size_dist,
-    graph_average_simulated_particle_size_dist,
+    plot_average_simulated_particle_size_dist,
+    plot_average_simulated_particle_size_yearly_mean,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,

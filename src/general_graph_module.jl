@@ -246,9 +246,9 @@ function plot_time_series_variation_general(
     )
 
     if japanese == true
-        y_label="変動量 (ppt)"
+        y_label="変動量 (%)"
     else
-        y_label="Variation (ppt)"
+        y_label="Variation (%)"
     end
 
     Plots.plot!(

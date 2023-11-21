@@ -41,8 +41,8 @@ export
     make_graph_suspended_load_target_hour,
     make_graph_bedload_target_hour,
     make_graph_suspended_bedload_target_hour,
-    make_graph_yearly_mean_suspended_load,
-    make_graph_yearly_mean_bedload,
+    plot_yearly_mean_suspended_load,
+    plot_yearly_mean_bedload,
     make_graph_particle_yearly_mean_suspended,
     make_graph_particle_yearly_mean_bedload,
     make_graph_percentage_particle_yearly_mean_suspended,
@@ -61,9 +61,9 @@ export
     make_graph_time_series_amount_percentage_particle_suspended_load,    
     make_graph_time_series_amount_percentage_particle_bedload,
     make_graph_condition_change_yearly_mean_suspended_load,
-    make_graph_condition_rate_yearly_mean_suspended_load,    
+    plot_condition_rate_yearly_mean_suspended_load,    
     make_graph_condition_change_yearly_mean_bedload,
-    make_graph_condition_rate_yearly_mean_bedload,    
+    plot_condition_rate_yearly_mean_bedload,    
     make_graph_particle_sediment_volume_each_year,
     make_graph_yearly_mean_suspended_load_per_case,
     make_graph_yearly_mean_bed_load_per_case,
@@ -82,8 +82,8 @@ export
     make_graph_particle_bedload_volume_each_year_with_average_line,
     make_graph_condition_change_bedload_volume_each_year,
     make_graph_condition_change_bedload_volume_each_year_with_average_line
-    
-    
+
+
 #特定位置の各年の年間掃流砂量の配列を出力する関数
 function bedload_sediment_volume_each_year!(
     sediment::AbstractArray{<:AbstractFloat, 1},
@@ -241,7 +241,7 @@ function sediment_volume_each_year(
         target_symbol,
         start_year,
         final_year
-	)
+    )
 
     return sediment
     
@@ -327,7 +327,7 @@ function particle_sediment_volume_each_year!(
             Symbol(string(target_symbol, Printf.@sprintf("%02i", particle_class_num))),
             start_year,
             final_year
-            )
+        )
     end
 
     return sediment
@@ -367,13 +367,13 @@ end
 #年平均関連
 
 function core_yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean,
-        flow_size::Int,
-        df::DataFrame,
-        start_year::Int,
-        final_year::Int,
-        each_year_timing::Each_year_timing,
-        tag::Symbol
+    sediment_load_yearly_mean,
+    flow_size::Int,
+    df::DataFrame,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    tag::Symbol
     )
     
     for target_year in start_year:final_year
@@ -395,18 +395,18 @@ end
 #過去のJupyter-labのコードを参考にする。
 function sediment_load_whole_area(df, target_hour::Int, tag::Symbol)
 
-  start_index, final_index = decide_index_number(target_hour)
+    start_index, final_index = decide_index_number(target_hour)
 
-  return df[start_index:final_index, tag]
+    return df[start_index:final_index, tag]
 
 end
 
 function sediment_load_whole_area_each_year!(
-        sediment_load_each_year,
-        df::DataFrame,
-        target_year::Int,
-        each_year_timing::Each_year_timing,
-        tag::Symbol
+    sediment_load_each_year,
+    df::DataFrame,
+    target_year::Int,
+    each_year_timing::Each_year_timing,
+    tag::Symbol
     )
     
     for target_hour in each_year_timing.dict[target_year][1]:each_year_timing.dict[target_year][2]
@@ -430,7 +430,7 @@ function sediment_load_whole_area_each_year(
     sediment_load_whole_area_each_year!(
         sediment_load_each_year, df, target_year,
 	each_year_timing,tag
-	)
+    )
 
     return sediment_load_each_year
 end
@@ -442,12 +442,12 @@ function yearly_mean_sediment_load_whole_area!(
 
     for target_year in start_year:final_year
         sediment_load_each_year = zeros(Float64, flow_size)
-	  
+	
         sediment_load_whole_area_each_year!(
-	        sediment_load_each_year,
+	    sediment_load_each_year,
             df,
             target_year,
-	        each_year_timing,
+	    each_year_timing,
             tag
         )
 
@@ -475,11 +475,11 @@ function yearly_mean_sediment_load_whole_area(
     yearly_mean_sediment_load_whole_area!(
         sediment_load_yearly_mean,
         flow_size,
-	    df,
+	df,
         start_year,
         final_year,
         each_year_timing,
-	    tag
+	tag
     )
 
     return sediment_load_yearly_mean
@@ -536,16 +536,16 @@ function make_graph_suspended_volume_flow_dist(
     sediment_load_whole_area_each_year!(
         sediment_load_each_year, df, target_year,
 	each_year_timing,:Qsall
-	)
+    )
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(collect(0:0.2:77.8),
-        reverse(sediment_load_each_year),
-	title=string(target_year),
-	label="",
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly Suspended\n Sediment Load (m³/year)",
-	xlims=(0,77.8))
+          reverse(sediment_load_each_year),
+	  title=string(target_year),
+	  label="",
+	  xlabel="Distance from the Estuary (km)",
+          ylabel="Yearly Suspended\n Sediment Load (m³/year)",
+	  xlims=(0,77.8))
 end
 
 function make_graph_bedload_volume_flow_dist(
@@ -559,23 +559,23 @@ function make_graph_bedload_volume_flow_dist(
     sediment_load_whole_area_each_year!(
         sediment_load_each_year, df, target_year,
 	each_year_timing,:Qball
-	)
+    )
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(collect(0:0.2:77.8),
-        reverse(sediment_load_each_year),
-	title=string(target_year),
-	label="",
-	xlabel="Distance from the Estuary (km)",
-        ylabel="Yearly \n Bedload (m³/year)",
-	xlims=(0,77.8))
+          reverse(sediment_load_each_year),
+	  title=string(target_year),
+	  label="",
+	  xlabel="Distance from the Estuary (km)",
+          ylabel="Yearly \n Bedload (m³/year)",
+	  xlims=(0,77.8))
 end
 
 function make_graph_sediment_volume_flow_dist(
     data_file::DataFrame,
     target_year::Int,
     each_year_timing::Each_year_timing
-)
+    )
 
     p1 = make_graph_suspended_volume_flow_dist(
         data_file,target_year,each_year_timing
@@ -618,7 +618,7 @@ function _core_make_graph_suspended_load_target_hour(
             target_hour,
             target_second,
             time_schedule
-		)
+	)
 
         yl = "浮遊砂量 (m³/s)"
 
@@ -631,7 +631,7 @@ function _core_make_graph_suspended_load_target_hour(
             target_hour,
             target_second,
             time_schedule
-		)
+	)
 
         yl = "Suspended load (m³/s)"
 
@@ -665,7 +665,7 @@ function _core_make_graph_bedload_target_hour(
             target_hour,
             target_second,
             time_schedule
-		)
+	)
 
         yl = "掃流砂量 (m³/s)"
 
@@ -678,7 +678,7 @@ function _core_make_graph_bedload_target_hour(
             target_hour,
             target_second,
             time_schedule
-		)
+	)
 
         yl = "Bedload (m³/s)"
 
@@ -720,13 +720,13 @@ function make_graph_suspended_load_target_hour(
 
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
     plot!(main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
-        reverse(main_df.tuple[target_df][start_index:finish_index,:Qs]),
-        label="", fillrange=0,
-        ylabel=yl, xlims=(0,77.8),ylims=(0,100),
-	      title=want_title, xlabel=xl,
-	      xticks=[0, 20, 40, 60, 77.8],
-	      linewidth=2, legend=:topleft,
-	      color=:firebrick)
+          reverse(main_df.tuple[target_df][start_index:finish_index,:Qs]),
+          label="", fillrange=0,
+          ylabel=yl, xlims=(0,77.8),ylims=(0,100),
+	  title=want_title, xlabel=xl,
+	  xticks=[0, 20, 40, 60, 77.8],
+	  linewidth=2, legend=:topleft,
+	  color=:firebrick)
     
 end
 
@@ -757,10 +757,10 @@ function make_graph_bedload_target_hour(
           reverse(main_df.tuple[target_df][start_index:finish_index,:Qb]),
           label="", fillrange=0,
           ylabel=yl, xlims=(0,77.8),ylims=(0,2),
-	      title=want_title, xlabel=xl,
-	      xticks=[0, 20, 40, 60, 77.8],
-	      linewidth=2, legend=:topleft,
-	      color=:royalblue)
+	  title=want_title, xlabel=xl,
+	  xticks=[0, 20, 40, 60, 77.8],
+	  linewidth=2, legend=:topleft,
+	  color=:royalblue)
     
 end
 
@@ -783,7 +783,7 @@ function make_graph_suspended_bedload_target_hour(
         time_schedule,
         target_df=target_df,
         japanese=japanese
-	)
+    )
     
     plot!(p1, xlabel="")
 
@@ -793,7 +793,7 @@ function make_graph_suspended_bedload_target_hour(
         time_schedule,
         target_df=target_df,
         japanese=japanese
-	)
+    )
 
     plot(p1, p2, layout=l)
 end
@@ -834,7 +834,7 @@ function make_graph_suspended_load_target_hour(
             start_index:finish_index,
             DataFrames.Between(:Qs01, Symbol(string(:Qs, Printf.@sprintf("%02i", sediment_size_num))))
         ]
-	)
+    )
 
     reverse!(target_matrix, dims=2)
     cumsum!(target_matrix, target_matrix, dims=2)
@@ -849,16 +849,16 @@ function make_graph_suspended_load_target_hour(
           title=want_title, xlabel=xl,
           xticks=[0, 20, 40, 60, 77.8],
           linewidth=2, legend=:outerright,
-	      palette=:tab20,
-	      legend_font_pointsize=9,
+	  palette=:tab20,
+	  legend_font_pointsize=9,
           label_title=lt,
           legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
         plot!(p, main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
-	          target_matrix[:,i],
-	          fillrange=0,
-	          label=strings_sediment_size[i])
+	      target_matrix[:,i],
+	      fillrange=0,
+	      label=strings_sediment_size[i])
     end
 
     return p
@@ -901,7 +901,7 @@ function make_graph_bedload_target_hour(
             start_index:finish_index,
             DataFrames.Between(:Qb01, Symbol(string(:Qb, Printf.@sprintf("%02i", sediment_size_num))))
         ]
-        )
+    )
 
     reverse!(target_matrix, dims=2)
     cumsum!(target_matrix, target_matrix, dims=2)
@@ -913,19 +913,19 @@ function make_graph_bedload_target_hour(
 
     p=vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
     plot!(p, ylabel=yl, xlims=(0,77.8),ylims=(0,2),
-        title=want_title, xlabel=xl,
-        xticks=[0, 20, 40, 60, 77.8],
-        linewidth=2, legend=:outerright,
-        palette=:tab20,
-        legend_font_pointsize=9,
-        label_title=lt,
-        legend_title_font_pointsize=10)
+          title=want_title, xlabel=xl,
+          xticks=[0, 20, 40, 60, 77.8],
+          linewidth=2, legend=:outerright,
+          palette=:tab20,
+          legend_font_pointsize=9,
+          label_title=lt,
+          legend_title_font_pointsize=10)
 
     for i in 1:sediment_size_num
         plot!(p, main_df.tuple[target_df][main_df.tuple[target_df].T .== 0, :I].*10^-3,
-            target_matrix[:,i],
-            fillrange=0,
-            label=strings_sediment_size[i])
+              target_matrix[:,i],
+              fillrange=0,
+              label=strings_sediment_size[i])
     end
 
     return p
@@ -954,7 +954,7 @@ function make_graph_suspended_bedload_target_hour(
         target_df=target_df,
         japanese=japanese
     )
-	
+    
     plot!(p1, xlabel="",
           legend_font_pointsize=4)
 
@@ -977,7 +977,7 @@ end
 """
 様々な解析の年平均の浮遊砂量の縦断分布を示すグラフを作る。
 """
-function make_graph_yearly_mean_suspended_load(
+function plot_yearly_mean_suspended_load(
     main_df::Main_df,
     start_year::Int,
     final_year::Int,
@@ -989,6 +989,92 @@ function make_graph_yearly_mean_suspended_load(
 
     
     X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+
+    p = _plot_yearly_mean_suspended_load(
+        start_year,
+        final_year,
+        japanese,
+        X
+    )
+
+    sediment_load_yearly_mean = zeros(Float64, flow_size)
+    
+    for i in 1:N
+        
+        sediment_load_yearly_mean .= 0.0
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	    main_df.tuple[df_vararg[i][1]],
+            start_year,
+            final_year,
+            each_year_timing,
+	    :Qsall
+        )
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean),
+	    label=df_vararg[i][2],
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
+        )
+
+    end
+
+    return p
+    
+end
+
+function plot_yearly_mean_suspended_load(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    
+    X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+
+    p = _plot_yearly_mean_suspended_load(
+        start_year,
+        final_year,
+        japanese,
+        X
+    )
+
+    _plot_yearly_mean!(
+        p,
+        main_df,
+        max_df,
+        min_df,
+        X,    
+        start_year,
+        final_year,
+        each_year_timing,
+        flow_size,
+        :Qsall,
+        df_vararg,
+        Val(N)
+    )    
+
+    return p
+    
+end
+
+function _plot_yearly_mean_suspended_load(
+    start_year::Int,
+    final_year::Int,
+    japanese::Bool,
+    X::AbstractVector{<:AbstractFloat}
+    )
 
     title_s = string(start_year, "-", final_year)
 
@@ -1002,7 +1088,7 @@ function make_graph_yearly_mean_suspended_load(
     
     p = plot(
     	title=title_s,
-	    xlabel=x_label,
+	xlabel=x_label,
      	xlims=(X[begin], X[end]),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
@@ -1010,39 +1096,13 @@ function make_graph_yearly_mean_suspended_load(
     	legend=:best,
         palette=:Set1_9,
         xflip=true
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
-    
-    for i in 1:N
-    
-        sediment_load_yearly_mean = zeros(Float64, flow_size)
-
-        yearly_mean_sediment_load_whole_area!(
-            sediment_load_yearly_mean,
-            flow_size,
-	        main_df.tuple[df_vararg[i][1]],
-            start_year,
-            final_year,
-            each_year_timing,
-	        :Qsall
-        )
-        
-        plot!(
-            p,
-            X,
-            reverse(sediment_load_yearly_mean),
-	        label=df_vararg[i][2],
-            linecolor=palette(:Set1_9)[i],
-            linewidth=1
-        )
-
-    end
-
     return p
-    
-end
+
+end 
 
 """
 ある解析の複数の期間における年平均の浮遊砂量の縦断分布のグラフを作る。
@@ -1067,7 +1127,7 @@ function make_graph_yearly_mean_suspended_load_per_case(
     end
 
     p = plot(
-	    xlabel=x_label,
+	xlabel=x_label,
      	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
@@ -1075,14 +1135,14 @@ function make_graph_yearly_mean_suspended_load_per_case(
     	legend=:best,
         palette=:default,
         xflip=true,
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
     X = [0.2*(i-1) for i in 1:flow_size]
 
     for i in 1:N
-    
+        
         sediment_load_yearly_mean = zeros(Float64, flow_size)
 
         if i == N 
@@ -1094,11 +1154,11 @@ function make_graph_yearly_mean_suspended_load_per_case(
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	        df_main.tuple[target_index],
+	    df_main.tuple[target_index],
             start_year[i],
             last_year,
             each_year_timing,
-	        :Qsall
+	    :Qsall
         )
         
         legend_label = string(start_year[i], "-", last_year)
@@ -1107,7 +1167,7 @@ function make_graph_yearly_mean_suspended_load_per_case(
             p,
             X,
             reverse(sediment_load_yearly_mean ./ 1e6),
-	        label=legend_label,
+	    label=legend_label,
             linecolor=palette(:default)[i],
             linewidth=2
         )
@@ -1118,7 +1178,7 @@ function make_graph_yearly_mean_suspended_load_per_case(
 
 end
 
-function make_graph_yearly_mean_bedload(
+function plot_yearly_mean_bedload(
     main_df::Main_df,
     start_year::Int,
     final_year::Int,
@@ -1129,7 +1189,92 @@ function make_graph_yearly_mean_bedload(
     ) where {N}
 
     X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+
+    p = _plot_yearly_mean_bedload(
+        start_year,
+        final_year,
+        japanese,
+        X
+    )
+
+    sediment_load_yearly_mean = zeros(Float64, flow_size)    
     
+    for i in 1:N
+        
+        sediment_load_yearly_mean .= 0.0
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	    main_df.tuple[df_vararg[i][1]],            
+            start_year,
+            final_year,
+            each_year_timing,
+	    :Qball
+        )
+        
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean),
+	    label=df_vararg[i][2],            
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
+        )
+
+    end
+
+    return p
+    
+end
+
+function plot_yearly_mean_bedload(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,    
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+
+    p = _plot_yearly_mean_bedload(
+        start_year,
+        final_year,
+        japanese,
+        X
+    )
+
+    _plot_yearly_mean!(
+        p,
+        main_df,
+        max_df,
+        min_df,
+        X,    
+        start_year,
+        final_year,
+        each_year_timing,
+        flow_size,
+        :Qball,
+        df_vararg,
+        Val(N)
+    )    
+
+    return p
+    
+end
+
+function _plot_yearly_mean_bedload(
+    start_year::Int,
+    final_year::Int,
+    japanese::Bool,
+    X::AbstractVector{<:AbstractFloat}
+    )
+
     title_s = string(start_year, "-", final_year)
 
     if japanese==true 
@@ -1142,57 +1287,144 @@ function make_graph_yearly_mean_bedload(
     
     p = plot(
     	title=title_s,
-	    xlabel=x_label,
-	    xlims=(X[begin], X[end]),
+	xlabel=x_label,
+     	xlims=(X[begin], X[end]),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
-	    ylims=(0, 6e4),
-	    legend=:outerright,
+    	ylims=(0, 6e4),
+    	legend=:best,
         palette=:Set1_9,
         xflip=true
-        )
+    )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    return p
+
+end
+
+function _plot_yearly_mean!(
+    p::Plots.Plot,
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    X::AbstractVector{<:AbstractFloat},    
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    flow_size::Int,
+    symbol_sediment::Symbol,
+    df_vararg::NTuple{N, Tuple{Int, <:AbstractString}},
+    ::Val{N}
+    ) where {N}
+
+    sediment_load_yearly_mean = zeros(Float64, flow_size)
+    sediment_load_yearly_max  = zeros(Float64, flow_size)
+    sediment_load_yearly_min  = zeros(Float64, flow_size)
+
+    _make_graph_yearly_mean!(
+        p,
+        main_df,
+        max_df,
+        min_df,
+        sediment_load_yearly_mean,
+        sediment_load_yearly_max,
+        sediment_load_yearly_min,
+        X,    
+        start_year,
+        final_year,
+        each_year_timing,
+        flow_size,
+        symbol_sediment,
+        df_vararg,
+        Val(N)
+    )    
+
+end
+
+function _make_graph_yearly_mean!(
+    p::Plots.Plot,
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    sediment_load_yearly_mean::AbstractVector{T},
+    sediment_load_yearly_max::AbstractVector{T},
+    sediment_load_yearly_min::AbstractVector{T},
+    X::AbstractVector{T},    
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    flow_size::Int,
+    symbol_sediment::Symbol,
+    df_vararg::NTuple{N, Tuple{Int, <:AbstractString}},
+    ::Val{N}
+    ) where {N, T<:AbstractFloat}
 
     for i in 1:N
-   
-        sediment_load_yearly_mean = zeros(Float64, flow_size)
+        
+        sediment_load_yearly_mean .= 0.0
+        sediment_load_yearly_max  .= 0.0
+        sediment_load_yearly_min  .= 0.0        
 
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	        main_df.tuple[df_vararg[i][1]],            
+	    main_df.tuple[df_vararg[i][1]],            
             start_year,
             final_year,
             each_year_timing,
-	        :Qball
+	    symbol_sediment
+        )
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_max,
+            flow_size,
+	    max_df.tuple[df_vararg[i][1]],
+            start_year,
+            final_year,
+            each_year_timing,
+	    symbol_sediment            
+        )
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_min,
+            flow_size,
+	    min_df.tuple[df_vararg[i][1]],
+            start_year,
+            final_year,
+            each_year_timing,
+            symbol_sediment
         )
         
         plot!(
             p,
             X,
             reverse(sediment_load_yearly_mean),
-	        label=df_vararg[i][2],            
+	    label=df_vararg[i][2],
             linecolor=palette(:Set1_9)[i],
-            linewidth=1
+            linewidth=1,
+            ribbon=(
+                reverse!(sediment_load_yearly_mean .- sediment_load_yearly_min),
+                reverse!(sediment_load_yearly_max  .- sediment_load_yearly_mean)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha = 0.3
         )
 
     end
 
-    return p
-    
 end
 
 """
 ある解析の複数の期間における年平均の掃流砂量の縦断分布のグラフを作る。
 """
 function make_graph_yearly_mean_bed_load_per_case(
-        df_main::Main_df,
-        target_index::Int,
-        each_year_timing::Each_year_timing,
-        final_year::Int,
-        start_year::Vararg{Int, N};
-        japanese::Bool=false
+    df_main::Main_df,
+    target_index::Int,
+    each_year_timing::Each_year_timing,
+    final_year::Int,
+    start_year::Vararg{Int, N};
+    japanese::Bool=false
     ) where {N}
 
     flow_size = length(df_main.tuple[target_index][df_main.tuple[target_index].T .== 0, :I])
@@ -1206,7 +1438,7 @@ function make_graph_yearly_mean_bed_load_per_case(
     end
 
     p = plot(
-	    xlabel=x_label,
+	xlabel=x_label,
      	xlims=(0,77.8),
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
@@ -1214,14 +1446,14 @@ function make_graph_yearly_mean_bed_load_per_case(
     	legend=:topright,
         palette=:default,
         xflip=true
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
 
     X = [0.2*(i-1) for i in 1:flow_size]
 
     for i in 1:N
-    
+        
         sediment_load_yearly_mean = zeros(Float64, flow_size)
 
         if i == N 
@@ -1233,11 +1465,11 @@ function make_graph_yearly_mean_bed_load_per_case(
         yearly_mean_sediment_load_whole_area!(
             sediment_load_yearly_mean,
             flow_size,
-	        df_main.tuple[target_index],
+	    df_main.tuple[target_index],
             start_year[i],
             last_year,
             each_year_timing,
-	        :Qball
+	    :Qball
         )
         
         legend_label = string(start_year[i], "-", last_year)
@@ -1246,7 +1478,7 @@ function make_graph_yearly_mean_bed_load_per_case(
             p,
             X,
             reverse(sediment_load_yearly_mean) ./ 1e3,
-	        label=legend_label,
+	    label=legend_label,
             linecolor=palette(:default)[i],
             linewidth=2
         )
@@ -1258,14 +1490,14 @@ function make_graph_yearly_mean_bed_load_per_case(
 end
 
 function stack_yearly_mean_sediment_load_each_size_whole_area!(
-        sediment_load_each_size,
-        sediment_size_num::Int,
-        flow_size::Int,
-        df::DataFrame,
-        start_year::Int,
-        final_year::Int,
-        each_year_timing::Each_year_timing,
-        tag::Symbol
+    sediment_load_each_size,
+    sediment_size_num::Int,
+    flow_size::Int,
+    df::DataFrame,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    tag::Symbol
     )
 
     for i in 1:sediment_size_num 
@@ -1285,7 +1517,7 @@ function stack_yearly_mean_sediment_load_each_size_whole_area!(
         )
         
         sediment_load_each_size[:,i].=sediment_load_yearly_mean
-    
+        
     end
     
     reverse!(cumsum!(sediment_load_each_size,reverse!(sediment_load_each_size, dims=2), dims=2), dims=2)    
@@ -1331,7 +1563,7 @@ function make_graph_particle_yearly_mean_suspended(
         palette=:tab20,
         legend_title_font_pointsize=11,
         legend_font_pointsize=9
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
@@ -1404,7 +1636,7 @@ function make_graph_particle_yearly_mean_bedload(
         palette=:tab20,
         legend_title_font_pointsize=11,
         legend_font_pointsize=9
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
@@ -1441,14 +1673,14 @@ function make_graph_particle_yearly_mean_bedload(
 end
 
 function percentage_sediment_load_each_size!(
-        sediment_load_each_size,
-        number_particle_size::Int,
-        flow_size::Int,
-        df::DataFrame,
-        start_year::Int,
-        final_year::Int,
-        each_year_timing::Each_year_timing,
-        tag::Symbol
+    sediment_load_each_size,
+    number_particle_size::Int,
+    flow_size::Int,
+    df::DataFrame,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    tag::Symbol
     )
 
     for i in 1:number_particle_size
@@ -1512,7 +1744,7 @@ function make_graph_percentage_particle_yearly_mean_suspended(
         palette=:tab20,
         legend_title_font_pointsize=11,
         legend_font_pointsize=9
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
@@ -1595,7 +1827,7 @@ function make_graph_percentage_particle_yearly_mean_bedload(
         palette=:tab20,
         legend_title_font_pointsize=11,
         legend_font_pointsize=9
-        )
+    )
 
     vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=2)
 
@@ -1642,12 +1874,12 @@ function make_graph_percentage_particle_yearly_mean_bedload(
 end
 
 function make_graph_amount_percentage_particle_yearly_mean_suspended(
-        start_year::Int,
-        final_year::Int,
-        each_year_timing::Each_year_timing,
-        df::DataFrame,
-        sediment_size::DataFrame;
-        japanese::Bool=false
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
     )
     
     l = @layout[a;b]
@@ -1662,9 +1894,9 @@ function make_graph_amount_percentage_particle_yearly_mean_suspended(
     )
     
     plot!(p1, xlabel="", xticks=[], legend=:outerright,
-        legend_font_pointsize=7,
-        legend_title_font_pointsize=7
-        )
+          legend_font_pointsize=7,
+          legend_title_font_pointsize=7
+          )
     
     p2 = make_graph_percentage_particle_yearly_mean_suspended(
         start_year,
@@ -1691,12 +1923,12 @@ function make_graph_amount_percentage_particle_yearly_mean_suspended(
 end
 
 function make_graph_amount_percentage_particle_yearly_mean_bedload(
-        start_year::Int,
-        final_year::Int,
-        each_year_timing::Each_year_timing,
-        df::DataFrame,
-        sediment_size::DataFrame;
-        japanese::Bool=false
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    df::DataFrame,
+    sediment_size::DataFrame;
+    japanese::Bool=false
     )
     
     l = @layout[a;b]
@@ -1711,9 +1943,9 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[], legend=:outerright,
-        legend_font_pointsize=7,
-        legend_title_font_pointsize=7
-        )
+          legend_font_pointsize=7,
+          legend_title_font_pointsize=7
+          )
     
     p2 = make_graph_percentage_particle_yearly_mean_bedload(
         start_year,
@@ -1725,8 +1957,8 @@ function make_graph_amount_percentage_particle_yearly_mean_bedload(
     )
     
     plot!(p2,
-        legend=:none
-    )
+          legend=:none
+          )
 
     p = plot(
         p1,
@@ -1761,7 +1993,7 @@ function plot_time_series_suspended(
         :Qs,
         japanese,
         df_vararg...
-    )    
+            )    
 
     if japanese == true
         y_label="浮遊砂量 (m³/s)"
@@ -1798,7 +2030,7 @@ function plot_time_series_bedload(
         :Qb,
         japanese,
         df_vararg...
-    ) 
+            ) 
 
     if japanese == true
         y_label="掃流砂量 (m³/s)"
@@ -1834,7 +2066,7 @@ function plot_time_series_variation_suspended(
         japanese,
         index_df_base,
         df_vararg...
-    )   
+            )   
 
     return p
 
@@ -1859,7 +2091,7 @@ function plot_time_series_variation_bedload(
         japanese,
         index_df_base,
         df_vararg...
-    )   
+            )   
 
     return p
 
@@ -2042,12 +2274,12 @@ function make_graph_time_series_particle_bedload(
 end
 
 function make_graph_time_series_particle_suspended_bedload(
-        area_index::Int,
-        river_length_km::Float64,
-        each_year_timing::Each_year_timing,
-        df::DataFrame,
-        sediment_size;
-        japanese::Bool=false
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing::Each_year_timing,
+    df::DataFrame,
+    sediment_size;
+    japanese::Bool=false
     )
     
     l = @layout[a;b]
@@ -2072,9 +2304,9 @@ function make_graph_time_series_particle_suspended_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string(t_title),
-        ylabel=y_label
-    )
+          title=string(t_title),
+          ylabel=y_label
+          )
     
     p2 = make_graph_time_series_particle_bedload(
         area_index,
@@ -2086,13 +2318,13 @@ function make_graph_time_series_particle_suspended_bedload(
     )
     
     plot!(p2, 
-        legend=:none
-    )
+          legend=:none
+          )
 
     p = plot(p1, p2, layout=l, 
-        legend_font_pointsize=6,
-        legend_title_font_pointsize=6,   
-    )
+             legend_font_pointsize=6,
+             legend_title_font_pointsize=6,   
+             )
     
     return p
     
@@ -2301,12 +2533,12 @@ function make_graph_time_series_percentage_particle_bedload(
 end
 
 function make_graph_time_series_amount_percentage_particle_suspended_load(
-        area_index::Int,
-        river_length_km::Float64,
-        each_year_timing::Each_year_timing,
-        df::DataFrame,
-        sediment_size;
-        japanese::Bool=false
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing::Each_year_timing,
+    df::DataFrame,
+    sediment_size;
+    japanese::Bool=false
     )
     
     l = @layout[a;b]
@@ -2331,9 +2563,9 @@ function make_graph_time_series_amount_percentage_particle_suspended_load(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string(t_title),
-        ylabel=y_label
-    )
+          title=string(t_title),
+          ylabel=y_label
+          )
     
     p2 = make_graph_time_series_percentage_particle_suspended_load(
         area_index,
@@ -2345,25 +2577,25 @@ function make_graph_time_series_amount_percentage_particle_suspended_load(
     )
     
     plot!(p2,
-        legend=:none
-    )
+          legend=:none
+          )
 
     p = plot(p1, p2, layout=l, 
-        legend_font_pointsize=6,
-        legend_title_font_pointsize=6,   
-    )
+             legend_font_pointsize=6,
+             legend_title_font_pointsize=6,   
+             )
     
     return p
     
 end
 
 function make_graph_time_series_amount_percentage_particle_bedload(
-        area_index::Int,
-        river_length_km::Float64,
-        each_year_timing::Each_year_timing,
-        df::DataFrame,
-        sediment_size;
-        japanese::Bool=false
+    area_index::Int,
+    river_length_km::Float64,
+    each_year_timing::Each_year_timing,
+    df::DataFrame,
+    sediment_size;
+    japanese::Bool=false
     )
     
     l = @layout[a;b]
@@ -2386,8 +2618,8 @@ function make_graph_time_series_amount_percentage_particle_bedload(
     )
     
     plot!(p1, xlabel="", xticks=[],
-        title=string(t_title)
-    )
+          title=string(t_title)
+          )
     
     p2 = make_graph_time_series_percentage_particle_bedload(
         area_index,
@@ -2399,13 +2631,13 @@ function make_graph_time_series_amount_percentage_particle_bedload(
     )
     
     plot!(p2,
-        legend=:none
-    )
+          legend=:none
+          )
 
     p = plot(p1, p2, layout=l, 
-        legend_font_pointsize=6,
-        legend_title_font_pointsize=6,   
-    )
+             legend_font_pointsize=6,
+             legend_title_font_pointsize=6,   
+             )
     
     return p
     
@@ -2447,7 +2679,7 @@ function make_graph_condition_change_yearly_mean_suspended_load(
         xticks=[0, 20, 40, 60, 77.8],
         ylabel=y_label,
     	ylims=(-7e5, 7e5),
-	    legend=:best,
+	legend=:best,
         palette=:Set1_3,
         xflip=true
     )
@@ -2513,139 +2745,6 @@ function make_graph_condition_change_yearly_mean_suspended_load(
     
     sediment_load_yearly_mean_mining_dam .=
         sediment_load_yearly_mean_mining_dam .- sediment_load_yearly_mean_base
-
-    plot!(
-        p,
-        X,
-        reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3],
-        linecolor=palette(:Set1_3)[1],
-        linewidth=1
-    )
-
-    plot!(
-        p,
-        X,
-        reverse(sediment_load_yearly_mean_dam),
-        label=label_s[2],
-        linecolor=palette(:Set1_3)[2],
-        linewidth=1
-    )
-
-    plot!(
-        p,
-        X,
-        reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1],
-        linecolor=palette(:Set1_3)[3],
-        linewidth=1
-    )    
-
-    return p
-    
-end
-
-function make_graph_condition_rate_yearly_mean_suspended_load(
-    start_year::Int,
-    final_year::Int,
-    each_year_timing::Each_year_timing,
-    df_base::DataFrame,
-    df_with_mining::DataFrame,
-    df_with_dam::DataFrame,
-    df_with_mining_and_dam::DataFrame;
-    japanese::Bool=false
-    )
-
-    flow_size = length(df_base[df_base.T .== 0, :I])
-
-    title_s = string(start_year, "-", final_year)
-
-    if japanese==true 
-        x_label="河口からの距離 (km)"
-        y_label="変化率 (%)"
-        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]
-    else
-        x_label = "Distance from the Estuary (km)"
-        y_label = "Rate of variation (%)"
-        label_s = [
-            "by gravel mining (Case 3 - Case 4)",
-            "by the Ikeda Dam (Case 2 - Case 4)",
-            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"]    
-    end
-    
-    p = plot(
-    	title=title_s,
-    	xlabel=x_label,
-    	xlims=(0,77.8),
-        xticks=[0, 20, 40, 60, 77.8],
-        ylabel=y_label,
-    	ylims=(-25, 25),
-	    legend=:best,
-        palette=:Set1_3,
-        xflip=true
-        )
-
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)        
-
-    X = [0.2*(i-1) for i in 1:flow_size]    
-    
-    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_base,
-        flow_size,
-        df_base,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qsall
-    )
-
-    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_mining,
-        flow_size,
-        df_with_mining,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qsall
-    )
-
-    sediment_load_yearly_mean_mining .=
-        ((sediment_load_yearly_mean_mining ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
-
-    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_dam,
-        flow_size,
-        df_with_dam,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qsall
-    )
-
-    sediment_load_yearly_mean_dam .=
-        ((sediment_load_yearly_mean_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
-
-    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_mining_dam,
-        flow_size,
-        df_with_mining_and_dam,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qsall
-    )
-    
-    sediment_load_yearly_mean_mining_dam .=
-        ((sediment_load_yearly_mean_mining_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
 
     plot!(
         p,
@@ -2812,138 +2911,315 @@ function make_graph_condition_change_yearly_mean_bedload(
     
 end
 
-function make_graph_condition_rate_yearly_mean_bedload(
+function plot_condition_rate_yearly_mean_suspended_load(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
     start_year::Int,
     final_year::Int,
     each_year_timing::Each_year_timing,
-    df_base::DataFrame,
-    df_with_mining::DataFrame,
-    df_with_dam::DataFrame,
-    df_with_mining_and_dam::DataFrame;
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
-    )
+    ) where {N}
 
-    flow_size = length(df_base[df_base.T .== 0, :I])
-
-    title_s = string(start_year, "-", final_year)
-    
-    if japanese==true 
-        x_label="河口からの距離 (km)"
-        y_label="変化率 (%)"
-        label_s = ["砂利採取", "池田ダム", "砂利採取と池田ダム"]        
-    else
-        x_label = "Distance from the Estuary (km)"
-        y_label = "Rate of variation (%)"
-        label_s = [
-            "by gravel mining (Case 3 - Case 4)",
-            "by the Ikeda Dam (Case 2 - Case 4)",
-            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)"
-        ]    
-    end
-    
-    p = plot(
-    	title=title_s,
-	    xlabel=x_label,
-	    xlims=(0,77.8),
-        xticks=[0, 20, 40, 60, 77.8],
-        ylabel=y_label,
-	    ylims=(-400, 400),
-	    legend=:best,
-        palette=:Set1_3,
-        xflip=true
-    )
-    
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)    
-
-    X = [0.2*(i-1) for i in 1:flow_size]    
-    
-    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_base,
-        flow_size,
-        df_base,
+    p = plot_condition_rate_yearly_mean_sediment(
+        main_df,
+        max_df,
+        min_df,
         start_year,
         final_year,
         each_year_timing,
-        :Qball
-    )
-
-    sediment_load_yearly_mean_mining = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_mining,
-        flow_size,
-        df_with_mining,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qball
-    )
-
-    sediment_load_yearly_mean_mining .=
-        ((sediment_load_yearly_mean_mining ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
-
-    sediment_load_yearly_mean_dam = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_dam,
-        flow_size,
-        df_with_dam,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qball
-    )
-
-    sediment_load_yearly_mean_dam .=
-        ((sediment_load_yearly_mean_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
-
-    sediment_load_yearly_mean_mining_dam = zeros(Float64, flow_size)
-
-    yearly_mean_sediment_load_whole_area!(
-        sediment_load_yearly_mean_mining_dam,
-        flow_size,
-        df_with_mining_and_dam,
-        start_year,
-        final_year,
-        each_year_timing,
-        :Qball
-    )
-    
-    sediment_load_yearly_mean_mining_dam .=
-        ((sediment_load_yearly_mean_mining_dam ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
-
-    plot!(
-        p,
-        X,
-        reverse(sediment_load_yearly_mean_mining_dam),
-        label=label_s[3],
-        linecolor=palette(:Set1_3)[1],
-        linewidth=1
+        :Qsall,
+        index_base_df,
+        df_vararg...;
+        flow_size=flow_size,
+        japanese=japanese
     )
 
     plot!(
         p,
-        X,
-        reverse(sediment_load_yearly_mean_dam),
-        label=label_s[2],
-        linecolor=palette(:Set1_3)[2],
-        linewidth=1
-    )
-    
-    plot!(
-        p,
-        X,
-        reverse(sediment_load_yearly_mean_mining),
-        label=label_s[1],
-        linecolor=palette(:Set1_3)[3],
-        linewidth=1
+        ylims=(-45, 45)
     )
 
     return p
     
+end
+
+function plot_condition_rate_yearly_mean_bedload(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    p = plot_condition_rate_yearly_mean_sediment(
+        main_df,
+        max_df,
+        min_df,
+        start_year,
+        final_year,
+        each_year_timing,
+        :Qball,
+        index_base_df,
+        df_vararg...;
+        flow_size=flow_size,
+        japanese=japanese
+    )
+
+    plot!(
+        p,
+        ylims=(-120, 220)
+    )
+
+    return p
+    
+end
+
+function plot_condition_rate_yearly_mean_sediment(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    symbol_sediment::Symbol,
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    X = main_df.tuple[begin][1:flow_size , :I] ./ 1000
+
+    p = _plot_condition_rate_yearly_mean(
+        X,
+        start_year,
+        final_year,
+        japanese
+    )    
+
+    _plot_condition_rate_yearly_mean!(
+        p,
+        main_df,
+        max_df,
+        min_df,
+        X,    
+        start_year,
+        final_year,
+        each_year_timing,
+        flow_size,
+        symbol_sediment,
+        index_base_df,
+        df_vararg,
+        Val(N)
+    )
+
+    return p
+    
+end
+
+function _plot_condition_rate_yearly_mean(
+    X::AbstractVector{<:AbstractFloat},
+    start_year::Int,
+    final_year::Int,
+    japanese::Bool
+    )
+    
+    title_s = string(start_year, "-", final_year)
+
+    if japanese==true 
+        x_label="河口からの距離 (km)"
+        y_label="変化率 (%)"
+    else
+        x_label = "Distance from the Estuary (km)"
+        y_label = "Rate of variation (%)"
+    end
+    
+    p = plot(
+    	title=title_s,
+    	xlabel=x_label,
+    	xlims=(X[begin], X[end]),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+	legend=:best,
+        palette=:Set1_3,
+        xflip=true
+        )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, linestyle=:dash, linewidth=1, primary=:false)
+    hline!(p, [0], line=:black, linestyle=:dot, linewidth=1, primary=:false)
+
+    return p
+
+end
+
+function _plot_condition_rate_yearly_mean!(
+    p::Plots.Plot,
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    X::AbstractVector{T},    
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    flow_size::Int,
+    symbol_sediment::Symbol,
+    index_base_df::Int,
+    df_vararg::NTuple{N, Tuple{Int, <:AbstractString}},
+    ::Val{N}
+    ) where {N, T<:AbstractFloat}
+
+    sediment_load_yearly_mean_base = zeros(Float64, flow_size)
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_mean_base,
+        flow_size,
+        main_df.tuple[index_base_df],
+        start_year,
+        final_year,
+        each_year_timing,
+        symbol_sediment
+    )
+
+    sediment_load_yearly_max_base = zeros(Float64, flow_size)
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_max_base,
+        flow_size,
+        main_df.tuple[index_base_df],
+        start_year,
+        final_year,
+        each_year_timing,
+        symbol_sediment
+    )
+
+    sediment_load_yearly_min_base = zeros(Float64, flow_size)
+    yearly_mean_sediment_load_whole_area!(
+        sediment_load_yearly_min_base,
+        flow_size,
+        main_df.tuple[index_base_df],
+        start_year,
+        final_year,
+        each_year_timing,
+        symbol_sediment
+    )
+
+    sediment_load_yearly_mean = zeros(Float64, flow_size)
+    sediment_load_yearly_max  = zeros(Float64, flow_size)
+    sediment_load_yearly_min  = zeros(Float64, flow_size)
+
+    _plot_condition_rate_yearly_mean!(
+        p,
+        main_df,
+        max_df,
+        min_df,
+        sediment_load_yearly_mean_base,
+        sediment_load_yearly_max_base,
+        sediment_load_yearly_min_base,
+        sediment_load_yearly_mean,
+        sediment_load_yearly_max,
+        sediment_load_yearly_min,
+        X,
+        start_year,
+        final_year,
+        each_year_timing,
+        flow_size,
+        symbol_sediment,
+        df_vararg,
+        Val(N)
+    )    
+
+end
+
+function _plot_condition_rate_yearly_mean!(
+    p::Plots.Plot,
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    sediment_load_yearly_mean_base::AbstractVector{T},
+    sediment_load_yearly_max_base::AbstractVector{T},
+    sediment_load_yearly_min_base::AbstractVector{T},
+    sediment_load_yearly_mean::AbstractVector{T},
+    sediment_load_yearly_max::AbstractVector{T},
+    sediment_load_yearly_min::AbstractVector{T},
+    X::AbstractVector{T},    
+    start_year::Int,
+    final_year::Int,
+    each_year_timing::Each_year_timing,
+    flow_size::Int,
+    symbol_sediment::Symbol,
+    df_vararg::NTuple{N, Tuple{Int, <:AbstractString}},
+    ::Val{N}
+    ) where {N, T<:AbstractFloat}
+
+    for i in 1:N
+
+        sediment_load_yearly_mean .= 0.0
+        sediment_load_yearly_max  .= 0.0
+        sediment_load_yearly_min  .= 0.0
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_mean,
+            flow_size,
+	    main_df.tuple[df_vararg[i][1]],            
+            start_year,
+            final_year,
+            each_year_timing,
+	    symbol_sediment
+        )
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_max,
+            flow_size,
+	    max_df.tuple[df_vararg[i][1]],
+            start_year,
+            final_year,
+            each_year_timing,
+	    symbol_sediment            
+        )
+
+        yearly_mean_sediment_load_whole_area!(
+            sediment_load_yearly_min,
+            flow_size,
+	    min_df.tuple[df_vararg[i][1]],
+            start_year,
+            final_year,
+            each_year_timing,
+            symbol_sediment
+        )
+
+        sediment_load_yearly_mean .=
+            ((sediment_load_yearly_mean ./ sediment_load_yearly_mean_base) .- 1.0) .* 100
+
+        sediment_load_yearly_max .=
+            ((sediment_load_yearly_max  ./ sediment_load_yearly_max_base)  .- 1.0) .* 100
+
+        sediment_load_yearly_min .=
+            ((sediment_load_yearly_min  ./ sediment_load_yearly_min_base)  .- 1.0) .* 100
+
+        plot!(
+            p,
+            X,
+            reverse(sediment_load_yearly_mean),
+	    label=df_vararg[i][2],
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1,
+            ribbon=(
+                reverse!(sediment_load_yearly_mean .- sediment_load_yearly_min),
+                reverse!(sediment_load_yearly_max  .- sediment_load_yearly_mean)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha = 0.3
+        )
+
+    end
+
 end
 
 """

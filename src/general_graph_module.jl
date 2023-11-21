@@ -86,7 +86,7 @@ function _get_target_year_sec!(
     
     for i in 1:length(each_year_timing.dict)
         target_year = 1965 + i - 1
-        target_year_sec[i] = 3600 * each_year_timing.dict[target_year][1]
+        target_year_sec[i] = each_year_timing.dict[target_year][1]
     end
 
 end
@@ -105,7 +105,7 @@ function _vline_per_year_timing!(
         each_year_timing
     )
     
-    vline!(p,
+    Plots.vline!(p,
            target_year_sec,
            label="",
            linecolor=:black,
@@ -172,7 +172,7 @@ function plot_time_series_general(
     df_main::Main_df,
     index_area::Int,
     flow_size::Int,
-    river_length_km::Float64,
+    river_length_km::AbstractFloat,
     symbol_target::Symbol,
     japanese::Bool,
     df_vararg::Vararg{Tuple{Int, <:AbstractString}, N}
@@ -180,7 +180,7 @@ function plot_time_series_general(
 
     num_data_time_series::Int = size(df_main.tuple[begin], 1) / flow_size
 
-    p =  _plot_time_series_variation_general(
+    p =  _plot_time_series_general(
         index_area,
         river_length_km,
         num_data_time_series,
@@ -224,11 +224,49 @@ function plot_time_series_general(
 
 end
 
+function plot_time_series_general(
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    japanese::Bool,
+    data_time_series::Vararg{Tuple{AbstractVector{T}, AbstractString}, N}
+    ) where {N, T<:Real}
+
+    p =  _plot_time_series_general(
+        index_area,
+        river_length_km,
+        length(data_time_series[begin][1]),
+        japanese
+    )
+    
+    for i in 1:N
+
+        range_time_series = range(
+            start = 0,
+            stop  = length(data_time_series[i][1]) - 1
+        )
+
+        Plots.plot!(
+            p,
+            range_time_series,
+            data_time_series[i][1],
+            label=data_time_series[i][2],
+            linewidth=1,
+            linecolor=Plots.palette(:Set1_9)[i]            
+        )
+
+    end
+
+    return p
+
+end
+
+
 function plot_time_series_variation_general(
     df_main::Main_df,
     index_area::Int,
     flow_size::Int,
-    river_length_km::Float64,
+    river_length_km::AbstractFloat,
     symbol_target::Symbol,
     japanese::Bool,
     index_df_base::Int,
@@ -243,26 +281,6 @@ function plot_time_series_variation_general(
         river_length_km,
         num_data_time_series,
         japanese
-    )
-
-    if japanese == true
-        y_label="変動量 (%)"
-    else
-        y_label="Variation (%)"
-    end
-
-    Plots.plot!(
-        p,
-        ylabel=y_label,
-        ylims =(-50, 50)
-    )
-
-    Plots.hline!(
-        [0],
-        linestyle=:dash,
-        linecolor=:black,
-        linewidth=1,
-        primary=:false
     )
 
     range_time_series = range(
@@ -313,7 +331,51 @@ function plot_time_series_variation_general(
 
 end
 
-function _plot_time_series_variation_general(
+function plot_time_series_variation_general(
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    japanese::Bool,
+    data_time_series_base::AbstractVector{T},
+    data_time_series::Vararg{Tuple{AbstractVector{T}, AbstractString}, N}       ) where {N, T<:Real}
+
+
+    p =  _plot_time_series_variation_general(
+        index_area,
+        river_length_km,
+        length(data_time_series_base),
+        japanese
+    )
+
+    variation_data_time_series = similar(data_time_series_base)
+
+    range_time_series = range(
+        start = 0,
+        stop  = length(variation_data_time_series) - 1
+    )
+
+    for i in 1:N
+
+        variation_data_time_series .=
+            (data_time_series[i][1] ./ data_time_series_base .- 1.0) * 100
+        
+        Plots.plot!(
+            p,
+            range_time_series,
+            variation_data_time_series,
+            label=data_time_series[i][2],
+            linewidth=1,
+            linecolor=Plots.palette(:Set1_9)[i]            
+        )
+
+    end
+
+    return p
+
+end
+
+
+function _plot_time_series_general(
     index_area::Int,
     river_length_km::Float64,
     num_data_time_series::Int,
@@ -351,5 +413,42 @@ function _plot_time_series_variation_general(
 
 end
 
+function _plot_time_series_variation_general(
+    index_area::Int,
+    river_length_km::Float64,
+    num_data_time_series::Int,
+    japanese::Bool
+    )
+
+    p =  _plot_time_series_general(
+        index_area,
+        river_length_km,
+        num_data_time_series,        
+        japanese
+    )
+
+    if japanese == true
+        y_label="変動量 (%)"
+    else
+        y_label="Variation (%)"
+    end
+
+    Plots.plot!(
+        p,
+        ylabel=y_label,
+        ylims =(-50, 50)
+    )
+
+    Plots.hline!(
+        [0],
+        linestyle=:dash,
+        linecolor=:black,
+        linewidth=1,
+        primary=:false
+    )
+
+    return p
+
+end
 
 end

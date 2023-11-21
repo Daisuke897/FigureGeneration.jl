@@ -442,40 +442,11 @@ function plot_average_simulated_particle_size_yearly_mean(
 
     X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
 
-    if japanese==true
-        x_label="河口からの距離 (km)"
-        y_label="平均粒径 (mm)"
-    else
-        x_label="Distance from the estuary (km)"
-        y_label="Mean diameter (mm)"
-    end        
-
-    legend_title_year = string(
+    p = _plot_average_simulated_particle_size_yearly_mean(
+        X,
         year_first,
-        " - ",
-        year_last
-    )
-    
-    p = plot(
-        xticks=[0, 20, 40, 60, 77.8],
-        xlabel=x_label,
-        ylabel=y_label,
-        xlims=(0,77.8),
-        ylims=(-10, 200),
-        legend=:topleft,
-        legend_title=legend_title_year,
-        legend_font_pointsize=10,
-        legend_title_font_pointsize=11,
-        xflip=true
-    )
-
-    vline!(
-        p,
-        [40.2,24.4,14.6],
-        line=:black,
-        label="",
-        linestyle=:dash,
-        linewidth=1
+        year_last,
+        japanese
     )
 
     for i in 1:N
@@ -507,6 +478,132 @@ function plot_average_simulated_particle_size_yearly_mean(
 
 end
 
+"""
+複数年の平均粒径の平均値のグラフを作成する。
+初期値なし
+最大値・最小値のレンジ付き。
+"""
+function plot_average_simulated_particle_size_yearly_mean(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    sediment_size::DataFrame,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
+
+    p = _plot_average_simulated_particle_size_yearly_mean(
+        X,
+        year_first,
+        year_last,
+        japanese
+    )
+
+    for i in 1:N
+
+        idx_df       = df_vararg[i][1]
+        legend_label = df_vararg[i][2]
+
+        simu_particle_size_dist_mean =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_main.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            ) * 1000       
+
+        simu_particle_size_dist_max  =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_max.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            ) * 1000       
+
+        simu_particle_size_dist_min  =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_min.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            ) * 1000       
+        
+        plot!(
+            p,
+            X,
+            reverse(simu_particle_size_dist_mean),
+            label=legend_label,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i],
+            ribbon=(
+                reverse!(simu_particle_size_dist_mean .- simu_particle_size_dist_min),
+                reverse!(simu_particle_size_dist_max .- simu_particle_size_dist_mean)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha=0.3
+        )
+        
+    end
+
+    return p
+
+end
+
+function _plot_average_simulated_particle_size_yearly_mean(
+    X::AbstractVector{<:AbstractFloat},
+    year_first::Int,
+    year_last::Int,
+    japanese::Bool
+    )
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="平均粒径 (mm)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Mean diameter (mm)"
+    end        
+
+    legend_title_year = string(
+        year_first,
+        "-",
+        year_last
+    )
+    
+    p = plot(
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(X[begin], X[end]),
+        ylims=(-10, 160),
+        legend=:best,
+        title=legend_title_year,
+        legend_font_pointsize=11,
+        legend_title_font_pointsize=12,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    return p
+
+end
 
 #平均粒径の時系列的な変化を示すグラフを作りたい
 function graph_temporal_variation_average_simulated_particle_size_fluc(

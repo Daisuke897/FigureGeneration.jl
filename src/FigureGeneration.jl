@@ -82,8 +82,8 @@ include("riverbed_graph.jl")
 using .RiverbedGraph
 export
     plot_riverbed_elevation_cross_averaged,
-    plot_riverbed_elevation_cross_minimum,    
-    difference_final_average_riverbed,
+    plot_riverbed_elevation_cross_minimum,
+    plot_error_riverbed_elevation_cross_minimum,
     graph_comparison_difference_average_riverbed,    
     graph_cumulative_change_in_riverbed,
     graph_condition_change_in_riverbed,

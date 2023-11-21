@@ -33,7 +33,7 @@ include("./sub_riverbed/heatmap_riverbed.jl")
 export
     plot_riverbed_elevation_cross_averaged,
     plot_riverbed_elevation_cross_minimum,
-    difference_final_average_riverbed,
+    plot_error_riverbed_elevation_cross_minimum,
     graph_comparison_difference_average_riverbed,
     graph_cumulative_change_in_riverbed,
     graph_condition_change_in_riverbed,    
@@ -62,7 +62,7 @@ export
 
 #core_comparison_final_average_riverbed_1はタイトルに秒数が入る
 function core_comparison_final_average_riverbed_1(
-title_01, data_file, hours_calculate_end, time_schedule)   
+    title_01, data_file, hours_calculate_end, time_schedule)   
     
     distance_from_upstream = data_file[data_file.T .== 0, :I]
     
@@ -71,14 +71,14 @@ title_01, data_file, hours_calculate_end, time_schedule)
     start_index, finish_index = decide_index_number(hours_calculate_end)
     
     want_title = making_time_series_title(title_01, hours_calculate_end,
-    seconds_now, time_schedule)
+                                          seconds_now, time_schedule)
     
     return want_title, distance_from_upstream, start_index, finish_index 
 end
 
 #core_comparison_final_average_riverbed_2はタイトルに秒数が入らない
 function core_comparison_final_average_riverbed_2(
-title_01, data_file, hours_calculate_end, time_schedule)    
+    title_01, data_file, hours_calculate_end, time_schedule)    
     
     distance_from_upstream = data_file[data_file.T .== 0, :I]
     
@@ -160,6 +160,51 @@ function _plot_riverbed_elevation_2!(
 
 end
 
+function _plot_riverbed_elevation_3!(
+    p::Plots.Plot,
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    start_index::Int,
+    finish_index::Int,
+    symbol_elevation::Symbol,
+    distance_from_upstream,
+    df_vararg::NTuple{N, Tuple{Int, AbstractString}},
+    ::Val{N}
+    ) where {N}
+
+    for i in 1:N
+
+        idx          = df_vararg[i][1]
+        legend_label = df_vararg[i][2]        
+        
+        average_riverbed_level = df_main.tuple[idx][start_index:finish_index, symbol_elevation]
+        max_riverbed_level     = df_max.tuple[idx][start_index:finish_index, symbol_elevation]
+        max_riverbed_level     .= max_riverbed_level .- average_riverbed_level
+        
+        min_riverbed_level     = df_min.tuple[idx][start_index:finish_index, symbol_elevation]
+        min_riverbed_level     .= average_riverbed_level .- min_riverbed_level
+        
+        plot!(
+            p,
+            distance_from_upstream,
+            reverse(average_riverbed_level), 
+            label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1,
+            ribbon=(
+                reverse!(min_riverbed_level),
+                reverse!(max_riverbed_level)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha=0.3
+        )
+        
+    end
+
+end
+
+
 
 """
 実測と再現の断面平均河床位のグラフを作る関数
@@ -216,7 +261,7 @@ function plot_riverbed_elevation_cross_averaged(
         df_vararg,
         Val(N)
     )    
-        
+    
     return p
     
 end
@@ -276,10 +321,76 @@ function plot_riverbed_elevation_cross_minimum(
         df_vararg,
         Val(N)
     )    
-        
+    
     return p
     
 end
+
+"""
+実測と再現の最低河床位のグラフを作る関数
+実測河床位が存在する場合
+最大値・最小値ケースのレンジ付き
+"""
+function plot_riverbed_elevation_cross_minimum(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    riverbed_level_data,
+    time_schedule,    
+    hour_target::Int,
+    when_year::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3
+
+    p = _plot_riverbed_elevation_1(
+        when_year,
+        want_title,
+        japanese
+    )
+
+    label_s = if japanese==true
+        string(when_year, " 実測河床位")
+    else
+        string("Measured in ", when_year)
+    end
+    
+    plot!(
+        p,
+        distance_from_upstream,
+        reverse(riverbed_level_data[:, Symbol(when_year)]), 
+	linecolor=:midnightblue,
+        linewidth=1,
+        label=label_s
+    )
+
+    _plot_riverbed_elevation_3!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        start_index,
+        finish_index,
+        :Zbmin,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )    
+    
+    return p
+    
+end
+
 
 
 #実測と再現の河床位を比較するグラフを作る関数
@@ -292,8 +403,8 @@ function comparison_final_average_riverbed(
     )
 
     want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule)
+        core_comparison_final_average_riverbed_2("", data_file,
+                                                 hours_calculate_end, time_schedule)
 
     average_riverbed_level = data_file[start_index:finish_index, :Zbave]
 
@@ -309,181 +420,100 @@ function comparison_final_average_riverbed(
     
     vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
     plot!(distance_from_upstream.*10^-3,
-        reverse(average_riverbed_level), 
-        label=label_s,  
-        ylabel=y_label, xlims=(0,77.8), ylims=(-20,85),
-	title=want_title, xlabel=x_label,
-	xticks=[0, 20, 40, 60, 77.8],
-	linecolor=:orangered,
-	linewidth=2, legend=:topleft)
+          reverse(average_riverbed_level), 
+          label=label_s,  
+          ylabel=y_label, xlims=(0,77.8), ylims=(-20,85),
+	  title=want_title, xlabel=x_label,
+	  xticks=[0, 20, 40, 60, 77.8],
+	  linecolor=:orangered,
+	  linewidth=2, legend=:topleft)
 end
 
-#実測と再現の河床位の誤差を表示するグラフを作る関数
-function difference_final_average_riverbed(
-    hours_calculate_end,
-    riverbed_level_data,
-    data_file,
-    time_schedule,
-    when_year::Int,
-    japanese::Bool=false
-    )
-    
-    want_title, distance_from_upstream, start_index, finish_index =
-    core_comparison_final_average_riverbed_2("", data_file,
-    hours_calculate_end, time_schedule)
-
-    average_riverbed_level = data_file[start_index:finish_index, :Zbave]
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
-
-    difference_riverbed = average_riverbed_level .- riverbed_level
-
-    label_s   = "Error in Riverbed Elevation"
-    x_label   = "Distance from the estuary (km)"
-    y_label   = "Error (m)"
-
-    if japanese==true
-        label_s   = "実測河床位との誤差"
-        x_label   = "河口からの距離 (km)"
-        y_label   = "誤差 (m)"
-    end
-    
-    vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=3)
-    hline!([0], line=:black, label="", linestyle=:dot, linewidth=3)
-    plot!(distance_from_upstream.*10^-3, reverse(difference_riverbed), 
-        label=label_s,  
-        ylabel=y_label, xlims=(0,77.8), title=want_title,
-	xlabel=x_label,
-	xticks=[0, 20, 40, 60, 77.8],
-	linewidth=2, legend=:bottomleft, ylims=(-3,3))
-end
-
-function difference_final_average_riverbed(
-    hours_calculate_end::Int,
+"""
+河床標高の誤差をプロットする
+"""
+function plot_error_riverbed_elevation_cross_minimum(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
     riverbed_level_data,
     time_schedule,
+    hour_target::Int,
     when_year::Int,
-    df_main::Main_df;
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
     japanese::Bool=false
-    )
+    ) where {N}
     
     want_title, distance_from_upstream, start_index, finish_index =
         core_comparison_final_average_riverbed_2(
             "",
-            df_main.tuple[1],
-            hours_calculate_end,
+            df_main.tuple[begin],
+            hour_target,
             time_schedule
         )
 
+    distance_from_upstream .= distance_from_upstream .* 10^-3    
+
     riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
-    label_s   = "Error in Riverbed Elevation"
-    x_label   = "Distance from the estuary (km)"
-    y_label   = "Errors (m)"
-
     if japanese==true
-        label_s   = "実測河床位との誤差"
         x_label   = "河口からの距離 (km)"
         y_label   = "誤差 (m)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Error (m)"
     end
     
     p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
 
     plot!(
         p,
         ylabel=y_label,
         xlims=(0,77.8),
         title=want_title,
-	    xlabel=x_label,
-	    xticks=[0, 20, 40, 60, 77.8],
+	xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
         xflip=true,
-	    legend=:bottomleft,
-        ylims=(-3.2,3.2),
+	legend=:bottomleft,
+        ylims=(-13, 13)
     )
 
-    
-    for (i, df) in enumerate(df_main.tuple)
+    measured_riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
-        average_riverbed_level = df[start_index:finish_index, :Zbave]
-        difference_riverbed = average_riverbed_level .- riverbed_level
+    for i in 1:N
+
+        idx          = df_vararg[i][1]
+        legend_label = df_vararg[i][2]        
         
-        legend_label = string("Case ", i)
+        average_riverbed_level = df_main.tuple[idx][start_index:finish_index, :Zbmin]
+        average_riverbed_level .= average_riverbed_level .- measured_riverbed_level
+        
+        max_riverbed_level     = df_max.tuple[idx][start_index:finish_index, :Zbmin]
+        max_riverbed_level     .= max_riverbed_level .- measured_riverbed_level
+        max_riverbed_level     .= max_riverbed_level .- average_riverbed_level
+        
+        min_riverbed_level     = df_min.tuple[idx][start_index:finish_index, :Zbmin]
+        min_riverbed_level     .= min_riverbed_level .- measured_riverbed_level
+        min_riverbed_level     .= average_riverbed_level .- min_riverbed_level
         
         plot!(
-            distance_from_upstream.*10^-3,
-            reverse(difference_riverbed), 
-            label=legend_label,  
+            p,
+            distance_from_upstream,
+            reverse(average_riverbed_level), 
+            label=legend_label,
             linecolor=palette(:Set1_9)[i],
-            linewidth=1
-        )
-        
-    end
-
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
-
-    return p
-end
-
-
-function difference_final_average_riverbed(
-    hours_calculate_end::Int,
-    riverbed_level_data,
-    time_schedule,
-    when_year::Int,
-    string_title::String,
-    string_label::String,
-    df_main::Main_df,
-    target_df::Int;
-    japanese::Bool=false
-    )
-    
-    want_title, distance_from_upstream, start_index, finish_index =
-        core_comparison_final_average_riverbed_2(
-            string_title,
-            df_main.tuple[target_df],
-            hours_calculate_end,
-            time_schedule
+            linewidth=1,
+            ribbon=(
+                reverse!(min_riverbed_level),
+                reverse!(max_riverbed_level)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha=0.3
         )
 
-    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
-
-    label_s   = "Error in Riverbed Elevation"
-    x_label   = "Distance from the estuary (km)"
-    y_label   = "Error (m)"
-
-    if japanese==true
-        label_s   = "実測河床位との誤差"
-        x_label   = "河口からの距離 (km)"
-        y_label   = "誤差 (m)"
     end
-    
-    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
-
-    plot!(
-        p,
-        ylabel=y_label,
-        xlims=(0,77.8),
-        title=want_title,
-	    xlabel=x_label,
-	    xticks=[0, 20, 40, 60, 77.8],
-        xflip=true,
-	    legend=:bottomleft,
-        ylims=(-3.2,3.2),
-    )
-
-    average_riverbed_level = df_main.tuple[target_df][start_index:finish_index, :Zbave]
-    difference_riverbed = average_riverbed_level .- riverbed_level
-        
-    legend_label = string_label
-        
-    plot!(
-        distance_from_upstream.*10^-3,
-        reverse(difference_riverbed), 
-        label=legend_label,  
-        linecolor=palette(:Set1_9)[1],
-        linewidth=1
-    )
-
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
 
     return p
 end
@@ -495,7 +525,7 @@ function graph_comparison_difference_average_riverbed(
     when_year::Int,
     df_vector;
     japanese::Bool=false
-)
+    )
     
     p1 = comparison_final_average_riverbed(
         hours_calculate_end,
@@ -594,7 +624,7 @@ function cumulative_change_in_simulated_riverbed_elevation(
     
     start_index_1, finish_index_1 = decide_index_number(start_target_hour)
     start_index_2, finish_index_2 = decide_index_number(final_target_hour)  
-        
+    
     flow_size=length(data_file[start_index_2:finish_index_2, :Zbave])
     cumulative_change_simulated=zeros(
         eltype(data_file[start_index_2:finish_index_2, :Zbave]),
@@ -725,34 +755,34 @@ function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::In
     
     average_riverbed_whole = Statistics.mean(
         Tables.columntable(riverbed_level[:, :])[Symbol(when_year)]
-        )
-	
+    )
+    
     return average_riverbed_whole
 end
 
 # 区間別の実測河床位の年ごとの平均値を出力する関数
 function observed_riverbed_average_section(riverbed_level::DataFrame,when_year::Int,
-    section_index)
+                                           section_index)
     
     #average_riverbed_level_whole = Statistics.mean(
     #    Tables.columntable(riverbed_level[:, :])[Symbol(when_year)]
     #    )
-	
+    
     average_riverbed_section = zeros(Float64,length(section_index))
     
     observed_riverbed_average_section!(average_riverbed_section,
-        riverbed_level,when_year,section_index)
+                                       riverbed_level,when_year,section_index)
 
     return average_riverbed_section
 end
 
 function observed_riverbed_average_section!(average_riverbed_section,
-    riverbed_level::DataFrame,when_year::Int,section_index)
-    	
+                                            riverbed_level::DataFrame,when_year::Int,section_index)
+    
     for i in 1:length(section_index)
         average_riverbed_section[i]=Statistics.mean(
 	    Tables.columntable(riverbed_level[:, :])[Symbol(when_year)][section_index[i][1]:section_index[i][2]]
-	    )
+	)
     end
     
     return average_riverbed_section
@@ -765,13 +795,13 @@ function observed_riverbed_average_whole_each_year(
     average_riverbed_level_whole_each_year=zeros(Float64, length(exist_riverbed_level_years))
 
     observed_riverbed_average_whole_each_year!(average_riverbed_level_whole_each_year,
-        riverbed_level,exist_riverbed_level_years)
+                                               riverbed_level,exist_riverbed_level_years)
     
     return average_riverbed_level_whole_each_year
 end
 
 function observed_riverbed_average_whole_each_year!(average_riverbed_level_whole_each_year,
-    riverbed_level::DataFrame,exist_riverbed_level_years)
+                                                    riverbed_level::DataFrame,exist_riverbed_level_years)
     
     for (index, target_year) in enumerate(exist_riverbed_level_years)
         string_target_year=string(target_year)
@@ -791,13 +821,13 @@ function observed_riverbed_average_section_each_year(
         zeros(Float64, length(section_index), length(exist_riverbed_level_years))
 
     observed_riverbed_average_section_each_year!(average_riverbed_level_section_each_year,
-        riverbed_level,section_index,exist_riverbed_level_years)
+                                                 riverbed_level,section_index,exist_riverbed_level_years)
     
     return average_riverbed_level_section_each_year
 end
 
 function observed_riverbed_average_section_each_year!(average_riverbed_level_section_each_year,
-    riverbed_level::DataFrame,section_index,exist_riverbed_level_years)
+                                                      riverbed_level::DataFrame,section_index,exist_riverbed_level_years)
     
     for (index, target_year) in enumerate(exist_riverbed_level_years)
         string_target_year=string(target_year)
@@ -806,7 +836,7 @@ function observed_riverbed_average_section_each_year!(average_riverbed_level_sec
 	    observed_riverbed_average_section!(
 	        average_riverbed_level_section_each_year[:,index],
                 riverbed_level,string_target_year,section_index
-		)
+	    )
 
     end
     
@@ -988,7 +1018,7 @@ function graph_variation_per_year_simulated_riverbed_level(
                 0.2*(i_max-final_area_index), 0.2*(i_max-first_area_index)
             )
         end
-                
+        
         plot!(
             p,
             [keys_year; keys_year[end]+1],
@@ -1140,9 +1170,9 @@ end
 
 # 実測の断面平均河床位を表示する
 function graph_observed_rb_level(
-        observed_riverbed_level::DataFrame,
-        year::Int;
-        japanese::Bool=false
+    observed_riverbed_level::DataFrame,
+    year::Int;
+    japanese::Bool=false
     )
     
     X = [0.2*(i-1) for i in 1:size(observed_riverbed_level, 1)]
@@ -1194,7 +1224,7 @@ function river_width_crossing(
         size_crossing_points,
         measured_width,
         area_index
-	)
+    )
 
     return measured_width_crossing
 
@@ -1202,9 +1232,9 @@ end
 
 # 実測の断面平均河床位の勾配を計算する関数
 function observed_riverbed_gradient!(
-        riverbed_gradient,
-        observed_riverbed_level,
-        year
+    riverbed_gradient,
+    observed_riverbed_level,
+    year
     )
     
     for i in 1:length(riverbed_gradient)
@@ -1216,9 +1246,9 @@ end
 
 # 実測の断面平均河床位の勾配のグラフを作成
 function graph_observed_rb_gradient(
-        observed_riverbed_level::DataFrame,
-        year::Int;
-        japanese::Bool=false
+    observed_riverbed_level::DataFrame,
+    year::Int;
+    japanese::Bool=false
     )
     
     X1 = [0.2*(i-1) for i in 1:size(observed_riverbed_level, 1)]
@@ -1262,8 +1292,8 @@ end
 
 # 実測の河川の川幅を示すグラフ
 function graph_transverse_distance(
-        river_width::DataFrame;
-        japanese::Bool=false
+    river_width::DataFrame;
+    japanese::Bool=false
     )
     
     X = [0.2*(i-1) for i in 1:size(river_width, 1)]
@@ -1300,10 +1330,10 @@ end
 
 # 実測の河床位、勾配、川幅を表すグラフ
 function graph_elevation_gradient_width(
-        observed_riverbed_level::DataFrame,
-        river_width::DataFrame,
-        year::Int;
-        japanese::Bool=false
+    observed_riverbed_level::DataFrame,
+    river_width::DataFrame,
+    year::Int;
+    japanese::Bool=false
     )
     
     l = @layout[a; b; c]
@@ -1360,8 +1390,8 @@ function graph_elevation_gradient_width(
 end
 
 function observed_riverbed_gradient(
-        observed_riverbed_level::DataFrame,
-        year::Int
+    observed_riverbed_level::DataFrame,
+    year::Int
     )
     size_flow = size(observed_riverbed_level, 1)
     
@@ -1407,8 +1437,8 @@ function graph_measured_rb_crossing_1_year_en(
             area_index,
             year
         ),
-	    measured_rb[year][!, Symbol(area_index)],
-	    legend=:outerright,
+	measured_rb[year][!, Symbol(area_index)],
+	legend=:outerright,
         label=year,
         xlabel="Distance from Left Bank (m)",
         ylabel="Elevation (m)",
@@ -1429,7 +1459,7 @@ function graph_measured_rb_crossing_several_years(
     years = sort(collect(keys(measured_cross_rb.dict)))
 
     p = plot(
-	    legend=:none,
+	legend=:none,
         xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
@@ -1470,13 +1500,13 @@ function graph_simulated_rb_crossing(
     )
 
     want_title = making_time_series_title("",
-        time_index, time_schedule)
+                                          time_index, time_schedule)
 
     first_i, last_i = decide_index_number(time_index)
     
     target_cross_rb = Matrix(
         df_cross[first_i:last_i, Between(:Zb001, :Zb101)]
-	)'
+    )'
 
     river_width_x = river_width_crossing(
         measured_width,
@@ -1486,19 +1516,19 @@ function graph_simulated_rb_crossing(
 
     p = plot(
         river_width_x,
-	    measured_cross_rb[year][:, Symbol(area_index)],
+	measured_cross_rb[year][:, Symbol(area_index)],
         legend=:outerright,
-	    label=string("Measured in ", year),
+	label=string("Measured in ", year),
     	xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=string(
             Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
-	        " ",
+	    " ",
             want_title
         ),
         linecolor=:midnightblue,
         legend_font_pointsize=10
-	)
+    )
 
     size_crossing_points = size(measured_cross_rb[year], 1)
 
@@ -1516,11 +1546,11 @@ function graph_simulated_rb_crossing(
         p,
         river_width_x,
         vec_cross_rb,
-	    label="Simulated"
-	)
+	label="Simulated"
+    )
 
     return p
-	
+    
 end
 
 function graph_simulated_rb_crossing(
@@ -1534,11 +1564,11 @@ function graph_simulated_rb_crossing(
     )
 
     want_title = making_time_series_title("",
-        time_index, time_schedule)
+                                          time_index, time_schedule)
     first_i, last_i = decide_index_number(time_index)
     target_cross_rb = Matrix(
         df_cross[1][first_i:last_i, Between(:Zb001, :Zb101)]
-	)'
+    )'
 
     river_width_x = river_width_crossing(
         measured_width,
@@ -1548,19 +1578,19 @@ function graph_simulated_rb_crossing(
 
     p = plot(
         river_width_x,
-	    measured_cross_rb[year][:, Symbol(area_index)],
+	measured_cross_rb[year][:, Symbol(area_index)],
         legend=:outerright,
-	    label=string("Measured in ", year),
+	label=string("Measured in ", year),
     	xlabel="Distance from Left Bank (km)",
         ylabel="Elevation (m)",
         title=string(
             Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
-	        " ",
+	    " ",
             want_title
         ),
         linecolor=:midnightblue,
         legend_font_pointsize=10
-	)
+    )
 
     size_crossing_points = size(measured_cross_rb[year], 1)
 
@@ -1572,7 +1602,7 @@ function graph_simulated_rb_crossing(
                 Between(
                     :Zb001,
                     Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))
-                    )
+                )
             ]
         )'[:, area_index]
 
@@ -1580,13 +1610,13 @@ function graph_simulated_rb_crossing(
             p,
             river_width_x,
             vec_cross_rb,
-	        label=string("Scenario ", i)
-	    )
+	    label=string("Scenario ", i)
+	)
 
     end
     
     return p
-	
+    
 end
 
 function graph_simulated_rb_crossing(
@@ -1617,7 +1647,7 @@ function graph_simulated_rb_crossing(
     hline!(p, [water_level], label="Water Level", color=:dodgerblue)
 
     return p
-	
+    
 end
 
 function calc_std_cross_rb_elevation!(
@@ -1625,23 +1655,23 @@ function calc_std_cross_rb_elevation!(
     measured_cross_rb::Measured_cross_rb,
     years::Vector{Int},
     ) where T <: AbstractFloat
-   
+    
     for i in 1:size(std_cross_rb_ele, 2)
-    
+        
         for j in 1:size(std_cross_rb_ele, 1)
-    
+            
             stock_rb_ele = zeros(length(years))
 
             for (k, year) in enumerate(years)
-   
+                
                 stock_rb_ele[k] = measured_cross_rb.dict[year][j, i]
-    
+                
             end
-        
+            
             std_cross_rb_ele[j, i] = Statistics.std(stock_rb_ele)
-        
+            
         end
-    
+        
     end
     
 end
@@ -1664,31 +1694,31 @@ function calc_std_cross_rb_elevation(
 end
 
 function diff_measured_cross_rb_elevation!(
-        diff_cross_rb_ele::Matrix{T},
-        measured_cross_rb::Measured_cross_rb,
-        start_year::Int,
-        final_year::Int
+    diff_cross_rb_ele::Matrix{T},
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int
     ) where T <: AbstractFloat
     
     for i in 1:size(diff_cross_rb_ele, 2)
-    
-        for j in 1:size(diff_cross_rb_ele, 1)
         
+        for j in 1:size(diff_cross_rb_ele, 1)
+            
             diff_cross_rb_ele[j, i] = 
                 measured_cross_rb.dict[final_year][j, i] - 
                 measured_cross_rb.dict[start_year][j, i]
-        
+            
         end
-    
+        
     end
     
 end
 
 function diff_measured_cross_rb_elevation(
-        measured_cross_rb::Measured_cross_rb,
-        start_year::Int,
-        final_year::Int
-        )
+    measured_cross_rb::Measured_cross_rb,
+    start_year::Int,
+    final_year::Int
+    )
     
     years = sort(collect(keys(measured_cross_rb.dict)))
     
@@ -1709,7 +1739,7 @@ function diff_measured_cross_rb_elevation(
         error("There is no actual measured river bed elevation for that year.")
         
     end
-     
+    
 end
 
 function graph_variation_per_year_mearsured_riverbed_level(
@@ -1836,18 +1866,18 @@ function graph_variation_per_year_mearsured_riverbed_level_with_linear_model(
     end
 
     p = graph_variation_per_year_mearsured_riverbed_level(
-      measured_cross_rb,
-      area_index_flow,
-      area_index_cross;
-      japanese=false
+        measured_cross_rb,
+        area_index_flow,
+        area_index_cross;
+        japanese=false
     )
     
     rb_model = fit_linear_variation_per_year_mearsured_riverbed_level(
-      measured_cross_rb,
-      area_index_flow,
-      area_index_cross,
-      1965,
-      1975
+        measured_cross_rb,
+        area_index_flow,
+        area_index_cross,
+        1965,
+        1975
     )
     
     coefs = GLM.coef(rb_model)
@@ -1855,19 +1885,19 @@ function graph_variation_per_year_mearsured_riverbed_level_with_linear_model(
     years = 1965:1975
     
     plot!(
-      p,
-      years,
-      f.(years, coefs[1], coefs[2]),
-      linestyle=:dash,
-      label="Before 1975"
+        p,
+        years,
+        f.(years, coefs[1], coefs[2]),
+        linestyle=:dash,
+        label="Before 1975"
     )
     
     rb_model = fit_linear_variation_per_year_mearsured_riverbed_level(
-      measured_cross_rb,
-      area_index_flow,
-      area_index_cross,
-      1975,
-      1999
+        measured_cross_rb,
+        area_index_flow,
+        area_index_cross,
+        1975,
+        1999
     )
     
     coefs = GLM.coef(rb_model)
@@ -1875,16 +1905,16 @@ function graph_variation_per_year_mearsured_riverbed_level_with_linear_model(
     years = 1975:1999
     
     plot!(
-      p,
-      years,
-      f.(years, coefs[1], coefs[2]),
-      linestyle=:dash,
-      label="After 1975"
+        p,
+        years,
+        f.(years, coefs[1], coefs[2]),
+        linestyle=:dash,
+        label="After 1975"
     )
     
     plot!(
-      p,
-      legend=:outerright
+        p,
+        legend=:outerright
     )
     
     return p
@@ -1902,7 +1932,7 @@ function slope_linear_model_measured_cross_rb_elevation!(
         for i in 1:size(slope_cross_rb_ele, 2)
             
             for j in 1:size(slope_cross_rb_ele, 1) 
-            
+                
                 rb_model_linear = fit_linear_variation_per_year_mearsured_riverbed_level(
                     measured_cross_rb,
                     i,
@@ -1912,7 +1942,7 @@ function slope_linear_model_measured_cross_rb_elevation!(
                 )
                 
                 slope_cross_rb_ele[j, i] = GLM.coef(rb_model_linear)[2]
-            
+                
             end
             
         end
@@ -1930,27 +1960,27 @@ function slope_linear_model_measured_cross_rb_elevation(
     start_year::Int,
     final_year::Int
     )
-        
+    
     slope_cross_rb_ele = zeros(size(measured_cross_rb.dict[start_year]))
-       
+    
     slope_linear_model_measured_cross_rb_elevation!(
         slope_cross_rb_ele,
         measured_cross_rb,
         start_year,
         final_year
     )
-        
+    
     return slope_cross_rb_ele
     
 end
 
 function graph_variation_per_year_simulated_riverbed_level(
-        cross_rb::DataFrame,
-        each_year_timing::Each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int;
-        japanese=false
+    cross_rb::DataFrame,
+    each_year_timing::Each_year_timing,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    n_x::Int;
+    japanese=false
     )
     
     
@@ -2028,13 +2058,13 @@ function graph_variation_per_year_simulated_riverbed_level(
 end
 
 function variation_per_year_simulated_riverbed_level!(
-        vec_riverbed_level::Vector{Float64},
-        cross_rb::DataFrame,
-        each_year_timing::Each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        years::Vector{Int}
+    vec_riverbed_level::Vector{Float64},
+    cross_rb::DataFrame,
+    each_year_timing::Each_year_timing,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    n_x::Int,
+    years::Vector{Int}
     )
 
     
@@ -2055,9 +2085,9 @@ function variation_per_year_simulated_riverbed_level!(
     )[1]
     
     for (k, t) in enumerate(vec_i_first)
-                    
+        
         vec_riverbed_level[k] = cross_rb[t+area_index_flow-1, Symbol(Printf.@sprintf("Zb%03i", area_index_cross))]                    
-                    
+        
     end
     
     return vec_riverbed_level
@@ -2065,12 +2095,12 @@ function variation_per_year_simulated_riverbed_level!(
 end
 
 function variation_per_year_simulated_riverbed_level(
-        cross_rb::DataFrame,
-        each_year_timing::Each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        years::Vector{Int}
+    cross_rb::DataFrame,
+    each_year_timing::Each_year_timing,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    n_x::Int,
+    years::Vector{Int}
     )
 
     vec_riverbed_level = zeros(Float64, length(years))
@@ -2090,13 +2120,13 @@ function variation_per_year_simulated_riverbed_level(
 end
 
 function fit_linear_variation_per_year_simulated_riverbed_level(
-        cross_rb::DataFrame,
-        each_year_timing::Each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        start_year::Int,
-        final_year::Int
+    cross_rb::DataFrame,
+    each_year_timing::Each_year_timing,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    n_x::Int,
+    start_year::Int,
+    final_year::Int
     )
     
     years = collect(start_year:final_year+1)
@@ -2128,7 +2158,7 @@ function calc_std_simulated_cross_rb_elevation!(
     start_year::Int,
     final_year::Int
     )
-   
+    
     n_x, n_y = size(std_cross_rb_ele)
 
     years = Vector{Int}(undef, 0)
@@ -2146,37 +2176,37 @@ function calc_std_simulated_cross_rb_elevation!(
     n = length(years) + 1
     
     vec_i_first = zeros(Int, n)
-        
+    
     vec_i_first[1] = GeneralGraphModule.decide_index_number(
         each_year_timing.dict[years[1]][1],
         n_x
     )[1]
     
     for (k, year) in enumerate(years)
-           
+        
         vec_i_first[k+1] = GeneralGraphModule.decide_index_number(
             each_year_timing.dict[year][2],
             n_x
         )[1]
-            
-    end
         
+    end
+    
     for i in 1:n_y
-            
+        
         for j in 1:n_x
-                
+            
             temp_std = zeros(Float64, n)
             
             for (k, t) in enumerate(vec_i_first)
-                    
-                temp_std[k] = cross_rb[t+j-1, Symbol(Printf.@sprintf("Zb%03i", i))]                    
-                    
-            end
                 
-            std_cross_rb_ele[j, i] = Statistics.std(temp_std)
-             
-        end
+                temp_std[k] = cross_rb[t+j-1, Symbol(Printf.@sprintf("Zb%03i", i))]                    
+                
+            end
             
+            std_cross_rb_ele[j, i] = Statistics.std(temp_std)
+            
+        end
+        
     end
     
     return std_cross_rb_ele 
@@ -2191,7 +2221,7 @@ function calc_std_simulated_cross_rb_elevation(
     start_year::Int,
     final_year::Int
     )
-        
+    
     std_cross_rb_ele = zeros(Float64, n_x, n_y)
     
 
@@ -2202,21 +2232,21 @@ function calc_std_simulated_cross_rb_elevation(
         start_year,
         final_year
     )
-        
+    
     return std_cross_rb_ele 
     
 end
 
 function graph_variation_per_year_simulated_riverbed_level_with_linear_model(
-        cross_rb::DataFrame,
-        each_year_timing::Each_year_timing,
-        area_index_flow::Int,
-        area_index_cross::Int,
-        n_x::Int,
-        start_year::Int,
-        final_year::Int,
-        mid_year::Int;
-        japanese::Bool=false
+    cross_rb::DataFrame,
+    each_year_timing::Each_year_timing,
+    area_index_flow::Int,
+    area_index_cross::Int,
+    n_x::Int,
+    start_year::Int,
+    final_year::Int,
+    mid_year::Int;
+    japanese::Bool=false
     )
 
     function f(
@@ -2286,5 +2316,380 @@ function graph_variation_per_year_simulated_riverbed_level_with_linear_model(
     return p
     
 end
+
+"""
+上流側の勾配を求める。
+上りなら正の値
+上流境界ならNaN
+"""
+function calc_gradient_upstream(
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    index_hour::Int,
+    flow_size::Int
+    )
+
+    index_start, index_last = decide_index_number(
+        index_hour,
+        flow_size
+    )
+
+    ret = 0.0
+
+    if (index_area <= 1) || (index_area > flow_size)
+        
+        ret = NaN
+        
+    else
+
+        index_area_point_df = index_start - 1 + index_area
+        
+        elevation_point =
+            main_df.tuple[index_df][index_area_point_df,     :Zbmin]
+
+        x_point =
+            main_df.tuple[index_df][index_area_point_df,     :I]
+
+        elevation_up =
+            main_df.tuple[index_df][index_area_point_df - 1, :Zbmin]
+
+        x_up =
+            main_df.tuple[index_df][index_area_point_df - 1, :I]
+
+        ret = (elevation_up - elevation_point) / (x_point - x_up)
+        
+    end
+
+    return ret
+
+end
+
+"""
+下流側の勾配を求める。
+下りなら正の値
+下流境界ならNaN
+"""
+function calc_gradient_downstream(
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    index_hour::Int,
+    flow_size::Int
+    )
+
+    index_start, index_last = decide_index_number(
+        index_hour,
+        flow_size
+    )
+
+    ret = 0.0
+
+    if (index_area < 1) || (index_area >= flow_size)
+        
+        ret = NaN
+        
+    else
+
+        index_area_point_df = index_start - 1 + index_area
+        
+        elevation_point =
+            main_df.tuple[index_df][index_area_point_df,     :Zbmin]
+
+        x_point =
+            main_df.tuple[index_df][index_area_point_df,     :I]
+
+        elevation_down =
+            main_df.tuple[index_df][index_area_point_df + 1, :Zbmin]
+
+        x_down =
+            main_df.tuple[index_df][index_area_point_df + 1, :I]
+
+        ret = (elevation_point - elevation_down) / (x_down - x_point)
+        
+    end
+
+    return ret
+
+end
+
+"""
+特定位置の時系列の上流側の勾配の配列を返す。
+"""
+function calc_gradient_upstream_time_series(
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    flow_size::Int
+    )
+    
+    num_data_time_series::Int =
+        size(main_df.tuple[index_df], 1) / flow_size
+
+    gradient_up = zeros(num_data_time_series)
+
+    calc_gradient_upstream_time_series!(
+        gradient_up,
+        main_df,
+        index_df,
+        index_area,
+        flow_size
+    )    
+    return gradient_up
+
+end
+
+function calc_gradient_upstream_time_series!(
+    gradient_up::AbstractVector{<:AbstractFloat},
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    flow_size::Int
+    )
+    
+    for index_hour in eachindex(gradient_up)
+        gradient_up[index_hour] = calc_gradient_upstream(
+            main_df,
+            index_df,
+            index_area,
+            index_hour-1,
+            flow_size
+        )
+    end
+
+end
+
+function plot_gradient_upstream_time_series(
+    main_df::Main_df,
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    vec_gradient_up = [
+        calc_gradient_upstream_time_series(
+            main_df,
+            df_vararg[i][1],
+            index_area,
+            flow_size
+        )
+        for i in 1:N
+    ]
+
+    p = GeneralGraphModule.plot_time_series_general(
+        index_area,
+        flow_size,
+        river_length_km,
+        japanese,
+        ntuple(
+            i -> tuple(vec_gradient_up[i], df_vararg[i][2]),
+            Val(N)
+        )...
+    )
+
+    plot!(
+        p,
+        ylabel = if japanese
+            "上流側 勾配 (-)"
+        else
+            "Gradient upstream (-)"
+        end
+    )
+
+    return p
+
+end
+
+function plot_gradient_upstream_time_series_variation(
+    main_df::Main_df,
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    vec_gradient_up_base = calc_gradient_upstream_time_series(
+        main_df,
+        index_base_df,
+        index_area,
+        flow_size
+    )
+    
+    vec_gradient_up = [
+        calc_gradient_upstream_time_series(
+            main_df,
+            df_vararg[i][1],
+            index_area,
+            flow_size
+        )
+        for i in 1:N
+    ]
+
+    p = GeneralGraphModule.plot_time_series_variation_general(
+        index_area,
+        flow_size,
+        river_length_km,
+        japanese,
+        vec_gradient_up_base,
+        ntuple(
+            i -> tuple(vec_gradient_up[i], df_vararg[i][2]),
+            Val(N)
+        )...
+            )
+
+
+    plot!(
+        p,
+        ylims=(-Inf, Inf)
+    )
+
+    return p
+
+end
+
+
+"""
+特定位置の時系列の下流側の勾配の配列を返す。
+"""
+function calc_gradient_downstream_time_series(
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    flow_size::Int
+    )
+    
+    num_data_time_series::Int =
+        size(main_df.tuple[index_df], 1) / flow_size
+
+    gradient_down = zeros(num_data_time_series)
+
+    calc_gradient_downstream_time_series!(
+        gradient_down,
+        main_df,
+        index_df,
+        index_area,
+        flow_size
+    )
+
+    return gradient_down
+
+end
+
+function calc_gradient_downstream_time_series!(
+    gradient_down::AbstractVector{<:AbstractFloat},
+    main_df::Main_df,
+    index_df::Int,
+    index_area::Int,
+    flow_size::Int
+    )
+    
+    for index_hour in eachindex(gradient_down)
+        gradient_down[index_hour] = calc_gradient_downstream(
+            main_df,
+            index_df,
+            index_area,
+            index_hour-1,
+            flow_size
+        )
+    end
+
+end
+
+function plot_gradient_downstream_time_series(
+    main_df::Main_df,
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    vec_gradient_down = [
+        calc_gradient_downstream_time_series(
+            main_df,
+            df_vararg[i][1],
+            index_area,
+            flow_size
+        )
+        for i in 1:N
+    ]
+
+    p = GeneralGraphModule.plot_time_series_general(
+        index_area,
+        flow_size,
+        river_length_km,
+        japanese,
+        ntuple(
+            i -> tuple(vec_gradient_down[i], df_vararg[i][2]),
+            Val(N)
+        )...
+    )
+
+    plot!(
+        p,
+        ylabel = if japanese
+            "下流側 勾配 (-)"
+        else
+            "Gradient downstream (-)"
+        end
+    )
+
+    return p
+
+end
+
+function plot_gradient_downstream_time_series_variation(
+    main_df::Main_df,
+    index_area::Int,
+    flow_size::Int,
+    river_length_km::AbstractFloat,
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    vec_gradient_down_base = calc_gradient_downstream_time_series(
+        main_df,
+        index_base_df,
+        index_area,
+        flow_size
+    )
+    
+    vec_gradient_down = [
+        calc_gradient_downstream_time_series(
+            main_df,
+            df_vararg[i][1],
+            index_area,
+            flow_size
+        )
+        for i in 1:N
+    ]
+
+    p = GeneralGraphModule.plot_time_series_variation_general(
+        index_area,
+        flow_size,
+        river_length_km,
+        japanese,
+        vec_gradient_down_base,
+        ntuple(
+            i -> tuple(vec_gradient_down[i], df_vararg[i][2]),
+            Val(N)
+        )...
+            )
+
+
+    plot!(
+        p,
+        ylims=(-Inf, Inf)
+    )
+
+    return p
+
+end
+
 
 end

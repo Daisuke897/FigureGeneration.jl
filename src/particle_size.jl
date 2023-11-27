@@ -27,6 +27,7 @@ export
     graph_ratio_simulated_particle_size_dist,
     plot_average_simulated_particle_size_dist,
     plot_average_simulated_particle_size_yearly_mean,
+    plot_condition_rate_average_simulated_particle_size_yearly_mean,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,
@@ -604,6 +605,122 @@ function _plot_average_simulated_particle_size_yearly_mean(
     return p
 
 end
+
+"""
+複数年の平均粒径の平均値の条件による変化率のグラフを作成する。
+初期値なし
+最大値・最小値のレンジ付き。
+"""
+function plot_condition_rate_average_simulated_particle_size_yearly_mean(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    sediment_size::DataFrame,
+    each_year_timing::Each_year_timing,
+    year_first::Int,
+    year_last::Int,
+    index_base_df::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+    X = df_main.tuple[begin][1:flow_size, :I] ./ 1000
+
+    p = GeneralGraphModule._plot_condition_rate_yearly_mean(
+        X,
+        year_first,
+        year_last,
+        japanese
+    )
+
+    simu_particle_size_dist_mean_base =
+        calc_average_simulated_particle_size_yearly_mean(
+            df_main.tuple[index_base_df],
+            each_year_timing,
+            year_first,
+            year_last,
+            flow_size
+        )   
+
+    simu_particle_size_dist_max_base  =
+        calc_average_simulated_particle_size_yearly_mean(
+            df_max.tuple[index_base_df],
+            each_year_timing,
+            year_first,
+            year_last,
+            flow_size
+        )      
+
+    simu_particle_size_dist_min_base  =
+        calc_average_simulated_particle_size_yearly_mean(
+            df_min.tuple[index_base_df],
+            each_year_timing,
+            year_first,
+            year_last,
+            flow_size
+        )     
+    
+
+    for i in 1:N
+
+        idx_df       = df_vararg[i][1]
+        legend_label = df_vararg[i][2]
+
+        simu_particle_size_dist_mean =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_main.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            )
+        simu_particle_size_dist_mean .=
+            ((simu_particle_size_dist_mean ./ simu_particle_size_dist_mean_base) .- 1.0) .* 100
+
+        simu_particle_size_dist_max  =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_max.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            )
+        simu_particle_size_dist_max .=
+            ((simu_particle_size_dist_max ./ simu_particle_size_dist_max_base) .- 1.0) .* 100
+
+        simu_particle_size_dist_min  =
+            calc_average_simulated_particle_size_yearly_mean(
+                df_min.tuple[idx_df],
+                each_year_timing,
+                year_first,
+                year_last,
+                flow_size
+            )
+        simu_particle_size_dist_min .=
+            ((simu_particle_size_dist_min ./ simu_particle_size_dist_min_base) .- 1.0) .* 100
+        
+        plot!(
+            p,
+            X,
+            reverse(simu_particle_size_dist_mean),
+            label=legend_label,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i],
+            ribbon=(
+                reverse!(simu_particle_size_dist_mean .- simu_particle_size_dist_min),
+                reverse!(simu_particle_size_dist_max .- simu_particle_size_dist_mean)
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha=0.3
+        )
+        
+    end
+
+    return p
+
+end
+
 
 #平均粒径の時系列的な変化を示すグラフを作りたい
 function graph_temporal_variation_average_simulated_particle_size_fluc(

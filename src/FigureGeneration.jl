@@ -116,6 +116,7 @@ export
     graph_ratio_simulated_particle_size_dist,
     plot_average_simulated_particle_size_dist,
     plot_average_simulated_particle_size_yearly_mean,
+    plot_condition_rate_average_simulated_particle_size_yearly_mean,
     graph_average_simulated_particle_size_fluc,
     graph_cumulative_change_in_mean_diameter,
     graph_cumulative_ratio_in_mean_diameter,

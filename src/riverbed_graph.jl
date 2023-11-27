@@ -33,8 +33,8 @@ include("./sub_riverbed/heatmap_riverbed.jl")
 export
     plot_riverbed_elevation_cross_averaged,
     plot_riverbed_elevation_cross_minimum,
+    plot_error_riverbed_elevation_cross_averaged,
     plot_error_riverbed_elevation_cross_minimum,
-    graph_comparison_difference_average_riverbed,
     graph_cumulative_change_in_riverbed,
     graph_condition_change_in_riverbed,    
     observed_riverbed_average_whole_each_year,
@@ -267,6 +267,72 @@ function plot_riverbed_elevation_cross_averaged(
 end
 
 """
+実測と再現の断面平均河床位のグラフを作る関数
+実測河床位が存在する場合
+最大値・最小値ケースのレンジ付き
+"""
+function plot_riverbed_elevation_cross_averaged(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    riverbed_level_data,
+    time_schedule,    
+    hour_target::Int,
+    when_year::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3
+
+    p = _plot_riverbed_elevation_1(
+        when_year,
+        want_title,
+        japanese
+    )
+
+    label_s = if japanese==true
+        string(when_year, " 実測河床位")
+    else
+        string("Measured in ", when_year)
+    end
+    
+    plot!(
+        p,
+        distance_from_upstream,
+        reverse(riverbed_level_data[:, Symbol(when_year)]), 
+	linecolor=:midnightblue,
+        linewidth=1,
+        label=label_s
+    )
+
+    _plot_riverbed_elevation_3!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        start_index,
+        finish_index,
+        :Zbave,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )    
+    
+    return p
+    
+end
+
+
+"""
 実測と再現の最低河床位のグラフを作る関数
 実測河床位が存在する場合
 """
@@ -431,6 +497,78 @@ end
 
 """
 河床標高の誤差をプロットする
+断面平均の比較
+"""
+function plot_error_riverbed_elevation_cross_averaged(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    riverbed_level_data,
+    time_schedule,
+    hour_target::Int,
+    when_year::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+    
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3    
+
+    riverbed_level = riverbed_level_data[:, Symbol(when_year)]
+
+    if japanese==true
+        x_label   = "河口からの距離 (km)"
+        y_label   = "誤差 (m)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Error (m)"
+    end
+    
+    p = vline([40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
+
+    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
+
+    plot!(
+        p,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        title=want_title,
+	xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
+	legend=:bottomleft,
+        ylims=(-13, 13)
+    )
+
+    _plot_error_riverbed_elevation_cross!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        riverbed_level_data,
+        distance_from_upstream,
+        start_index,
+        finish_index,
+        when_year,
+        :Zbave,
+        df_vararg,
+        japanese,
+        Val(N)
+    )
+
+    return p
+end
+
+"""
+河床標高の誤差をプロットする
+最小値の比較
 """
 function plot_error_riverbed_elevation_cross_minimum(
     df_main::Main_df,
@@ -480,6 +618,41 @@ function plot_error_riverbed_elevation_cross_minimum(
         ylims=(-13, 13)
     )
 
+    _plot_error_riverbed_elevation_cross!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        riverbed_level_data,
+        distance_from_upstream,
+        start_index,
+        finish_index,
+        when_year,
+        :Zbmin,
+        df_vararg,
+        japanese,
+        Val(N)
+    )
+
+    return p
+end
+
+function _plot_error_riverbed_elevation_cross!(
+    p::Plots.Plot,
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    riverbed_level_data,
+    distance_from_upstream::AbstractVector{<:AbstractFloat},
+    start_index::Int,
+    finish_index::Int,
+    when_year::Int,
+    sediment_type::Symbol,
+    df_vararg::NTuple{N, Tuple{Int, AbstractString}},
+    japanese::Bool,
+    ::Val{N}
+    ) where {N}
+
     measured_riverbed_level = riverbed_level_data[:, Symbol(when_year)]
 
     for i in 1:N
@@ -487,14 +660,14 @@ function plot_error_riverbed_elevation_cross_minimum(
         idx          = df_vararg[i][1]
         legend_label = df_vararg[i][2]        
         
-        average_riverbed_level = df_main.tuple[idx][start_index:finish_index, :Zbmin]
+        average_riverbed_level = df_main.tuple[idx][start_index:finish_index, sediment_type]
         average_riverbed_level .= average_riverbed_level .- measured_riverbed_level
         
-        max_riverbed_level     = df_max.tuple[idx][start_index:finish_index, :Zbmin]
+        max_riverbed_level     = df_max.tuple[idx][start_index:finish_index, sediment_type]
         max_riverbed_level     .= max_riverbed_level .- measured_riverbed_level
         max_riverbed_level     .= max_riverbed_level .- average_riverbed_level
         
-        min_riverbed_level     = df_min.tuple[idx][start_index:finish_index, :Zbmin]
+        min_riverbed_level     = df_min.tuple[idx][start_index:finish_index, sediment_type]
         min_riverbed_level     .= min_riverbed_level .- measured_riverbed_level
         min_riverbed_level     .= average_riverbed_level .- min_riverbed_level
         
@@ -515,54 +688,9 @@ function plot_error_riverbed_elevation_cross_minimum(
 
     end
 
-    return p
+
 end
 
-function graph_comparison_difference_average_riverbed(
-    hours_calculate_end,
-    riverbed_level_data,
-    time_schedule,
-    when_year::Int,
-    df_vector;
-    japanese::Bool=false
-    )
-    
-    p1 = comparison_final_average_riverbed(
-        hours_calculate_end,
-        riverbed_level_data,
-        time_schedule,
-        when_year,
-        df_vector...;
-        japanese=japanese
-    )
-    
-    plot!(p1, xticks=[], xlabel="")
-    
-    p2 = difference_final_average_riverbed(
-        hours_calculate_end,
-        riverbed_level_data,
-        time_schedule,
-        when_year,
-        df_vector...;
-        japanese=japanese
-    )
-    
-    plot!(p2, title="", legend=:none)
-    
-    l = @layout[a; b]
-    
-    p = plot(
-        p1,
-        p2,
-        layout = l,
-        tickfontsize=11,
-        guidefontsize=11,
-        legend_font_pointsize=9
-    )
-    
-    return p
-    
-end
 
 #累積の河床変動量のグラフを作成したい．
 

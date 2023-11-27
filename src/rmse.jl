@@ -41,9 +41,23 @@ function error_simulated_and_actual_riverbed(data_file, initial_and_final_riverb
     return differential_riverbed
 end
 
+function error_simulated_and_actual_riverbed_minimum(data_file, initial_and_final_riverbed_level, target_hour, which_type)
+    first_i, last_i = decide_index_number(target_hour)
+    differential_riverbed =
+        initial_and_final_riverbed_level[!, which_type] .- data_file[first_i:last_i, :Zbmin]
+    return differential_riverbed
+end
+
 function calculate_RMSE(data_file, initial_and_final_riverbed_level, target_hour, which_type)
     rmse=sqrt(mean(
         error_simulated_and_actual_riverbed(data_file, initial_and_final_riverbed_level, target_hour, which_type).^2
+    ))
+    return rmse
+end
+
+function calculate_RMSE_riverbed_minimum(data_file, initial_and_final_riverbed_level, target_hour, which_type)
+    rmse=sqrt(mean(
+        error_simulated_and_actual_riverbed_minimum(data_file, initial_and_final_riverbed_level, target_hour, which_type).^2
     ))
     return rmse
 end

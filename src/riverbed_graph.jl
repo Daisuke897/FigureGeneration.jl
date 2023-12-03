@@ -1710,7 +1710,7 @@ function graph_simulated_rb_crossing(
         legend=:outerright,
 	label=string("Measured in ", year),
     	xlabel="Distance from Left Bank (km)",
-        ylabel="Elevation (m)",
+        ylabel="Elevation (T.P. m)",
         title=string(
             Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
 	    " ",
@@ -1723,7 +1723,7 @@ function graph_simulated_rb_crossing(
     size_crossing_points = size(measured_cross_rb[year], 1)
 
     for i in 1:length(df_cross)
-        
+
         vec_cross_rb = Matrix(
             df_cross[i][
                 first_i:last_i,
@@ -1742,9 +1742,9 @@ function graph_simulated_rb_crossing(
 	)
 
     end
-    
+
     return p
-    
+
 end
 
 function graph_simulated_rb_crossing(

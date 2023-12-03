@@ -34,11 +34,11 @@ end
 function default_setting_plots(fontfamily::String)
 
     default_setting_plots()
-    
+
     Plots.default(
         fontfamily=fontfamily
     )
-    
+
 end
 
 function check_dir_exist_if_no_mkdir(path_string::String)
@@ -57,7 +57,9 @@ include("read_df_river.jl")
 using .Read_df_river
 export
     Main_df,
-    get_cross_rb_df,
+    Main_df_from_JDF,
+    Cross_riverbed,
+    Cross_riverbed_from_JDF,
     get_time_schedule,
     get_observed_riverbed_level,
     get_observed_riverbed_level_minimum,
@@ -67,8 +69,7 @@ export
     Each_year_timing,
     Section,
     Exist_riverbed_level,
-    Measured_cross_rb,
-    Type_read_main_df_jdf    
+    Measured_cross_rb
 
 include("general_graph_module.jl")
 
@@ -93,22 +94,22 @@ export
     graph_variation_per_year_simulated_riverbed_level,
     graph_variation_per_year_mearsured_riverbed_level,
     graph_variation_per_year_mearsured_riverbed_level_with_linear_model,
-    graph_variation_per_year_simulated_riverbed_level_with_linear_model,    
+    graph_variation_per_year_simulated_riverbed_level_with_linear_model,
     graph_observed_rb_level,
     graph_observed_rb_gradient,
     graph_transverse_distance,
-    graph_elevation_gradient_width,    
+    graph_elevation_gradient_width,
     graph_measured_rb_crossing_1_year_en,
     graph_measured_rb_crossing_several_years,
     graph_simulated_rb_crossing,
     heatmap_measured_cross_rb_elevation,
     heatmap_std_measured_cross_rb_elevation,
-    heatmap_std_simulated_cross_rb_elevation,    
+    heatmap_std_simulated_cross_rb_elevation,
     heatmap_diff_measured_cross_rb_elevation,
     heatmap_diff_per_year_measured_cross_rb_elevation,
-    heatmap_diff_per_year_simulated_cross_rb_elevation,    
+    heatmap_diff_per_year_simulated_cross_rb_elevation,
     heatmap_slope_by_model_measured_cross_rb_elevation,
-    heatmap_slope_by_model_simulated_cross_rb_elevation    
+    heatmap_slope_by_model_simulated_cross_rb_elevation
 
 include("particle_size.jl")
 using .ParticleSize
@@ -141,26 +142,26 @@ export
     plot_yearly_mean_bedload,
     plot_particle_yearly_mean_suspended,
     plot_particle_yearly_mean_bedload,
-    make_graph_percentage_particle_yearly_mean_suspended,    
+    make_graph_percentage_particle_yearly_mean_suspended,
     make_graph_percentage_particle_yearly_mean_bedload,
     make_graph_amount_percentage_particle_yearly_mean_suspended,
-    make_graph_amount_percentage_particle_yearly_mean_bedload,    
+    make_graph_amount_percentage_particle_yearly_mean_bedload,
     plot_time_series_suspended,
     plot_time_series_bedload,
     plot_time_series_variation_suspended,
-    plot_time_series_variation_bedload,    
+    plot_time_series_variation_bedload,
     make_graph_time_series_particle_suspended_load,
     make_graph_time_series_particle_bedload,
     make_graph_time_series_percentage_particle_suspended_load,
     make_graph_time_series_percentage_particle_bedload,
-    make_graph_time_series_amount_percentage_particle_suspended_load,    
-    make_graph_time_series_amount_percentage_particle_bedload,    
+    make_graph_time_series_amount_percentage_particle_suspended_load,
+    make_graph_time_series_amount_percentage_particle_bedload,
     plot_condition_change_particle_yearly_mean_suspended_load,
     plot_condition_rate_yearly_mean_suspended_load,
     plot_condition_rate_particle_yearly_mean_suspended_load,
     make_graph_condition_change_yearly_mean_bedload,
     plot_condition_rate_yearly_mean_bedload,
-    plot_condition_rate_particle_yearly_mean_bedload,    
+    plot_condition_rate_particle_yearly_mean_bedload,
     make_graph_particle_sediment_volume_each_year,
     make_graph_yearly_mean_suspended_load_per_case,
     make_graph_yearly_mean_bed_load_per_case,
@@ -193,7 +194,7 @@ export
     make_graph_energy_slope,
     make_graph_friction_velocity,
     make_graph_non_dimensional_shear_stress,
-    make_graph_area,   
+    make_graph_area,
     make_graph_width,
     make_graph_velocity,
     make_graph_discharge,

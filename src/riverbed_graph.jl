@@ -36,12 +36,12 @@ export
     plot_error_riverbed_elevation_cross_averaged,
     plot_error_riverbed_elevation_cross_minimum,
     graph_cumulative_change_in_riverbed,
-    graph_condition_change_in_riverbed,    
+    graph_condition_change_in_riverbed,
     observed_riverbed_average_whole_each_year,
     observed_riverbed_average_section_each_year,
     graph_simulated_riverbed_fluctuation,
     graph_variation_per_year_simulated_riverbed_level,
-    graph_variation_per_year_mearsured_riverbed_level,    
+    graph_variation_per_year_mearsured_riverbed_level,
     graph_variation_per_year_mearsured_riverbed_level_with_linear_model,
     graph_variation_per_year_simulated_riverbed_level_with_linear_model,
     graph_observed_rb_level,
@@ -276,7 +276,7 @@ function plot_riverbed_elevation_cross_averaged(
     df_max::Main_df,
     df_min::Main_df,
     riverbed_level_data,
-    time_schedule,    
+    time_schedule,
     hour_target::Int,
     when_year::Int,
     df_vararg::Vararg{Tuple{Int, AbstractString}, N};
@@ -304,11 +304,11 @@ function plot_riverbed_elevation_cross_averaged(
     else
         string("Measured in ", when_year)
     end
-    
+
     plot!(
         p,
         distance_from_upstream,
-        reverse(riverbed_level_data[:, Symbol(when_year)]), 
+        reverse(riverbed_level_data[:, Symbol(when_year)]),
 	linecolor=:midnightblue,
         linewidth=1,
         label=label_s
@@ -325,10 +325,80 @@ function plot_riverbed_elevation_cross_averaged(
         distance_from_upstream,
         df_vararg,
         Val(N)
-    )    
-    
+    )
+
     return p
-    
+
+end
+
+"""
+再現の断面平均河床位のグラフを作る関数
+実測河床位が存在しない場合
+最大値・最小値ケースのレンジ付き
+"""
+function plot_riverbed_elevation_cross_averaged(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    time_schedule,
+    hour_target::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3
+
+    if japanese==true
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Elevation (T.P. m)"
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-25,90),
+	title=want_title,
+        xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        legend=:best,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    _plot_riverbed_elevation_3!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        start_index,
+        finish_index,
+        :Zbave,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )
+
+    return p
+
 end
 
 
@@ -430,7 +500,7 @@ function plot_riverbed_elevation_cross_minimum(
     else
         string("Measured in ", when_year)
     end
-    
+
     plot!(
         p,
         distance_from_upstream,
@@ -451,13 +521,171 @@ function plot_riverbed_elevation_cross_minimum(
         distance_from_upstream,
         df_vararg,
         Val(N)
-    )    
-    
+    )
+
     return p
-    
+
 end
 
+"""
+実測と再現の最低河床位のグラフを作る関数
+実測河床位が存在しない場合
+最大値・最小値ケースのレンジ付き
+"""
+function plot_riverbed_elevation_cross_minimum(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    time_schedule,
+    hour_target::Int,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
 
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3
+
+    if japanese==true
+        x_label   = "河口からの距離 (km)"
+        y_label   = "標高 (T.P. m)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Elevation (T.P. m)"
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-25,90),
+	title=want_title,
+        xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        legend=:best,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    _plot_riverbed_elevation_3!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        start_index,
+        finish_index,
+        :Zbmin,
+        distance_from_upstream,
+        df_vararg,
+        Val(N)
+    )
+
+    return p
+
+end
+
+"""
+河床標高
+2つのデータセット間の比較
+"""
+function plot_variation_case_riverbed_elevation(
+    df_main::Main_df,
+    df_base::Main_df,
+    time_schedule,
+    hour_target::Int,
+    symbol_elevation::Symbol,
+    df_vararg::Vararg{Tuple{Int, AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+
+    want_title, distance_from_upstream, start_index, finish_index =
+        core_comparison_final_average_riverbed_2(
+            "",
+            df_main.tuple[begin],
+            hour_target,
+            time_schedule
+        )
+
+    distance_from_upstream .= distance_from_upstream .* 10^-3
+
+    reverse!(distance_from_upstream)
+
+    if japanese==true
+        x_label   = "河口からの距離 (km)"
+        y_label   = "変化量 (m)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Variation (m)"
+    end
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-4, 4),
+	title=want_title,
+        xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        legend=:best,
+        xflip=true
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    hline!(
+        p,
+        [0],
+        line=:black,
+        primary=:false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    for i in 1:N
+
+        idx          = df_vararg[i][1]
+        legend_label = df_vararg[i][2]
+
+        average_riverbed_level = df_main.tuple[idx][start_index:finish_index, symbol_elevation]
+
+        average_riverbed_level_base = df_base.tuple[idx][start_index:finish_index, symbol_elevation]
+
+        average_riverbed_level .-= average_riverbed_level_base
+
+        plot!(
+            p,
+            distance_from_upstream,
+            average_riverbed_level,
+            label=legend_label,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1
+        )
+
+    end
+
+    return p
+
+end
 
 #実測と再現の河床位を比較するグラフを作る関数
 #実測河床位が存在しない場合
@@ -728,54 +956,75 @@ function cumulative_change_in_measured_riverbed_elevation(
     return cumulative_change_measured 
 end
 
-#再現値の累積の河床変動量を計算する．
-function cumulative_change_in_simulated_riverbed_elevation!(
-    cumulative_change_simulated,
-    data_file::DataFrame,
-    start_index_1,
-    finish_index_1,
-    start_index_2,
-    finish_index_2
+function _cumulative_change_in_simulated_riverbed_elevation(
+    data_file::AbstractDataFrame,
+    start_target_hour,
+    final_target_hour,
+    flow_size,
+    riverbed_symbol::Symbol
     )
 
-    cumulative_change_simulated.=data_file[start_index_2:finish_index_2, :Zbave].-
-        data_file[start_index_1:finish_index_1, :Zbave]
-    
-    return cumulative_change_simulated    
+    start_index_1, finish_index_1 =
+        decide_index_number(start_target_hour, flow_size)
+    start_index_2, finish_index_2 =
+        decide_index_number(final_target_hour, flow_size)
+
+    cumulative_change_simulated=similar(
+        data_file[start_index_2:finish_index_2, riverbed_symbol],
+    )
+
+    cumulative_change_simulated.=
+        data_file[start_index_2:finish_index_2, riverbed_symbol].-
+        data_file[start_index_1:finish_index_1, riverbed_symbol]
+
+    return cumulative_change_simulated
 end
 
+
+"""
+再現値の累積の河床変動量を計算する．（断面平均値）
+"""
 function cumulative_change_in_simulated_riverbed_elevation(
-    data_file::DataFrame,
+    data_file::AbstractDataFrame,
     start_target_hour,
-    final_target_hour
+    final_target_hour,
+    flow_size
     )
-    
-    start_index_1, finish_index_1 = decide_index_number(start_target_hour)
-    start_index_2, finish_index_2 = decide_index_number(final_target_hour)  
-    
-    flow_size=length(data_file[start_index_2:finish_index_2, :Zbave])
-    cumulative_change_simulated=zeros(
-        eltype(data_file[start_index_2:finish_index_2, :Zbave]),
-        flow_size
-    )
-    
-    cumulative_change_in_simulated_riverbed_elevation!(
-        cumulative_change_simulated,
+
+    _cumulative_change_in_simulated_riverbed_elevation(
         data_file,
-        start_index_1,
-        finish_index_1,
-        start_index_2,
-        finish_index_2
+        start_target_hour,
+        final_target_hour,
+        flow_size,
+        :Zbave
     )
-    
-    return cumulative_change_simulated 
+
+end
+
+"""
+再現値の累積の河床変動量を計算する．（断面最低値）
+"""
+function cumulative_change_in_simulated_riverbed_elevation_minimum(
+    data_file::AbstractDataFrame,
+    start_target_hour,
+    final_target_hour,
+    flow_size
+    )
+
+    _cumulative_change_in_simulated_riverbed_elevation(
+        data_file,
+        start_target_hour,
+        final_target_hour,
+        flow_size,
+        :Zbmin
+    )
+
 end
 
 #累積の河床変動量のグラフを作る関数
-
 function _graph_cumulative_change_in_riverbed!(
     p::Plots.Plot,
-    df_main::Main_df,    
+    df_main::Main_df,
     X,
     start_target_hour,
     final_target_hour,
@@ -788,9 +1037,10 @@ function _graph_cumulative_change_in_riverbed!(
         cumulative_change_simulated=cumulative_change_in_simulated_riverbed_elevation(
             df_main.tuple[i],
             start_target_hour,
-            final_target_hour
+            final_target_hour,
+            length(X)
         )
-        
+
         plot!(
             p,
             X,
@@ -799,7 +1049,71 @@ function _graph_cumulative_change_in_riverbed!(
             linewidth=1,
             linecolor=palette(:Set1_9)[i]
         )
-        
+
+    end
+
+    return p
+
+end
+
+function _graph_cumulative_change_in_riverbed!(
+    p::Plots.Plot,
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    X,
+    start_target_hour,
+    final_target_hour,
+    riverbed_symbol::Symbol,
+    labels::NTuple{N, Tuple{Int, AbstractString}},
+    ::Val{N}
+    ) where N
+
+    for (i, label_s) in labels
+
+        cumulative_change_simulated = _cumulative_change_in_simulated_riverbed_elevation(
+            df_main.tuple[i],
+            start_target_hour,
+            final_target_hour,
+            length(X),
+            riverbed_symbol
+        )
+
+        cumulative_change_simulated_max = _cumulative_change_in_simulated_riverbed_elevation(
+            df_max.tuple[i],
+            start_target_hour,
+            final_target_hour,
+            length(X),
+            riverbed_symbol
+        )
+
+        cumulative_change_simulated_min = _cumulative_change_in_simulated_riverbed_elevation(
+            df_min.tuple[i],
+            start_target_hour,
+            final_target_hour,
+            length(X),
+            riverbed_symbol
+        )
+
+        reverse!(cumulative_change_simulated)
+        reverse!(cumulative_change_simulated_max)
+        reverse!(cumulative_change_simulated_min)
+
+        plot!(
+            p,
+            X,
+            cumulative_change_simulated,
+            label=label_s,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i],
+            ribbon=(
+                cumulative_change_simulated .- cumulative_change_simulated_min,
+                cumulative_change_simulated_max .- cumulative_change_simulated
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha = 0.3
+        )
+
     end
 
     return p
@@ -807,7 +1121,7 @@ function _graph_cumulative_change_in_riverbed!(
 end
 
 function graph_cumulative_change_in_riverbed(
-    df_main::Main_df,    
+    df_main::Main_df,
     measured_riverbed,
     start_year::Int,
     final_year::Int,
@@ -825,7 +1139,6 @@ function graph_cumulative_change_in_riverbed(
         start_year,
         final_year
     )
-    
     x_label = "Distance from the estuary (km)"
     y_label = "Variation (m)"
     legend_label_0 = "Measured"
@@ -848,11 +1161,11 @@ function graph_cumulative_change_in_riverbed(
         title=title_s,
         xflip=true
     )
-    
+
     X = [0.2*(i-1) for i in 1:flow_size]
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)
-    
+    vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
     plot!(
         p,
         X,
@@ -861,10 +1174,10 @@ function graph_cumulative_change_in_riverbed(
         linewidth=1,
         label=legend_label_0
     )
-    
+
     _graph_cumulative_change_in_riverbed!(
         p,
-        df_main,        
+        df_main,
         X,
         start_target_hour,
         final_target_hour,
@@ -873,10 +1186,208 @@ function graph_cumulative_change_in_riverbed(
     )
 
 
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)    
+    hline!(p, [0], line=:black, primary=false, linestyle=:dot, linewidth=1)
 
     return p
 end
+
+function graph_cumulative_change_in_riverbed(
+    df_main::Main_df,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    string_title::String,
+    labels::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where N
+
+    title_s = string(string_title, " ", start_year, "-", final_year)
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "累積変化量 (m)"
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Variation (m)"
+    end
+
+    p=plot(
+        legend=:topright,
+        legend_font_pointsize=10,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-5.5, 5.5),
+        ylabel=y_label,
+        title=title_s,
+        xflip=true
+    )
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    _graph_cumulative_change_in_riverbed!(
+        p,
+        df_main,
+        X,
+        start_target_hour,
+        final_target_hour,
+        labels,
+        Val(N)
+    )
+
+
+    hline!(p, [0], line=:black, primary=false, linestyle=:dot, linewidth=1)
+
+    return p
+end
+
+function graph_cumulative_change_in_riverbed(
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    string_title::String,
+    riverbed_symbol::Symbol,
+    labels::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where N
+
+    title_s = string(string_title, " ", start_year, "-", final_year)
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "累積変化量 (m)"
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Variation (m)"
+    end
+
+    p=plot(
+        legend=:topright,
+        legend_font_pointsize=10,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-5.5, 5.5),
+        ylabel=y_label,
+        title=title_s,
+        xflip=true
+    )
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    _graph_cumulative_change_in_riverbed!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        X,
+        start_target_hour,
+        final_target_hour,
+        riverbed_symbol,
+        labels,
+        Val(N)
+    )
+
+
+    hline!(p, [0], line=:black, primary=false, linestyle=:dot, linewidth=1)
+
+    return p
+end
+
+function graph_cumulative_change_in_riverbed(
+    measured_riverbed::DataFrames.DataFrame,
+    df_main::Main_df,
+    df_max::Main_df,
+    df_min::Main_df,
+    start_year::Int,
+    final_year::Int,
+    start_target_hour::Int,
+    final_target_hour::Int,
+    string_title::String,
+    riverbed_symbol::Symbol,
+    labels::Vararg{Tuple{Int, AbstractString}, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where N
+
+    title_s = string(string_title, " ", start_year, "-", final_year)
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "累積変化量 (m)"
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Variation (m)"
+    end
+
+    p=plot(
+        legend=:topright,
+        legend_font_pointsize=10,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylims=(-5.5, 5.5),
+        ylabel=y_label,
+        title=title_s,
+        xflip=true
+    )
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+
+    vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    cumulative_change_measured =
+        cumulative_change_in_measured_riverbed_elevation(
+            measured_riverbed,
+            start_year,
+            final_year
+        )
+
+    reverse!(cumulative_change_measured)
+
+    plot!(
+        p,
+        X,
+        cumulative_change_measured,
+        linecolor=:midnightblue,
+        linewidth=1,
+        label=if japanese
+            "実測値"
+        else
+            "Measured"
+        end
+    )
+
+    _graph_cumulative_change_in_riverbed!(
+        p,
+        df_main,
+        df_max,
+        df_min,
+        X,
+        start_target_hour,
+        final_target_hour,
+        riverbed_symbol,
+        labels,
+        Val(N)
+    )
+
+
+    hline!(p, [0], line=:black, primary=false, linestyle=:dot, linewidth=1)
+
+    return p
+end
+
 
 # 全区間の実測河床位の年ごとの平均値を出力する関数
 function observed_riverbed_average_whole(riverbed_level::DataFrame,when_year::Int)
@@ -1185,37 +1696,29 @@ function graph_variation_per_year_simulated_riverbed_level(
 end
 
 function graph_condition_change_in_riverbed(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
     start_year::Int,
     final_year::Int,
     start_target_hour::Int,
     final_target_hour::Int,
-    string_title::String,
-    df_base::DataFrame,
-    df_with_mining::DataFrame,
-    df_with_dam::DataFrame,
-    df_with_mining_and_dam::DataFrame;
+    string_title::AbstractString,
+    riverbed_symbol::Symbol,
+    index_df_base::Int,
+    df_vararg::Vararg{Tuple{Int, <:AbstractString}, N};
+    flow_size::Int=390,
     japanese::Bool=false
-    )
+    ) where {N}
 
-    title_s = string(string_title, " ", start_year, "-", final_year)    
-    
+    title_s = string(string_title, " ", start_year, "-", final_year)
 
     if japanese == true
         x_label = "河口からの距離 (km)"
         y_label = "変化量 (m)"
-        label_s = [
-            "砂利採取と池田ダム (Case 1 - Case 4)",
-            "池田ダム (Case 2 - Case 4)",
-            "砂利採取 (Case 3 - Case 4)"            
-        ]
     else
         x_label = "Distance from the estuary (km)"
         y_label = "Variation (m)"
-        label_s = [
-            "by gravel mining and the Ikeda Dam (Case 1 - Case 4)",
-            "by the Ikeda Dam (Case 2 - Case 4)",
-            "by gravel mining (Case 3 - Case 4)"
-        ]
     end
 
     p=plot(
@@ -1224,74 +1727,101 @@ function graph_condition_change_in_riverbed(
         xticks=[0, 20, 40, 60, 77.8],
         xflip=true,
         xlabel=x_label,
-        ylims=(-1.2, 1.2),
+        ylims=(-2, 2),
         ylabel=y_label,
         title=title_s,
         legend_font_pointsize=10
     )
 
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dash, linewidth=1)    
-    hline!(p, [0], line=:black, label="", linestyle=:dot, linewidth=1)
-
-    base_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
-        df_base,
-        start_target_hour,
-        final_target_hour
-    )
-
-    with_mining_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
-        df_with_mining,
-        start_target_hour,
-        final_target_hour
-    )
-
-    with_dam_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
-        df_with_dam,
-        start_target_hour,
-        final_target_hour
-    )
-
-    with_mining_and_dam_riverbed_diff = cumulative_change_in_simulated_riverbed_elevation(
-        df_with_mining_and_dam,
-        start_target_hour,
-        final_target_hour
-    )
-
-    change_by_mining         = with_mining_riverbed_diff -
-        base_riverbed_diff
-    change_by_dam            = with_dam_riverbed_diff    -
-        base_riverbed_diff
-    change_by_mining_and_dam = with_mining_and_dam_riverbed_diff -
-        base_riverbed_diff
-    
-    X = [0.2*(i-1) for i in 1:length(change_by_dam)]
-
-    plot!(
+    vline!(
         p,
-        X,
-        reverse(change_by_mining_and_dam),
-        label=label_s[1],
-        linewidth=1,
-        linecolor=palette(:Set1_3)[1]
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=false,
+        linestyle=:dash,
+        linewidth=1
     )
-    
-    plot!(
+    hline!(
         p,
-        X,
-        reverse(change_by_dam),
-        label=label_s[2],
-        linewidth=1,
-        linecolor=palette(:Set1_3)[2]
+        [0],
+        line=:black,
+        primary=false,
+        linestyle=:dot,
+        linewidth=1
     )
-    
-    plot!(
-        p,
-        X,
-        reverse(change_by_mining),
-        label=label_s[3],
-        linewidth=1,
-        linecolor=palette(:Set1_3)[3]        
+
+    X = [0.2*(i-1) for i in 1:flow_size]
+    reverse!(X)
+
+    base_riverbed_diff = _cumulative_change_in_simulated_riverbed_elevation(
+        main_df.tuple[index_df_base],
+        start_target_hour,
+        final_target_hour,
+        flow_size,
+        riverbed_symbol
     )
+    base_riverbed_diff_max = _cumulative_change_in_simulated_riverbed_elevation(
+        max_df.tuple[index_df_base],
+        start_target_hour,
+        final_target_hour,
+        flow_size,
+        riverbed_symbol
+    )
+    base_riverbed_diff_min = _cumulative_change_in_simulated_riverbed_elevation(
+        min_df.tuple[index_df_base],
+        start_target_hour,
+        final_target_hour,
+        flow_size,
+        riverbed_symbol
+    )
+
+    for i in 1:N
+
+        index_df = df_vararg[i][1]
+        label_df = df_vararg[i][2]
+
+        riverbed_diff = _cumulative_change_in_simulated_riverbed_elevation(
+            main_df.tuple[index_df],
+            start_target_hour,
+            final_target_hour,
+            flow_size,
+            riverbed_symbol
+        )
+        riverbed_diff_max = _cumulative_change_in_simulated_riverbed_elevation(
+            max_df.tuple[index_df],
+            start_target_hour,
+            final_target_hour,
+            flow_size,
+            riverbed_symbol
+        )
+        riverbed_diff_min = _cumulative_change_in_simulated_riverbed_elevation(
+            min_df.tuple[index_df],
+            start_target_hour,
+            final_target_hour,
+            flow_size,
+            riverbed_symbol
+        )
+
+        riverbed_diff .= riverbed_diff .- base_riverbed_diff
+        riverbed_diff_max .= riverbed_diff_max .- base_riverbed_diff_max
+        riverbed_diff_min .= riverbed_diff_min .- base_riverbed_diff_min
+
+        plot!(
+            p,
+            X,
+            riverbed_diff,
+            label=label_df,
+            linewidth=1,
+            linecolor=palette(:Set1_9)[i],
+            ribbon=(
+                riverbed_diff .- riverbed_diff_min,
+                riverbed_diff_max .- riverbed_diff
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha = 0.3
+        )
+
+    end
 
     return p
 end
@@ -1631,7 +2161,7 @@ function graph_simulated_rb_crossing(
                                           time_index, time_schedule)
 
     first_i, last_i = decide_index_number(time_index)
-    
+
     target_cross_rb = Matrix(
         df_cross[first_i:last_i, Between(:Zb001, :Zb101)]
     )'
@@ -1678,7 +2208,84 @@ function graph_simulated_rb_crossing(
     )
 
     return p
-    
+
+end
+
+# 断面の再現河床位を表示させる関数を作る．（実測は複数年）
+function graph_simulated_rb_crossing(
+    df_cross::DataFrame,
+    measured_width::DataFrame,
+    measured_cross_rb::Dict{Int, DataFrame},
+    time_schedule,
+    area_index::Int,
+    year_1::Int,
+    year_2::Int,
+    time_index::Int
+    )
+
+    want_title = making_time_series_title(
+        "",
+        time_index,
+        time_schedule
+    )
+
+    first_i, last_i = decide_index_number(time_index)
+
+    target_cross_rb = Matrix(
+        df_cross[first_i:last_i, Between(:Zb001, :Zb101)]
+    )'
+
+    river_width_x = river_width_crossing(
+        measured_width,
+        measured_cross_rb,
+        area_index,
+        year_1) ./1000
+
+    p = plot(
+        river_width_x,
+	measured_cross_rb[year_1][:, Symbol(area_index)],
+	label=string("Measured in ", year_1),
+    	xlabel="Distance from the left bank (km)",
+        ylabel="Elevation (T.P. m)",
+        title=Printf.@sprintf("%.1f km from the estuary", 0.2*(390 - area_index)),
+        linecolor=:midnightblue,
+        legend=:top,
+        legend_font_pointsize=10,
+        linestyle=:dash
+    )
+
+    plot!(
+        p,
+        river_width_x,
+	measured_cross_rb[year_2][:, Symbol(area_index)],
+	label=string("Measured in ", year_2),
+        linecolor=:midnightblue,
+        legend_font_pointsize=10,
+        linestyle=:dashdot
+    )
+
+    size_crossing_points = size(measured_cross_rb[year_1], 1)
+
+    vec_cross_rb = Matrix(
+        df_cross[
+            first_i:last_i,
+            Between(
+                :Zb001,
+                Symbol(Printf.@sprintf("Zb%3i", size_crossing_points))
+            )
+        ]
+    )'[:, area_index]
+
+    plot!(
+        p,
+        river_width_x,
+        vec_cross_rb,
+	label=string("Simulated at ", want_title),
+        linecolor=palette(:Set1_4)[1]
+    )
+
+    return p
+
 end
 
 function graph_simulated_rb_crossing(
@@ -2446,6 +3053,142 @@ function graph_variation_per_year_simulated_riverbed_level_with_linear_model(
 end
 
 """
+再現最低河床標高の勾配を求める関数
+"""
+function calc_gradient(
+    main_df::Main_df,
+    index_df::Int,
+    index_hour::Int,
+    flow_size::Int
+    )
+
+    index_start, index_final = decide_index_number(
+        index_hour,
+        flow_size
+    )
+
+    gradient_vector = zeros(flow_size-1)
+
+    for i in eachindex(gradient_vector)
+
+        j = index_start + i - 1
+
+        gradient_vector[i] =
+            (main_df.tuple[index_df][j, :Zbmin] - main_df.tuple[index_df][j+1, :Zbmin]) /
+            (main_df.tuple[index_df][j+1, :I] - main_df.tuple[index_df][j, :I])
+
+    end
+
+    return gradient_vector
+
+end
+
+"""
+再現最低河床標高の勾配を図示する関数
+"""
+function plot_gradient(
+    main_df::Main_df,
+    max_df::Main_df,
+    min_df::Main_df,
+    index_hour::Int,
+    time_schedule,
+    flow_size::Int,
+    vararg_df::Vararg{Tuple{Int, <:AbstractString}, N};
+    japanese::Bool=false
+    ) where {N}
+
+    if japanese==true
+        x_label   = "河口からの距離 (km)"
+        y_label   = "勾配 (-)"
+    else
+        x_label   = "Distance from the estuary (km)"
+        y_label   = "Gradient (-)"
+    end
+
+    want_title = making_time_series_title("", index_hour, time_schedule)
+
+    p = plot(
+        ylabel=y_label,
+        xlims=(0,77.8),
+        title=want_title,
+	xlabel=x_label,
+	xticks=[0, 20, 40, 60, 77.8],
+        xflip=true,
+	legend=:top,
+        ylims=(-0.05, 0.1)
+    )
+
+    vline!(
+        p,
+        [40.2, 24.4, 14.6],
+        line=:black,
+        primary=false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    hline!(
+        p,
+        [0],
+        line=:black,
+        primary=false,
+        linestyle=:dot,
+        linewidth=1
+    )
+
+    X = collect(range(start=0.1, step=0.2, length=flow_size))
+    reverse!(X)
+
+    for i in 1:N
+
+        index_df = vararg_df[i][1]
+        label_df = vararg_df[i][2]
+
+        gradient_vector = calc_gradient(
+            main_df,
+            index_df,
+            index_hour,
+            flow_size
+        )
+
+        gradient_vector_max = calc_gradient(
+            max_df,
+            index_df,
+            index_hour,
+            flow_size
+        )
+
+        gradient_vector_min = calc_gradient(
+            min_df,
+            index_df,
+            index_hour,
+            flow_size
+        )
+
+        plot!(
+            p,
+            X,
+            gradient_vector,
+            label=label_df,
+            linecolor=palette(:Set1_9)[i],
+            linewidth=1,
+            ribbon=(
+                gradient_vector .- gradient_vector_min,
+                gradient_vector_max .- gradient_vector
+            ),
+            fillcolor=palette(:Set1_9)[i],
+            fillalpha = 0.3
+        )
+
+    end
+
+    return p
+
+end
+
+
+
+"""
 上流側の勾配を求める。
 上りなら正の値
 上流境界ならNaN
@@ -2466,13 +3209,13 @@ function calc_gradient_upstream(
     ret = 0.0
 
     if (index_area <= 1) || (index_area > flow_size)
-        
+
         ret = NaN
-        
+
     else
 
         index_area_point_df = index_start - 1 + index_area
-        
+
         elevation_point =
             main_df.tuple[index_df][index_area_point_df,     :Zbmin]
 
@@ -2486,7 +3229,7 @@ function calc_gradient_upstream(
             main_df.tuple[index_df][index_area_point_df - 1, :I]
 
         ret = (elevation_up - elevation_point) / (x_point - x_up)
-        
+
     end
 
     return ret

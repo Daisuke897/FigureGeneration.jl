@@ -173,8 +173,8 @@ function graph_ratio_simulated_particle_size_dist(
         x_label="河口からの距離 (km)"
         y_label="割合 (%)"
         l_title="粒径 (mm)"
-    end        
-    
+    end
+
     p = plot(
             palette=:tab20, title=want_title,
 	    # xticks=[0, 20, 40, 60, 77.8],
@@ -203,6 +203,225 @@ function graph_ratio_simulated_particle_size_dist(
 
     return p
 end
+
+"""
+期間平均の底質粒度分布を示すグラフを作る
+"""
+function plot_ratio_simulated_particle_size_dist_mean_period(
+    df_main::Main_df,
+    index_df::Int,
+    index_time_first::Int,
+    index_time_last::Int,
+    sediment_size::DataFrames.AbstractDataFrame;
+    flow_size::Int=390,
+    japanese::Bool=false
+    )
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "割合 (%)"
+        l_title = "粒径 (mm)"
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Percentage (%)"
+        l_title = "Size (mm)"
+    end
+
+    p = plot(
+        xlabel=x_label,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+        ylims=(0, 100),
+        legend=:outerright,
+        legendtitle=l_title,
+        xflip=true
+    )
+
+    X = collect(range(start=0.0, step=0.2, length=flow_size))
+
+    reverse!(X)
+
+    dist_grain = zeros(flow_size, size(sediment_size, 1))
+
+    for i in axes(dist_grain, 2)
+        fmc_symbol = Symbol(@sprintf("fmc%02i", i))
+
+        dist_grain[:, i] .= mean(
+            j ->  df_main.tuple[index_df][j[1]:j[2], fmc_symbol],
+            map(
+                decide_index_number,
+                index_time_first:index_time_last
+            )
+        )
+    end
+
+    for i in axes(dist_grain, 1)
+
+        normalize!(view(dist_grain, i, :), 1)
+
+    end
+
+    reverse!(dist_grain, dims=2)
+
+    dist_grain .= cumsum(dist_grain, dims=2)
+
+    reverse!(dist_grain, dims=2)
+
+    dist_grain .= dist_grain .* 100
+
+    palette_sediment_size = palette(
+        :tab20
+    )
+
+    for i in axes(dist_grain, 2)
+
+        if i == 1
+            s_label = Printf.@sprintf("%5.3f", sediment_size[i, 3])
+        elseif 1 < i <= 8
+            s_label = Printf.@sprintf("%5.2f", sediment_size[i, 3])
+        elseif 8 < i <= 11
+            s_label = Printf.@sprintf("%5.1f", sediment_size[i, 3])
+        else
+            s_label = Printf.@sprintf("%5.0f", sediment_size[i, 3])
+        end
+
+        plot!(
+            p,
+            X,
+            dist_grain[:,i],
+            label=s_label,
+            fillrange=0,
+            linewidth=1,
+            color=palette_sediment_size[i],
+            linecolor=:gray
+        )
+
+    end
+
+    # vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    return p
+
+end
+
+"""
+期間平均の底質粒度分布の人為操作によるパーセントポイントの変化
+"""
+function plot_percentage_point_simulated_particle_size_dist_mean_period(
+    df_main::Main_df,
+    index_df::Int,
+    index_base_df::Int,
+    index_time_first::Int,
+    index_time_last::Int,
+    sediment_size::DataFrames.AbstractDataFrame;
+    flow_size::Int=390,
+    japanese::Bool=false
+    )
+
+    if japanese == true
+        x_label = "河口からの距離 (km)"
+        y_label = "パーセントポイント (%pt)"
+        l_title = "粒径 (mm)"
+    else
+        x_label = "Distance from the estuary (km)"
+        y_label = "Percentage point (%pt)"
+        l_title = "Size (mm)"
+    end
+
+    p = plot(
+        xlabel=x_label,
+        xlims=(0, 77.8),
+        xticks=[0, 20, 40, 60, 77.8],
+        ylabel=y_label,
+        ylims=(-30, 30),
+        legend=:outerright,
+        legendtitle=l_title,
+        xflip=true
+    )
+
+    X = collect(range(start=0.0, step=0.2, length=flow_size))
+
+    reverse!(X)
+
+    dist_grain = zeros(flow_size, size(sediment_size, 1))
+    for i in axes(dist_grain, 2)
+        fmc_symbol = Symbol(@sprintf("fmc%02i", i))
+
+        dist_grain[:, i] .= mean(
+            j ->  df_main.tuple[index_df][j[1]:j[2], fmc_symbol],
+            map(
+                decide_index_number,
+                index_time_first:index_time_last
+            )
+        )
+    end
+    for i in axes(dist_grain, 1)
+        normalize!(view(dist_grain, i, :), 1)
+    end
+
+    dist_grain_base = zeros(flow_size, size(sediment_size, 1))
+    for i in axes(dist_grain_base, 2)
+        fmc_symbol = Symbol(@sprintf("fmc%02i", i))
+
+        dist_grain_base[:, i] .= mean(
+            j ->  df_main.tuple[index_base_df][j[1]:j[2], fmc_symbol],
+            map(
+                decide_index_number,
+                index_time_first:index_time_last
+            )
+        )
+    end
+    for i in axes(dist_grain_base, 1)
+        normalize!(view(dist_grain_base, i, :), 1)
+    end
+
+    dist_grain .= dist_grain .- dist_grain_base
+    dist_grain .= dist_grain .* 100
+
+    fill_dist_grain = similar(dist_grain)
+
+    GeneralGraphModule.calc_condition_percentage_point_to_plot!(
+        dist_grain,
+        fill_dist_grain
+    )
+
+    vline!(p, [40.2,24.4,14.6], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    palette_sediment_size = palette(
+        :tab20
+    )
+
+    for i in axes(dist_grain, 2)
+
+        if i == 1
+            s_label = Printf.@sprintf("%5.3f", sediment_size[i, 3])
+        elseif 1 < i <= 8
+            s_label = Printf.@sprintf("%5.2f", sediment_size[i, 3])
+        elseif 8 < i <= 11
+            s_label = Printf.@sprintf("%5.1f", sediment_size[i, 3])
+        else
+            s_label = Printf.@sprintf("%5.0f", sediment_size[i, 3])
+        end
+
+        plot!(
+            p,
+            X,
+            view(dist_grain,:,i),
+            label=s_label,
+            linewidth=0,
+            color=palette_sediment_size[i],
+            fillrange=view(fill_dist_grain,:,i)
+        )
+
+    end
+
+    hline!(p, [0], line=:black, primary=false, linestyle=:dash, linewidth=1)
+
+    return p
+
+end
+
 
 """
 特定時刻における平均粒径の縦断分布
@@ -729,6 +948,7 @@ function graph_temporal_variation_average_simulated_particle_size_fluc(
     time_schedule::DataFrame,
     title::String,
     target_hour::Vararg{Int, N};
+    flow_size::Int=390,
     japanese::Bool=false
     ) where {N}
 
@@ -739,46 +959,154 @@ function graph_temporal_variation_average_simulated_particle_size_fluc(
     else
         x_label="Distance from the estuary (km)"
         y_label="Mean diameter (mm)"
-    end        
+    end
 
     line_colors = cgrad(:reds, N, categorical = true)
-    
+
     p = plot(
         xticks=[0, 20, 40, 60, 77.8],
         xlabel=x_label,
         ylabel=y_label,
         xlims=(0,77.8),
         ylims=(-10, 200),
-        legend=:topleft,
+        legend=:topright,
         legend_font_pointsize=10,
         title=title
     )
 
-    distance_from_estuary = 0:0.2:77.8
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=false,
+        linestyle=:dot,
+        linewidth=1
+    )
+
+    distance_from_estuary = df_main.tuple[begin][1:flow_size , :I] ./ 1000
+
+    reverse!(distance_from_estuary)
 
     for i in 1:N
 
         start_index, finish_index = decide_index_number(target_hour[i])
-        
+
         simu_particle_size_dist = df_main.tuple[target_df][start_index:finish_index, :Dmave] * 1000
-    
+
         legend_label = making_time_series_title(
             "",
             target_hour[i],
             time_schedule
         )
-            
+
         plot!(
-            p, distance_from_estuary,
-            reverse(simu_particle_size_dist),
+            p,
+            distance_from_estuary,
+            simu_particle_size_dist,
             label=legend_label,
-            linewidth=1,
-            linecolor=line_colors[i]
+            linewidth=1.0,
+            linecolor=line_colors[i],
+            xflip=true
         )
 
     end
-    
-    vline!(p, [40.2,24.4,14.6], line=:black, label="", linestyle=:dot, linewidth=1)
+
+    return p
+
+end
+
+function graph_temporal_variation_rate_average_simulated_particle_size_fluc(
+    df_main::Main_df,
+    target_df::Int,
+    time_schedule::DataFrame,
+    title::String,
+    target_hour::Vararg{Int, N};
+    flow_size::Int=390,
+    japanese::Bool=false
+    ) where {N}
+
+
+    if japanese==true
+        x_label="河口からの距離 (km)"
+        y_label="変化率 (%)"
+    else
+        x_label="Distance from the estuary (km)"
+        y_label="Rate of variation (%)"
+    end
+
+    line_colors = cgrad(:reds, N-1, categorical = true)
+
+    p = plot(
+        xticks=[0, 20, 40, 60, 77.8],
+        xlabel=x_label,
+        ylabel=y_label,
+        xlims=(0,77.8),
+        ylims=(-100, 1050),
+        legend=:topright,
+        legend_font_pointsize=10,
+        title=title
+    )
+
+    vline!(
+        p,
+        [40.2,24.4,14.6],
+        line=:black,
+        primary=false,
+        linestyle=:dot,
+        linewidth=1
+    )
+
+    hline!(
+        p,
+        [0],
+        line=:black,
+        primary=false,
+        linestyle=:dash,
+        linewidth=1
+    )
+
+    distance_from_estuary = df_main.tuple[begin][1:flow_size, :I] ./ 1000
+
+    reverse!(distance_from_estuary)
+
+    for i in 1:(N-1)
+
+        start_index, finish_index = decide_index_number(target_hour[i])
+
+        simu_particle_size_dist_1 = df_main.tuple[target_df][start_index:finish_index, :Dmave] * 1000
+
+        start_index, finish_index = decide_index_number(target_hour[i+1])
+
+        simu_particle_size_dist_2 = df_main.tuple[target_df][start_index:finish_index, :Dmave] * 1000
+
+        legend_label = string(
+            making_time_series_title(
+                "",
+                target_hour[i],
+                time_schedule
+            ),
+            " - ",
+            making_time_series_title(
+                "",
+                target_hour[i+1],
+                time_schedule
+            )
+        )
+
+        simu_particle_size_dist_2 .=
+            ((simu_particle_size_dist_2 ./ simu_particle_size_dist_1) .- 1) * 100
+
+        plot!(
+            p,
+            distance_from_estuary,
+            simu_particle_size_dist_2,
+            label=legend_label,
+            linewidth=1.0,
+            linecolor=line_colors[i],
+            xflip=true
+        )
+
+    end
 
     return p
 

@@ -21,6 +21,7 @@ import
     Plots,
     DataFrames,
     Statistics,
+    Printf,
     ..GeneralGraphModule,
     ..ParticleSize,
     ..Main_df,
@@ -35,7 +36,7 @@ export
     make_graph_velocity,
     make_graph_discharge,
     make_graph_water_level,
-    make_graph_condition_change_water_level,    
+    make_graph_condition_change_water_level,
     make_graph_time_series_area,
     make_graph_time_series_width,
     make_graph_time_series_velocity,
@@ -132,13 +133,13 @@ function calc_settling_velocity_by_rubey(
     param::Param{T},
     diameter_m::T
     ) where {T<:AbstractFloat}
-    
+
     tmp = 36 * param.kinematic_viscosity^2 / (param.specific_gravity * param.g * diameter_m^3)
-    
+
     w_f = (sqrt(2.0/3.0 + tmp) - sqrt(tmp)) * sqrt(param.specific_gravity * param.g * diameter_m)
-    
+
     return w_f
-    
+
 end
 
 """
@@ -1119,109 +1120,134 @@ end
 
 function make_graph_time_series_water_level_with_measured(
     area_index::Int,
-    target_hours::Int,
     river_length_km::Float64,
-    each_year_timing,
-    df::DataFrames.DataFrame,
-    df_measured::DataFrames.DataFrame;
+    df::DataFrames.AbstractDataFrame,
+    df_measured::DataFrames.AbstractDataFrame;
     japanese::Bool=false
 )
 
-    area_km = abs(river_length_km - 0.2 * (area_index - 1))    
-    
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+
     if japanese == true
 
-        x_label="時間 (s)"
-        y_label="水位 (m)"
+        x_label="時間"
+        y_label="水位 (T.P. m)"
         t_title=string("河口から ", round(area_km, digits=2), " km 上流")
         t_label_1="再現値"
         t_label_2="観測値"
 
     elseif japanese == false
 
-        x_label="Time (s)"
-        y_label="Water Level (m)"
+        x_label="Hours"
+        y_label="Water level (T.P. m)"
         t_title=string(round(area_km, digits=2), " km upstream from the estuary")
         t_label_1="Simulated"
-        t_label_2="Measured"
+        t_label_2="Observed"
 
     end
 
-    time_data = unique(df[:, :T])
-    max_num_time = maximum(time_data)
-    num_time = length(time_data)
+    num_time = size(df_measured, 1)
 
     p = Plots.plot(
-        xlims=(0, max_num_time),
+        xlims=(0,num_time-1),
         xlabel=x_label,
-#        ylims=(0, 140),
         ylabel=y_label,
         title=t_title,
-        legend=:bottomleft,
-        tickfontsize=12,
-        guidefontsize=12,
-        legend_font_pointsize=11,
-        legend_title_font_pointsize=11,
-#        palette=:tab20,
-#        legend_title=t_legend
+        legend=:bottomleft
     )
 
-    # GeneralGraphModule._vline_per_year_timing!(
-    #     p,
-    #     each_year_timing
-    # )
-
-    Plots.vline!(
-        [each_year_timing[1975][1],
-         each_year_timing[1985][1],
-         each_year_timing[1995][1]] .* 3600,
-        label="",
-        linewidth=1,
-        linestyle=:dash,
-        linecolor=:black
-    )
-    
     water_level_time_series = zeros(Float64, num_time)
 
-    for j in 1:num_time
+    for j in eachindex(water_level_time_series)
 
-        i_first, i_final = GeneralGraphModule.decide_index_number(j-1)
+        i_first, _ = GeneralGraphModule.decide_index_number(j-1)
 
-        water_level_time_series[j] = df[i_first:i_final, :Z][area_index]
+        water_level_time_series[j] = df[i_first + area_index - 1, :Z]
 
     end
 
     Plots.plot!(
         p,
-        time_data,
+        0:(num_time - 1),
         water_level_time_series,
+        linecolor=Plots.palette(:Set1_9)[1],
         linewidth=1,
-        linestyle=:dot,
-        linecolor=:black,
-        label=""
-    )
-
-    Plots.plot!(
-        p,
-        time_data[1:target_hours],
-        water_level_time_series[1:target_hours],
-        linecolor=:dodgerblue,
         label=t_label_1
     )
 
     Plots.plot!(
         p,
-        time_data[1:target_hours],        
+        0:(num_time - 1),
         df_measured[!, :water_level],
         label=t_label_2,
         seriestype=:scatter,
-        markersize=3,
-        color=:red
+        markersize=1,
+        color=:black
     )
 
-    mean_water_level = Statistics.mean(water_level_time_series)
+    return p
 
-    Plots.plot!(p, ylims=(mean_water_level-4.0, mean_water_level+5.0))
+end
+
+function make_scatter_time_series_water_level_with_measured(
+    area_index::Int,
+    river_length_km::Float64,
+    df::DataFrames.AbstractDataFrame,
+    df_measured::DataFrames.AbstractDataFrame;
+    japanese::Bool=false
+)
+
+    area_km = abs(river_length_km - 0.2 * (area_index - 1))
+
+    if japanese == true
+
+        x_label="実測水位 (T.P. m)"
+        y_label="再現水位 (T.P. m)"
+        t_title=string("河口から ", round(area_km, digits=2), " km 上流")
+
+    elseif japanese == false
+
+        x_label="Measured water level (T.P. m)"
+        y_label="Simulated water level (T.P. m)"
+        t_title=string(round(area_km, digits=2), " km upstream from the estuary")
+
+    end
+
+    num_time = size(df_measured, 1)
+
+    p = Plots.plot(
+        [20, 40],
+        [20, 40],
+        linestyle=:dash,
+        linewidth=2,
+        priority=false,
+        xlabel=x_label,
+        ylabel=y_label,
+        title=t_title,
+        legend=:none,
+        color=:black
+    )
+
+    water_level_time_series = zeros(Float64, num_time)
+
+    for j in eachindex(water_level_time_series)
+
+        i_first, _ = GeneralGraphModule.decide_index_number(j-1)
+
+        water_level_time_series[j] = df[i_first + area_index - 1, :Z]
+
+    end
+
+    Plots.scatter!(
+        p,
+        df_measured[!, :water_level],
+        water_level_time_series,
+        markercolor=Plots.palette(:Set1_9)[2],
+        markersize=4,
+        label="",
+        xlims=(26, 37),
+        ylims=(26, 37)
+    )
 
     return p
 

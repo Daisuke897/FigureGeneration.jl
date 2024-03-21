@@ -148,7 +148,7 @@ function calc_non_dimensional_shear_stress_yearly_mean(
     param::Param,
     each_year_timing::Each_year_timing,
     year_first::Int,
-    year_last::Int,    
+    year_last::Int,
     diameter_m::AbstractFloat
     )
 
@@ -159,7 +159,7 @@ function calc_non_dimensional_shear_stress_yearly_mean(
         year_first,
         diameter_m
     )
-    
+
     for year in (year_first + 1):year_last
 
         τₛ .= τₛ .+ calc_non_dimensional_shear_stress_yearly_mean(
@@ -294,30 +294,20 @@ function calc_effective_non_dimensional_shear_stress_yearly_mean(
     diameter_m::AbstractFloat
     )
 
-    τₑ = calc_effective_non_dimensional_shear_stress(
-        df,
-        sediment_size,
-        param,
-        each_year_timing.dict[year][1],
-        diameter_m
-    )
-
-    
-    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
-
-        τₑ .= τₑ .+ calc_effective_non_dimensional_shear_stress(
+    Statistics.mean(
+        i -> calc_effective_non_dimensional_shear_stress(
             df,
             sediment_size,
             param,
-            target_hour,
+            i,
             diameter_m
+        ),
+        range(
+            start=each_year_timing.dict[year][1],
+            stop=each_year_timing.dict[year][2]
         )
+    )
 
-    end
-
-    τₑ .= τₑ ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
-
-    return τₑ
 end
 
 """
@@ -325,41 +315,58 @@ end
 """
 function calc_effective_non_dimensional_shear_stress_yearly_mean(
     df::DataFrames.DataFrame,
-    sediment_size::DataFrames.DataFrame,    
+    sediment_size::DataFrames.DataFrame,
     param::Param,
     each_year_timing::Each_year_timing,
     year_first::Int,
-    year_last::Int,    
+    year_last::Int,
     diameter_m::AbstractFloat
     )
 
-    τₑ = calc_effective_non_dimensional_shear_stress_yearly_mean(
-        df,
-        sediment_size,
-        param,
-        each_year_timing,
-        year_first,
-        diameter_m
-    )
-    
-    for year in (year_first + 1):year_last
-
-        τₑ .= τₑ .+ calc_effective_non_dimensional_shear_stress_yearly_mean(
+    Statistics.mean(
+        year -> calc_effective_non_dimensional_shear_stress_yearly_mean(
             df,
             sediment_size,
             param,
             each_year_timing,
             year,
             diameter_m
+        ),
+        range(
+            start=year_first,
+            stop=year_last
         )
+    )
 
-    end
-
-    τₑ .= τₑ ./ (year_last - year_first + 1)
-
-    return τₑ
 end
 
+"""
+平均粒径に対応する複数年の年平均の有効無次元掃流力を計算する
+"""
+function calc_effective_non_dimensional_shear_stress_yearly_mean(
+    df::DataFrames.AbstractDataFrame,
+    sediment_size::DataFrames.AbstractDataFrame,
+    param::Param,
+    start_year::Int,
+    last_year::Int,
+    each_year_timing::Each_year_timing
+)
+
+
+    Statistics.mean(
+        i -> calc_effective_non_dimensional_shear_stress(
+            df,
+            sediment_size,
+            param,
+            i
+        ),
+        range(
+            start=each_year_timing.dict[start_year][1],
+            stop=each_year_timing.dict[last_year][2]
+        )
+    )
+
+end
 
 # 限界無次元掃流力
 

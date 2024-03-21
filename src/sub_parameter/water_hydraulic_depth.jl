@@ -20,29 +20,21 @@ end
 特定年の径深の平均値を求める。
 """
 function calc_water_hydraulic_depth_yearly_mean(
-    df::DataFrames.DataFrame,
+    df::DataFrames.AbstractDataFrame,
     each_year_timing::Each_year_timing,
     year::Int
     )
 
-    hydraulic_depth = calc_water_hydraulic_depth(
-        df,
-        each_year_timing.dict[year][1]
-    )
-
-    for target_hour in (each_year_timing.dict[year][1]+1):each_year_timing.dict[year][2]
-
-        hydraulic_depth .= hydraulic_depth .+ calc_water_hydraulic_depth(
+    Statistics.mean(
+        i -> calc_water_hydraulic_depth(
             df,
-            target_hour
+            i
+        ),
+        range(
+            start=each_year_timing.dict[year][1],
+            stop=each_year_timing.dict[year][2]
         )
-
-    end
-
-    hydraulic_depth .=
-        hydraulic_depth ./ (each_year_timing.dict[year][2] - each_year_timing.dict[year][1] + 1)
-
-    return hydraulic_depth
+    )
 
 end
 
@@ -50,30 +42,22 @@ end
 複数年の径深の平均値を求める。
 """
 function calc_water_hydraulic_depth_yearly_mean(
-    df::DataFrames.DataFrame,
+    df::DataFrames.AbstractDataFrame,
     each_year_timing::Each_year_timing,
     year_first::Int,
-    year_last::Int    
+    year_last::Int
     )
 
-    hydraulic_depth = calc_water_hydraulic_depth_yearly_mean(
-        df,
-        each_year_timing,
-        year_first
-    )
-
-    for year in (year_first + 1):year_last
-
-        hydraulic_depth .= hydraulic_depth .+ calc_water_hydraulic_depth_yearly_mean(
+    Statistics.mean(
+        year -> calc_water_hydraulic_depth_yearly_mean(
             df,
             each_year_timing,
             year
+        ),
+        range(
+            start=year_first,
+            stop=year_last
         )
+    )
 
-    end
-
-    hydraulic_depth .= hydraulic_depth ./ (year_last - year_first + 1)
-
-    return hydraulic_depth
-    
 end

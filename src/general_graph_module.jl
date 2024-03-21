@@ -741,4 +741,64 @@ function contours_time_series_diff_general(
 
 end
 
+function calc_condition_percentage_point_to_plot!(
+    sediment_load::AbstractMatrix{T},
+    fill_sediment_load::AbstractMatrix{T}
+    ) where {T<:Real}
+
+    if size(sediment_load) != size(fill_sediment_load)
+
+        error("Different size")
+
+    else
+
+        for i in axes(sediment_load, 1)
+
+            y_neg = zero(T)
+
+            y_pos = zero(T)
+
+            for j in axes(sediment_load, 2)
+
+                if (sediment_load[i, j] > zero(T))
+
+                    y_pos = y_pos + sediment_load[i, j]
+
+                end
+
+            end
+
+            for j in axes(sediment_load, 2)
+
+                el = sediment_load[i, j]
+
+                if (el > zero(T))
+
+                    sediment_load[i, j] = y_pos
+
+                    y_pos = y_pos - el
+
+                    fill_sediment_load[i, j] = y_pos
+
+                else
+
+                    fill_sediment_load[i, j] = y_neg
+
+                    y_neg = y_neg + el
+
+                    sediment_load[i, j] = y_neg
+
+                end
+
+
+            end
+
+        end
+
+    end
+
+    return nothing
+
+end
+
 end
